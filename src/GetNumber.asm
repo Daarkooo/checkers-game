@@ -4,12 +4,12 @@ getNumber MACRO row, column, Num
         ; (row % 2 === column % 2)
         mov al, column
         xor ah, ah
-        div byte ptr 02h
-        mov bl, dl  ; Store (column % 2) in bl
+        div byte ptr 2
+        mov bl, ah  ; Store (column % 2) in bl
         mov al, row
         xor ah, ah
-        div byte ptr 02h
-        cmp dl, bl  ; Compare (row % 2) with (column % 2)
+        div byte ptr 2
+        cmp ah, bl  ; Compare (row % 2) with (column % 2)
         jnz calculate_number  ; not a White Square
     
         ; White square
@@ -35,3 +35,14 @@ getNumber MACRO row, column, Num
     
     fin: 
     ENDM
+
+
+.data
+    row db 3
+    column db 2
+.code
+
+    mov ax,@data
+    mov ds,ax
+    
+    getNumber row, column, cl
