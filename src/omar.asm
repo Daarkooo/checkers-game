@@ -64,6 +64,7 @@ endm
 
 ;important functions:start
 cell_content macro row ,col
+    mov ax,row  
     mov ax,row
     mov bx,col
     shr ax,1
@@ -97,18 +98,19 @@ cell_content macro row ,col
     inc ax
     mov bx,ax
     endPrint: 
-endm  
-    
-;important functions:end
-cell_content 8,5    
-mov ah,2
-mov dl,0Ah
-int 21h
-print_number_dw bx 
+endm
 
-;testing:start
-;cell_content 2,2
-;pilila db 3 dup(0)     
-;init_table_db pilila, 3     
-;print_table_db pilila,3      
-;testing:end
+fill_cell macro board ,val 
+    sub bx,1
+    mov si,bx              
+    mov board[si],val,'$' 
+    mov ah,2
+    mov dl,board[si]
+    int 21h
+endm 
+;!start testing
+board db 50 dup(0) 
+cell_content 8,5
+fill_cell board,'w'    
+;!end testing
+;important functions:end
