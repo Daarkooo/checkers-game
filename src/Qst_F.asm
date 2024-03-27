@@ -4,11 +4,10 @@ STACK SEGMENT PARA STACK
 	DB 64 DUP (0)
 STACK ENDS
 
-DATA SEGMENT
+.DATA
 	myBoard DB 50 DUP (0)
-DATA ENDS
 
-CODE SEGMENT
+.CODE
 ;		EMPTY:			00h
 
 ;		BLACK: 	PAWN: 	'b'
@@ -16,39 +15,39 @@ CODE SEGMENT
 
 ;		WHITE: 	PAWN: 	'w'
 ;				QUEEN: 	04h
-	board_init MACRO board
-		XOR SI, SI
+	board_init MACRO
+		LEA SI, myBoard
 
 		MOV CX, 20
 		L1:
-			MOV board[SI], 'b'
+			MOV BYTE PTR [SI], 'b'
 			INC SI
 		LOOP L1
 		
 		MOV CX, 10
 		L2:
-			MOV board[SI], 'w'
+			MOV BYTE PTR [SI], 'w'
 			INC SI
 		LOOP L2
 
 		MOV CX, 20
 		L3:
-			MOV board[SI], 02h
+			MOV BYTE PTR [SI], 02h
 			INC SI
 		LOOP L3
+		RET
 	ENDM
 
-	MAIN PROC FAR
+	main PROC FAR
 		
         MOV AX, @DATA
         MOV DS, AX
 		
-		board_init OFFSET myBoard		
+		board_init
 
 		MOV AH ,4Ch
 		INT 21h        
         
 		RET
 	main ENDP
-CODE ENDS
 END
