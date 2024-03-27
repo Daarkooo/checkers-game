@@ -18,9 +18,6 @@ getNumber MACRO row, column, Num
         jmp fin
     
     calculate_number:
-        ; Subtract 1 from row and column to adjust them to the range [1,10]
-        dec row
-        dec column
     
         ; Calculate the number
         mov al, row
