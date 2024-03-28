@@ -1,11 +1,15 @@
 ; Formule pour l'algorithmique (les indexes sont de 1 à 10): (N - 1) / 5 + 1
 ; Formule pour assembly (les indexes sont de 0 à 9): (N - 1) / 5
-foo1 MACRO Num, result
+getRow MACRO Num, result
     LOCAL errorLabel, endLabel
     XOR AX, AX
-    
+
     MOV AL, Num
-    CMP AL, 49
+
+    TEST AL, AL
+    JZ errorLabel
+
+    CMP AL, 50
     JA errorLabel
 
     DEC AL
