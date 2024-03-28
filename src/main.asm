@@ -100,237 +100,130 @@ getNumber MACRO row, column, Num
     
     fin: 
 ENDM  
-   
-   
+
+;---getCellState--------------  
+getCellState MACRO board, i, j, result
+	LOCAL white_cell, end_label     ; LOCAL LABELS
+		MOV DL, i
+		MOV DH, j
+		getNumber DL, DH, AL        ; Le macro de la question C (Fait par Abdou & Omar)
+		
+		TEST AL, AL
+		JZ white_cell
+		
+		XOR AH, AH
+		MOV SI, AX
+		MOV AL, board[SI - 1]        
+		MOV result, AL
+		JMP end_label
+			
+	white_cell:
+	    MOV result, 0
+	
+	end_label: 
+ENDM   
 ;----------verify_move----------------   
 verify_move MACRO i,j,x,y,turn  
     ; in place of turn I can compare between i & x (i < x -> Black's turn...) "only pawns"
-    
-    CALL getNumber i,j,n1
-    CALL getNumber x,y,n2
+    ; check the color dame[i,j]
+    getNumber i,j,n1 
+    getNumber x,y,n2
     ; check if it's a valid input
+    ; else jmp end
     MOV DH,turn 
     
-    ;---- BLACK's TURN--------------
     MOV AL, i
     XOR AH, AH   
-    MOV BL, 2 
-    DIV BL ;  divide AL by BL, q -> AL, r -> AH 
+    MOV BL, 2 ; TEST BL,01h
+    DIV BL ;  divide AL by BL, q -> AL, r -> AH  
+    ; I'LL USE AH for (impair/pair) (odd/even) line
                       
+    CMP DH,'w' 
+    JE white_turn
+        MOV DL,n2   
+        SUB DL,n1 ;---BLACK's TURN------
+        JMP next 
+    white_turn:  ;---WHITE's TURN------
+        MOV DL,n1   
+        SUB DL,n2
+    next:
+    
     CMP AH, 0
-    JNE impair ; i (odd line)
-    
-    CMP DL,'w'
-    JE white_turn1
-    MOV DL,n2  ; i (even line) 
-    SUB DL,n1
-    JMP next1 
-    white_turn1:
-    MOV DL,n1  ; i (even line) 
-    SUB DL,n2
-    next1:
-    
-    CMP DL,5 ; the first case of the direct move
-    JE direct ;  
+    JNE impair
+    CMP DL,5 ; the first case of the direct move -----pair-----------------
+    JE direct  
     CMP DL,6 ; 2nd case
     JNE indirect        
-    direct:       
-      CALL check_state_cell i,j
-      ; if else (white black..)------ for a direct move it requires to be free to make the move 
-      ; if it's black we jump to the end (cant move) 
-      ; if it's white we test in the indirect move
-    
-    indirect: 
-        CMP DL,9
-        JE next ; 
-        CMP DL,10
-        JE next
-        CMP DL,11
-        JE next
-        JNE end ; cant do the move
-        next:
-            CMP DL,'w'
-            JE white_turn2:
-                CALL check_state_cell x,y
-                ; it requires to be free to make the move &.. else jump end
-                
-                CMP DL,9
-                JE case1
-                CMP DL,10
-                JE case2
-                CMP DL,11
-                JE case3
-                case1:
-                MOV CL,n1
-                ADD CL,5
-                find_column CL,j1
-                find_line CL,i1
-                check_state_cell i1,j1  
-                ; if it's white we can do the move
-                JMP end
-                case2:
-                MOV CL,n1
-                ADD CL,5
-                find_column CL,j1
-                find_line CL,i1
-                check_state_cell i1,j1  
-                ; if it's white we can do the move
-                ; if it's black we check the other way   
-                case3:  ; CASE 3
-                INC CL
-                find_column CL,j1
-                find_line CL,i1 
-                check_state_cell i1,j1
-                ; if it's white we can do the move
-                JMP end
-
-            white_turn2:
-                CALL check_state_cell x,y
-                    ; it requires to be free to make the move &.. else jump end
-                    
-                    CMP DL,9
-                    JE case1
-                    CMP DL,10
-                    JE case2
-                    CMP DL,11
-                    JE case3
-                    case1:
-                    MOV CL,n1
-                    SUB CL,5 ; -------EDIT
-                    find_column CL,j1
-                    find_line CL,i1
-                    check_state_cell i1,j1  
-                    ; if it's white we can do the move
-                    JMP end
-                    case2:
-                    MOV CL,n1
-                    SUB CL,5
-                    find_column CL,j1
-                    find_line CL,i1
-                    check_state_cell i1,j1  
-                    ; if it's white we can do the move
-                    ; if it's black we check the other way   
-                    case3:  ; CASE 3
-                    DEC CL
-                    find_column CL,j1
-                    find_line CL,i1 
-                    check_state_cell i1,j1
-                    ; if it's white we can do the move
-                    JMP end
-    
-    
     impair:
-        CMP DL,'w'
-        JE white_turn3
-            MOV DL,n2
-            SUB DL,n1
-            CMP DL,4 ; the first case of the direct move
-            JE next      
-            CMP DL,5 ; 2nd case
-            JNE indirect        
-            next:       
-            CALL check_state_cell i,j
-            ; if else (white black..)------ for a direct move it requires to be free to make the move 
-            ; if it's black we jump to the end (cant move) 
-            ; if it's white we test it in the indirect move
-            
-            indirect: 
-                CMP DL,9
-                JE next2
-                CMP DL,10
-                JE next2
-                CMP DL,11
-                JE next2
-                JNE end ; cant do the move
-                next2:
-                    CALL check_state_cell x,y
-                    ; it requires to be free to make the move &.. else jump end
-                    
-                    CMP DL,9
-                    JE case1
-                    CMP DL,10
-                    JE case2
-                    CMP DL,11
-                    JE case3
-                    case1:
-                    MOV CL,n1
-                    ADD CL,4 ; ----4
-                    find_column CL,j1
-                    find_line CL,i1
-                    check_state_cell i1,j1  
-                    ; if it's white we can do the move
-                    JMP end
-                    case2:
-                    MOV CL,n1
-                    ADD CL,4 ;---4
-                    find_column CL,j1
-                    find_line CL,i1
-                    check_state_cell i1,j1  
-                    ; if it's white we can do the move
-                    ; if it's black we check the other way   
-                    case3:  ; CASE 3 & 2 
-                    INC CL
-                    find_column CL,j1
-                    find_line CL,i1 
-                    check_state_cell i1,j1
-                    ; if it's white we can do the move
-                    JMP end
-        white_turn3:
+        CMP DL,4 ; the first case of the direct move
+        JE direc t    
+        CMP DL,5 ; 2nd case
+        JNE indirect 
+    direct:       
+      check_state_cell x,y ; FUN H
+      getCellState x,y,result
+        JMP end
+    indirect: 
+        check_state_cell x,y ; need to be free 
+        CMP DL,9
+        JE case1 ; 
+        CMP DL,11
+        JE case2 
+        JNE end ; cant do the move
+            ; it requires to be free to make the move &.. else jump end
+            case1:
+            MOV CL,n1
+
+            CMP DL,'w'
+            JE white_turn1
+            ADD CL,4 ;---BLACK's TURN------
+            JMP next1
+            white_turn1:
+            SUB CL,4 ;---WHITE's TURN------
+            next1:
+
+            CMP AH, 0
+            JNE impair ; --in odd lines, no need for inc and dec
+            CMP DL,'w'
+            JE white_turn2
+            INC CL ;---BLACK's TURN------
+            JMP next2
+            white_turn2:
+            DEC CL ;---WHITE's TURN------
+            next2:
             impair:
-                MOV DL,n1
-                SUB DL,n2
-                CMP DL,4 ; the first case of the direct move
-                JE next      
-                CMP DL,5 ; 2nd case
-                JNE indirect        
-                next:       
-                CALL check_state_cell i,j
-                ; if else (white black..)------ for a direct move it requires to be free to make the move 
-                ; if it's black we jump to the end (cant move) 
-                ; if it's white we test it in the indirect move
-                
-                indirect: 
-                    CMP DL,9
-                    JE next2
-                    CMP DL,10
-                    JE next2
-                    CMP DL,11
-                    JE next2
-                    JNE end ; cant do the move
-                    next2:
-                        CALL check_state_cell x,y
-                        ; it requires to be free to make the move &.. else jump end
-                        
-                        CMP DL,9
-                        JE case1
-                        CMP DL,10
-                        JE case2
-                        CMP DL,11
-                        JE case3
-                        case1:
-                        MOV CL,n1
-                        SUB CL,4 ; ----4
-                        find_column CL,j1
-                        find_line CL,i1
-                        check_state_cell i1,j1  
-                        ; if it's white we can do the move
-                        JMP end
-                        case2:
-                        MOV CL,n1
-                        SUB CL,4 ;---4
-                        find_column CL,j1
-                        find_line CL,i1
-                        check_state_cell i1,j1  
-                        ; if it's white we can do the move
-                        ; if it's black we check the other way   
-                        case3:  ; CASE 3 & 2 
-                        DEC CL
-                        find_column CL,j1
-                        find_line CL,i1 
-                        check_state_cell i1,j1
-                        ; if it's white we can do the move
-                    
+            find_column CL,j1
+            find_line CL,i1
+            check_state_cell i1,j1  
+            ; depends on the colors (white -> black/ black ->white)
+            JMP end
             
+            case2: ; ---the other way----- 
+            MOV CL,n1
+
+            CMP DL,'w'
+            JE white_turn4 
+            ADD CL,5 ;---BLACK's TURN------
+            JMP next4
+            white_turn4:
+            SUB CL,5 ;---WHITE's TURN------
+            next4:
+            JNE impair
+                
+            CMP DL,'w'
+            JE white_turn5
+            INC CL ; 
+            JMP next5
+            white_turn5:
+            DEC CL
+            next5:
+
+            impair:
+            find_column CL,j1
+            find_line CL,i1
+            check_state_cell i1,j1  
+            ; if it's white we can do the move
+                    
     end:
 ENDM 
 
