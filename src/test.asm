@@ -1,3 +1,5 @@
+INCLUDE main.asm 
+
 STACK SEGMENT PARA STACK
 	DB 64 DUP (' ')
 	
@@ -35,6 +37,7 @@ CODE SEGMENT PARA 'CODE'
 		;INT 10H ; execute the configuration
 		
 		CALL DRAW_BALL
+	
 		
 		
 		RET
