@@ -21,6 +21,8 @@
     n2 db ?   
     i DB ?
     j DB ? 
+    i1 DB ?
+    j1 DB ?
     x DB ?
     y DB ?
     result1 DB ?  
@@ -252,7 +254,7 @@ ENDM
    
 ;----------verify_move----------------   
 verify_move MACRO board,i,j,x,y,turn,verified 
-    LOCAL impossible_move,done,direct,indirect,case1,case2,white_turn,white_turn1,white_turn2,white_turn3,white_turn4,next,next1,next2,next3,next4,next5,impair,impair1,impair2,first_column,last_column
+    LOCAL impossible_move,done,direct,indirect,case1,case2,white_turn,next,impair,impair1,impair2,first_column,last_column
     ; for pawns only
     ; in place of 'turn' I can compare between i & x (i < x -> Black's turn...) "only pawns"
     ; i and j must be between 1-10 -> (0-9) 'we do the check & 'DEC 1' in the main' 
@@ -279,38 +281,57 @@ verify_move MACRO board,i,j,x,y,turn,verified
     MOV BL, 2 ; TEST BL,01h
     DIV BL ;  divide AL by BL, q -> AL, r -> AH  
     ; I'LL USE AH for (impair/pair) (odd/even) line
-                      
+    
+    MOV CH, j ; to check if it's the first/last column + 2nd and 8th column for indirect move                
     CMP DH,'w' ; DH <- turn 
     JE white_turn
-        MOV DL,n2 ;---BLACK's TURN------  
+        MOV DL,n2 ;---BLACK's TURN--------------------------------
         SUB DL,n1 ; n2-n1 for pawn (cuz board[i,j] < board[x,y]) "no dame"
-        JMP next 
-    white_turn:  ;---WHITE's TURN------
+        
+        CMP AH, 0 ; we check if it's odd or even (the remainder of 'AL div 2' -> AH )   --2nd version: TEST AH,0  JNZ impair
+        JNE impair
+            CMP DL,5 ; the first case of the direct move -----pair------
+            JE direct  
+            CMP CH,9
+            JE last_column
+                CMP DL,6 ; 2nd case
+                JE direct 
+            last_column:
+            JMP indirect        
+        impair:
+            CMP CH,0
+            JE first_column
+                CMP DL,4 ; the first case of the direct move -----impair-----
+                JE direct 
+            first_column:  
+            CMP DL,5 ; 2nd case
+            JE direct  
+            JMP indirect
+    white_turn:  ;----WHITE's TURN---------------------------------
         MOV DL,n1 
         SUB DL,n2 ; n1-n2 for pawn (cuz board[i,j] > board[x,y])
-    next:
+        MOV BH,n2 ; for optimization 
+        MOV n1,BH
+        CMP AH, 0 ; we check if it's odd or even (the remainder of 'AL div 2' -> AH )   --2nd version: TEST AH,0  JNZ impair
+        JNE impair1
+            CMP DL,5 ; the first case of the direct move -----pair------
+            JE direct  
+            CMP CH,9
+            JE last_column1
+                CMP DL,4 ; 2nd case
+                JE direct 
+            last_column1:
+            JMP indirect        
+        impair1:
+            CMP CH,0
+            JE first_column1
+                CMP DL,6 ; the first case of the direct move -----impair-----
+                JE direct 
+            first_column1:  
+            CMP DL,5 ; 2nd case
+            JE direct  
+            JMP indirect
     ; DL contains SUB n1,n2 / n2,n1
-
-    MOV CH, j ; to check if it's the first/last column
-    CMP AH, 0 ; we check if it's odd or even (the remainder of 'AL div 2' -> AH )   --2nd version: TEST AH,0  JNZ impair
-    JNE impair
-        CMP DL,5 ; the first case of the direct move -----pair------
-        JE direct  
-        CMP CH,9
-        JE last_column
-            CMP DL,6 ; 2nd case
-            JE direct 
-        last_column:
-        JMP indirect        
-    impair:
-        CMP CH,0
-        JE first_column
-            CMP DL,4 ; the first case of the direct move -----impair-----
-            JE direct 
-        first_column:  
-        CMP DL,5 ; 2nd case
-        JE direct  
-        JMP indirect
 
     direct: 
         cmp state,'0' ; to make the move -> board[x,y] the state needs to be '0' (empty)  
@@ -322,50 +343,39 @@ verify_move MACRO board,i,j,x,y,turn,verified
         JNE impossible_move 
 
         MOV CL,n1 ; n1 -> board[i,j]
-        CMP DL,9
-        JE case1  
-        CMP DL,11
-        JE case2
-        JMP impossible_move ; cant do the move
+        CMP CH,9 ; test last & 8th column 'j'
+        JE last_column2
+            CMP CH,8
+            JE last_column2 
+                CMP DL,9
+                JE case1 
+        last_column2: ; DL contains 
+        CMP CH,0 ; test 1st & 2nd column 'j'
+        JE impossible_move ; cant do the move
+            CMP CH,1
+            JE impossible_move ; cant do the move
+                CMP DL,11
+                JE case2
         
         case1:
-            CMP DL,'w'
-            JE white_turn1
-                ADD CL,4 ;---BLACK's TURN------ ADD n1,4
-                JMP next1
-            white_turn1:
-                SUB CL,4 ;---WHITE's TURN------ SUB n1,4
-            JMP next1
-        
+            ADD CL,4 ; now am using the lower value  (works for both white & black) 'only for indirect part'
+            JMP next
         case2: ; ---the other way----- 
-            CMP DL,'w'
-            JE white_turn3 
-                ADD CL,5 ;---BLACK's TURN------ ADD n1,5
-                JMP next1
-            white_turn3:
-                SUB CL,5 ;---WHITE's TURN------ SUB n1,5
-            next1:
+            ADD CL,5 ;---BLACK's TURN------ ADD n1,5
+        next:
 
         CMP AH, 0 ; we check if it's odd or even (the remainder of 'AL div 2' -> AH )
-        JNE impair1 ; for odd lines, no need to inc and dec
-            CMP DL,'w'
-            JNE impair1
-                INC CL ;---BLACK's TURN(pair)------ INC n1
-                JMP impair2
-            
-        impair1:
-            CMP DL,'w'
-            JNE impair2
-                DEC CL ;---WHITE's TURN(impair)------ DEC n1
-            impair2:
+        JNE impair2 ; for odd lines, no need to inc and dec
+            INC CL ; INC n1 (now am using the lower value  (works for both white & black) 'only for indirect part')
+        impair2:
 
-
-        get_column CL,j ; for both impair & pair
-        get_row CL,i ; I used i&j cuz there's no longer a need for the initial i&j
-        MOV DL,i
-        MOV DH,j
-        get_cell_state board,DL,DH,state  
-        ; depends on the colors (white -> black/ black ->white)
+        get_column CL,j1 ; for both impair & pair
+        get_row CL,i1 ; I used i&j cuz there's no longer a need for the initial i&j
+        MOV DL,i1
+        MOV DH,j1
+        get_cell_state board,DL,DH,state ; depends on the colors (white -> black/ black ->white)
+        CMP state,'0' ; one step (not for dames)
+        JE impossible_move 
         CMP state,turn ; to make the move -> state needs to be the color of the opposing player (enemy) 
         JNE done ; make the move
                     
@@ -382,12 +392,14 @@ START:
     MOV DS, AX 
     board_init board
     ;get_column 25,result1 ; calling
-    getNumber 5,8,result2   
-    getNumber 4,9,result3  
+    getNumber 3,2,result2   
+    getNumber 4,1,result3  
     ;get_row 40,result3                      
     ;get_cell_state board,4,1,result4                      
-    MOV board[29],'b'
-    verify_move board,5,8,4,9,'b',verified 
+    MOV board[25],'b'   
+    mov board[19],'0'
+    ;mov board[
+    verify_move board,6,1,3,8,'w',verified 
     ;print_board board
  
     
