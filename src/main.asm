@@ -31,6 +31,7 @@
     result4 DB ? 
     state DB ?
     turn DB ?
+    newline DB 10,13,"$"
     verified DB ?
     board DB 50 dup(?)  
     num DB ?  
@@ -203,7 +204,7 @@ print_board MACRO board
 			
 			print_char ' '
 			
-			print_char '0'
+			print_char 2EH
 			
 			print_char ' '          ; space
 		LOOP inner_loop1
@@ -211,7 +212,7 @@ print_board MACRO board
 		JMP row_end
 		
 		inner_loop2:
-			print_char '0'
+			print_char 2EH
 			
 			print_char ' '          ; space
 			
@@ -254,7 +255,7 @@ ENDM
    
 ;----------verify_move----------------   
 verify_move MACRO board,i,j,x,y,turn,verified 
-    LOCAL impossible_move,done,direct,indirect,case1,case2,white_turn,next,impair,impair1,impair2,first_column,last_column
+    LOCAL impossible_move,done,direct,indirect,case1,case2,white_turn,next,next1,next2,next3,next4,next5,impair,impair1,impair2,first_column,last_column
     ; for pawns only
     ; in place of 'turn' I can compare between i & x (i < x -> Black's turn...) "only pawns"
     ; i and j must be between 1-10 -> (0-9) 'we do the check & 'DEC 1' in the main' 
@@ -282,6 +283,7 @@ verify_move MACRO board,i,j,x,y,turn,verified
     DIV BL ;  divide AL by BL, q -> AL, r -> AH  
     ; I'LL USE AH for (impair/pair) (odd/even) line
     
+    MOV BH,n2 ; need it in indirect for checking 1st,2nd,8th,last (9/11)<-(n1-n2)
     MOV CH, j ; to check if it's the first/last column + 2nd and 8th column for indirect move                
     CMP DH,'w' ; DH <- turn 
     JE white_turn
@@ -310,8 +312,7 @@ verify_move MACRO board,i,j,x,y,turn,verified
     white_turn:  ;----WHITE's TURN---------------------------------
         MOV DL,n1 
         SUB DL,n2 ; n1-n2 for pawn (cuz board[i,j] > board[x,y])
-        MOV BH,n2 ; for optimization 
-        MOV n1,BH
+        MOV n1,BH ; for optimization
         CMP AH, 0 ; we check if it's odd or even (the remainder of 'AL div 2' -> AH )   --2nd version: TEST AH,0  JNZ impair
         JNE impair1
             CMP DL,5 ; the first case of the direct move -----pair------
@@ -343,20 +344,48 @@ verify_move MACRO board,i,j,x,y,turn,verified
         JNE impossible_move 
 
         MOV CL,n1 ; n1 -> board[i,j]
-        CMP CH,9 ; test last & 8th column 'j'
-        JE last_column2
-            CMP CH,8
-            JE last_column2 
-                CMP DL,9
-                JE case1 
-        last_column2: ; DL contains 
-        CMP CH,0 ; test 1st & 2nd column 'j'
-        JE impossible_move ; cant do the move
-            CMP CH,1
-            JE impossible_move ; cant do the move
+        CMP DL,9  ; check if DL (n1-n2) = 9/11 else impossible
+        JE next1
+        CMP DL,11
+        JNE impossible_move
+        next1:
+
+        CMP CL,BH ; CMP n1,n2 | testing if n1>n2 =>------going up--------
+        JB down:
+            CMP CH,0 ; 1st column
+            JE next2
+                CMP CH,1 ; 2nd column
+                JNE continue
+            next2:
                 CMP DL,11
-                JE case2
-        
+                JE impossible_move ; 1st/2nd column case, cant move 
+
+            CMP CH,8 ; 9th column
+            JE next3
+                CMP CH,9 ; last column
+                JNE continue
+            next3:
+                CMP DL,9
+                JE impossible_move ; last/9th column case, cant move 
+            
+        down: ; n1<n2 => -------going down---------
+            CMP CH,0 ; 1st column
+            JE next4
+                CMP CH,1 ; 2nd column
+                JNE continue
+            next4:
+                CMP DL,9
+                JE impossible_move ; 1st/2nd column case, cant move 
+
+            CMP CH,8 ; 9th column
+            JE next5
+                CMP CH,9 ; last column
+                JNE continue
+            next5:
+                CMP DL,11
+                JE impossible_move ; last/9th column case, cant move 
+        continue:
+        ; test case 
         case1:
             ADD CL,4 ; now am using the lower value  (works for both white & black) 'only for indirect part'
             JMP next
@@ -392,14 +421,14 @@ START:
     MOV DS, AX 
     board_init board
     ;get_column 25,result1 ; calling
-    getNumber 3,2,result2   
-    getNumber 4,1,result3  
+    ;getNumber 3,2,result2   
+    ;getNumber 4,1,result3  
     ;get_row 40,result3                      
     ;get_cell_state board,4,1,result4                      
-    MOV board[25],'b'   
-    mov board[19],'0'
+    MOV board[20],'w'   
+    ;mov board[19],'0'
     ;mov board[
-    verify_move board,6,1,3,8,'w',verified 
+    verify_move board,3,0,5,2,'b',verified 
     ;print_board board
  
     
