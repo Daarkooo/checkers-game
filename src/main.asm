@@ -25,6 +25,7 @@
     j1 DB ?
     x DB ?
     y DB ?
+    isDirect DB ?
     result1 DB ?  
     result2 DB ? 
     result3 DB ? 
@@ -254,7 +255,7 @@ ENDM
    
    
 ;----------verify_move----------------   
-verify_move MACRO board,i,j,x,y,turn,verified 
+verify_move MACRO board,i,j,x,y,turn,verified,isDirect,val1,val2
     LOCAL impossible_move,done,direct,indirect,case2,white_turn,next,next1,next2,next3,impair,impair1,impair2,down,down1,first_column,last_column,continue
     ; for pawns only
     ; in place of 'turn' I can compare between i & x (i < x -> Black's turn...) "only pawns"
@@ -262,9 +263,9 @@ verify_move MACRO board,i,j,x,y,turn,verified
     MOV DL,i
     MOV DH,j
     getNumber DL,DH,n1
-    get_cell_state board,DL,DH,state
-    cmp state,turn ; to make the move -> 'w'='w' / 'b'='b' else impossible_move
-    JNE impossible_move
+    ;get_cell_state board,DL,DH,state
+    ;cmp state,turn ; to make the move -> 'w'='w' / 'b'='b' else impossible_move
+    ;JNE impossible_move
 
     MOV DL,x ; for optimization
     MOV DH,y
@@ -282,8 +283,14 @@ verify_move MACRO board,i,j,x,y,turn,verified
     MOV BL, 2 ; TEST BL,01h
     DIV BL ;  divide AL by BL, q -> AL, r -> AH  
     ; I'LL USE AH for (impair/pair) (odd/even) line
-    
+
+    MOV BH,n1
+    MOV val1,BH ; need it in move function (to avoid the getNumber call)
     MOV BH,n2 ; need it in indirect for checking 1st,2nd,8th,last (9/11)<-(n1-n2)
+    MOV val2,BH ; need it in move function (to avoid the getNumber call)
+    MOV BH,1
+    MOV isDirect,BH ; to check if it's direct/indirect move
+
     MOV CH, j ; to check if it's the first/last column + 2nd and 8th column for indirect move                
     CMP DH,'w' ; DH <- turn 
     JE white_turn
@@ -394,6 +401,7 @@ verify_move MACRO board,i,j,x,y,turn,verified
         get_row CL,i1 ; I used i&j cuz there's no longer a need for the initial i&j
         MOV DL,i1
         MOV DH,j1
+        getNumber DL,DH,isDirect ; isDirect return makla number (for optimization) 'indirect move'
         get_cell_state board,DL,DH,state ; depends on the colors (white -> black/ black ->white)
         CMP state,'0' ; one step (not for dames)
         JE impossible_move 
@@ -408,6 +416,47 @@ verify_move MACRO board,i,j,x,y,turn,verified
     end:
 ENDM 
 
+
+;------move----------
+move_pawn MACRO board,i,j,x,y,turn
+    LOCAL end, indirect
+    MOV DL,i
+    MOV DH,j
+    MOV BH,x
+    MOV CH,y
+    ;MOV CH,turn
+    verify_move board,DL,DH,BH,CH,turn,verified,isDirect,n1,n2 ; n1[i,j] n2[x,y] , in the indirect case isDirect <- numMakla
+    
+    CMP verified,0
+    JE end   
+        XOR AX, AX   
+        MOV AL, n1 
+        DEC AL   
+        MOV DI, AX    
+        MOV AL, n2
+        DEC AL   
+        MOV SI, AX     
+        
+        CMP isDirect,1
+        JNE indirect 
+            MOV AL,board[DI] 
+            MOV board[DI],'0'
+            MOV board[SI],AL                    
+            JMP end
+        indirect:
+            MOV AL,board[DI]
+            MOV board[DI],'0'
+            MOV board[SI],AL 
+            
+            MOV AL, isDirect 
+            DEC AL  
+            MOV DI, AX    
+            MOV AL,board[DI]
+            MOV board[DI],'0'
+    end:
+ENDM
+
+
 START:
     MOV AX, @DATA
     MOV DS, AX 
@@ -420,8 +469,9 @@ START:
     ;MOV board[29],'b'   
     mov board[20],'w'
     ;mov board[
-    verify_move board,3,0,5,2,'b',verified 
-    print_board board
+    ;verify_move board,3,0,5,2,'b',verified 
+    move_pawn board,3,0,5,2,'b' 
+    print_board board 
  
     
 
