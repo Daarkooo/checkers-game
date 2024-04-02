@@ -255,7 +255,7 @@ ENDM
    
 ;----------verify_move----------------   
 verify_move MACRO board,i,j,x,y,turn,verified 
-    LOCAL impossible_move,done,direct,indirect,case1,case2,white_turn,next,next1,next2,next3,next4,next5,impair,impair1,impair2,first_column,last_column
+    LOCAL impossible_move,done,direct,indirect,case2,white_turn,next,next1,next2,next3,impair,impair1,impair2,down,down1,first_column,last_column,continue
     ; for pawns only
     ; in place of 'turn' I can compare between i & x (i < x -> Black's turn...) "only pawns"
     ; i and j must be between 1-10 -> (0-9) 'we do the check & 'DEC 1' in the main' 
@@ -349,44 +349,36 @@ verify_move MACRO board,i,j,x,y,turn,verified
         CMP DL,11
         JNE impossible_move
         next1:
-
-        CMP CL,BH ; CMP n1,n2 | testing if n1>n2 =>------going up--------
-        JB down:
-            CMP CH,0 ; 1st column
-            JE next2
-                CMP CH,1 ; 2nd column
-                JNE continue
-            next2:
-                CMP DL,11
-                JE impossible_move ; 1st/2nd column case, cant move 
-
-            CMP CH,8 ; 9th column
-            JE next3
-                CMP CH,9 ; last column
-                JNE continue
-            next3:
-                CMP DL,9
-                JE impossible_move ; last/9th column case, cant move 
             
-        down: ; n1<n2 => -------going down---------
-            CMP CH,0 ; 1st column
-            JE next4
-                CMP CH,1 ; 2nd column
-                JNE continue
-            next4:
+        CMP CH,0 ; 1st column
+        JE next2
+            CMP CH,1 ; 2nd column
+            JNE continue
+        next2:
+            CMP CL,BH ; CMP n1,n2
+            JB down
+                CMP DL,11 ; n1>n2 =>------going up--------
+                JE impossible_move ; 1st/2nd column case, cant move 
+            down: ; n1<n2 => -------going down---------
                 CMP DL,9
                 JE impossible_move ; 1st/2nd column case, cant move 
-
-            CMP CH,8 ; 9th column
-            JE next5
-                CMP CH,9 ; last column
-                JNE continue
-            next5:
-                CMP DL,11
+        CMP CH,8 ; 9th column
+        JE next3
+            CMP CH,9 ; last column
+            JNE continue
+        next3:
+            CMP CL,BH ; CMP n1,n2
+            JB down1
+                CMP DL,9 ; n1>n2 =>------going up--------
                 JE impossible_move ; last/9th column case, cant move 
+            down1: ; n1<n2 => -------going down---------
+                CMP DL,11 
+                JE impossible_move ; 1st/2nd column case, cant move 
         continue:
-        ; test case 
-        case1:
+
+        CMP DL,11
+        JE case2 
+        ;---------case 1------------------
             ADD CL,4 ; now am using the lower value  (works for both white & black) 'only for indirect part'
             JMP next
         case2: ; ---the other way----- 
@@ -425,11 +417,11 @@ START:
     ;getNumber 4,1,result3  
     ;get_row 40,result3                      
     ;get_cell_state board,4,1,result4                      
-    MOV board[20],'w'   
-    ;mov board[19],'0'
+    ;MOV board[29],'b'   
+    mov board[20],'w'
     ;mov board[
     verify_move board,3,0,5,2,'b',verified 
-    ;print_board board
+    print_board board
  
     
 
