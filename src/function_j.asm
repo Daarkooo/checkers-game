@@ -2,9 +2,9 @@ pre_deplacement macro i,j,x,y,dep_possible,turn,direct,droite;j)macro qui verifi
     
 LOCAL pion_blanc,deplacement_impossible,deplacement_possible,deplacement_indirect,cologne_gauche,cologne_droite,cologne_gauche2,cologne_droite2,fin,deplacement_direct,blancc,noiree,commun           
 
-cmp x,0                     ;verifier si la destination est coerente ou non 
+cmp x,0                       ;verifier si la destination est coerente ou non 
 jl deplacement_impossible
-cmp x,9                
+cmp x,9                                        ;appartient au damier
 jg deplacement_impossible
 cmp y,0
 jl deplacement_impossible

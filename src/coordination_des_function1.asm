@@ -238,7 +238,7 @@ LOCAL pion_blanc,deplacement_impossible,deplacement_possible,deplacement_indirec
 cmp x,0                     ;verifier si la destination est coerente ou non 
 jl deplacement_impossible
 cmp x,9                
-jg deplacement_impossible
+jg deplacement_impossible                                           ;)by rayanch
 cmp y,0
 jl deplacement_impossible
 cmp y,9
@@ -352,7 +352,7 @@ endm
 
 deplacement macro i,j,x,y,turn,droite,direct              ;k)macro qui effectue le deplacement
     
-LOCAL etiquette,droitee,gauchee,impossiblee,blacke,whitee,fin
+LOCAL etiquette,droitee,gauchee,impossiblee,blacke,whitee,fin                   ;)by rayanch
      
 pre_deplacement i,j,x,y,dep_possible,turn,direct,droite     ;verifier si le deplacement est possible
 cmp dep_possible,1

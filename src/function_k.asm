@@ -1,6 +1,6 @@
 deplacement macro i,j,x,y,turn,droite,direct              ;k)macro qui effectue le deplacement
     
-LOCAL etiquette,droitee,gauchee,impossiblee,blacke,whitee,fin
+LOCAL etiquette,droitee,gauchee,impossiblee,blacke,whitee,fin     ;etiquette locale
      
 pre_deplacement i,j,x,y,dep_possible,turn,direct,droite     ;verifier si le deplacement est possible
 cmp dep_possible,1
