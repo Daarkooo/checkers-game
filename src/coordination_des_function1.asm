@@ -58,7 +58,7 @@ ENDM
 
 getNumber MACRO i,j, n        ;c)macro qui retourne le num N ,0 si case blanche (abdou)
     LOCAL calculate_number, fin       ;0..9
-
+        pusha
         ; (row % 2 === column % 2)
         mov al, j
         xor ah, ah
@@ -88,7 +88,7 @@ getNumber MACRO i,j, n        ;c)macro qui retourne le num N ,0 si case blanche 
     
         ; Store the number
         mov n, al
-    
+        popa
     fin: 
     ENDM
 
@@ -150,11 +150,12 @@ CaseColor MACRO i,j                    ;0...9
     ENDM
  
 getCellState MACRO board, i, j, result
-	LOCAL white_cell, end_label     ; LOCAL LABELS
+	LOCAL white_cell, end_label
+	pusha                           ; LOCAL LABELS
 		MOV DL, i
 		MOV DH, j
-		getNumber DL, DH, al        ;h)macro qui retourne l'etat de la case 0 vide blanche ou noir
-		
+		getNumber DL, DH, result        ;h)macro qui retourne l'etat de la case 0 vide blanche ou noir
+		mov al,result
 		TEST al, al
 		JZ white_cell
 		
@@ -167,7 +168,8 @@ getCellState MACRO board, i, j, result
 	white_cell:
 	    MOV result, 0
 	
-	end_label: 
+	end_label:
+	popa 
 ENDM
 
 
@@ -186,7 +188,7 @@ ENDM
 
 
 print_board MACRO board
-	LOCAL outer_loop, inner_loop1, inner_loop2
+	LOCAL outer_loop, inner_loop1, inner_loop2,row_end
 		MOV CX, 10
 		XOR SI, SI
 	
@@ -229,11 +231,11 @@ print_board MACRO board
 	LOOP outer_loop
 ENDM
 
-pre_deplacement macro i,j,x,y           ;indice 0..9 
+pre_deplacement macro i,j,x,y,dep_possible,turn,direct,droite;j)macro qui verifie si le deplacement est possible de i,j a x,y    ;indice 0..9;possible 1 oui 0 non;direct 1 indirect 2 ;droite 1 gauche 0
     
-LOCAL pion_blanc,deplacement_impossible,deplacement_possible,deplacement_indirect,cologne_gauche,cologne_droite,cologne_gauche2,cologne_droite2,fin,deplacement_direct,blancc,noiree           
+LOCAL pion_blanc,deplacement_impossible,deplacement_possible,deplacement_indirect,cologne_gauche,cologne_droite,cologne_gauche2,cologne_droite2,fin,deplacement_direct,blancc,noiree,commun           
 
-cmp x,0              ;verifier si la destination est coerente ou non 
+cmp x,0                     ;verifier si la destination est coerente ou non 
 jl deplacement_impossible
 cmp x,9                
 jg deplacement_impossible
@@ -246,94 +248,161 @@ cmp j,0
 jl deplacement_impossible
 cmp j,9
 jg deplacement_impossible
-cmp i,0              ;verifier si la case de depart est coerente ou non 
+cmp i,0                          ;verifier si la case de depart est coerente ou non 
 jl deplacement_impossible
 cmp i,9                
 jg deplacement_impossible
 
 getCellState board,x,y,result
-cmp result,0
-je deplacement_impossible
-cmp result,'0'                      ;verifier si la case est vide ou contient un pion blanc ou noir
+cmp result,'0'                   ;verifier si la case d'arriver est vide et existe bien
 jne deplacement_impossible 
 
 getCellState board,i,j,result
+mov al,turn                      ;verifier si la case de depart est bien un pion du joueur en jeux 
+cmp al,result
+jne deplacement_impossible 
+
 mov al,i
 mov bl,j    
-cmp result,0
-je deplacement_impossible
-cmp result,'0'                      ;verifier si la case est vide ou contient un pion blanc ou noir
-je deplacement_impossible    
-cmp result,'w'    
+cmp result,'w'                   ;selection de pion noire ou blanc
 je pion_blanc
 
 ;pion noire
-mov ch,'w'        
-cmp al,x                           ;verifier si la destination est coerente ou non 2.0 une seule direction de deplacement
-jge deplacement_impossible         
-inc al                        ;prochaine ligne               
-cmp x,al
+cmp al,x                           ;verifier si la destination est coerente une seule direction de deplacement
+jge deplacement_impossible
+         
+inc al                        ;prochaine ligne en incremenatant car pion noire               
+cmp x,al                    ;verifier si on est dans un cas de deplacement direct ou indirect
 jne deplacement_indirect
 
-deplacement_direct:                  ;deplacement direct
-cmp bl,y
+deplacement_direct:      ;deplacement direct
+mov direct,1            ;sauvegarde du choix direct    
+cmp bl,y                   
 jg cologne_gauche
-inc bl
+mov droite,1                   ;sauvegarde du choix cologne droite
+inc bl                           ;recherche de la cologne souhaite
 jmp cologne_droite                             
 cologne_gauche:
+mov droite,0            ;sauvegarde du choix cologne gauche
 dec bl
 cologne_droite: 
 cmp bl,y                        ;verifier si c'est bien l'indice de la cologne rechercher
 jne deplacement_impossible
 jmp deplacement_possible
 
-deplacement_indirect:
-inc al
-commun:                         ;2 ligne en dessous
+deplacement_indirect:                ;deplacement indirect
+mov ch,'w'             ;pour verifier en cas de deplacement indirect pour les pion noires
+inc al                          ;2 ligne au dessus
+
+commun:           ;code en commun pour les pion noire et blanc
+mov direct,2                                       ;sauvegarde du choix indirect        
 cmp al,x
-jne deplacement_impossible      ;pas de deplacement indirect
+jne deplacement_impossible      ;deplacement indirect impossible
 cmp bl,y
-jg cologne_gauche2
-add bl,2                           
+jg cologne_gauche2             ;selection de cologne
+mov droite,1             ;sauvegarde du choix cologne droite
+add bl,2               ;acces a la cologne rechercher y            
 cmp bl,y
-jne deplacement_impossible
-dec bl   
+jne deplacement_impossible    ;ce n'est pas la cologne rechercher y
+dec bl                ;selectionne l'indice de la cologne de la case d'avant
 jmp cologne_droite2          
 cologne_gauche2:
+mov droite,0             ;condition pour la cologne de gauche same as right
 sub bl,2
 cmp bl,y
 jne deplacement_impossible
 inc bl
 cologne_droite2:
-cmp al,i
+cmp al,i            ;verifier si on est avec le pion blanc ou noir question d'optimization
 jl blancc
-dec al
+dec al               ;pour selectionner la case d'avant et savoire si elle est libre
 jmp noiree
 blancc:
 inc al
 noiree:
 getCellState board,al,bl,result
-cmp result,ch                        ;verifier si la case d'avant est occuper par un piont blanc
-jne deplacement_impossible
+cmp result,ch                        ;verifier si la case d'avant est occuper par un pion approprie pour le deplacement
+jne deplacement_impossible                                                                     
 jmp deplacement_possible
 
-pion_blanc:
-mov ch,'b'    
-cmp al,x                        ;verifier si la destination est coerente ou non 2.0 une seule direction de deplacement
+pion_blanc:                ;party pour les pion blanc same as black diference de parametrage
+    
+cmp al,x                        ;verifier si la destination est coerente une seule direction de deplacement
 jle deplacement_impossible        
 dec al                              ;prochaine ligne               
 cmp x,al
-je deplacement_direct                                    ;deplacement direct
+je deplacement_direct          ;selection de deplacement direct ou indirect
 dec al
+mov direct,2                  ;deplacement indirect
+mov ch,'b'
 jmp commun:
  
 deplacement_possible:
-print_string possible 
+print_string possible
+print_string newLine db 13,10,'$'
+mov dep_possible,1               ;affichage et affectation des resultat
 jmp fin
-deplacement_impossible:    
-print_string impossible        
-fin:    
+deplacement_impossible:   
+print_string impossible 
+print_string newLine db 13,10,'$'
+mov dep_possible,0         
+fin:
+    
 endm    
+
+deplacement macro i,j,x,y,turn,droite,direct              ;k)macro qui effectue le deplacement
+    
+LOCAL etiquette,droitee,gauchee,impossiblee,blacke,whitee,fin
+     
+pre_deplacement i,j,x,y,dep_possible,turn,direct,droite     ;verifier si le deplacement est possible
+cmp dep_possible,1
+jne impossiblee
+
+mov al,i           ;deplacement possible
+mov bl,j
+mov cl,direct       ;direct represente si c'est un deplecament direct ou indirect
+xor ch,ch
+
+etiquette:           ;boucle qui effectue le trajet...
+getNumber i,j,result
+mov dl,result
+xor dh,dh             ;retrouver la valeur de la case dans notre  structure et la remplacer par un vide
+mov si,dx
+mov board[si-1],'0'
+cmp turn,'b'          ;selectionne la direction a emprunter selon notre toure
+ je blacke                                                                  
+ dec al           ;black en avant  blanc e arriere                                                          
+ jmp whitee
+ blacke:
+ inc al
+ whitee:
+ 
+cmp droite,1      ;selectionne si on vas a gauche ou a droite 
+je droitee 
+dec bl
+jmp gauchee
+droitee:
+inc bl 
+gauchee:
+mov i,al        ;actualisation de la case de depart
+mov j,bl 
+loop etiquette
+
+getNumber i,j,result
+mov dl,result
+xor dh,dh                 ;remplacement de la case d'arriver selon notre pion
+mov si,dx
+mov al,turn
+mov board[si-1],al
+
+print_string reussie
+print_string newLine db 13,10,'$'
+jmp fin
+impossiblee:
+print_string echouer
+print_string newLine db 13,10,'$'
+fin:
+endm
 
 .model small
 .data
@@ -350,11 +419,16 @@ endm
  impossible db " deplacement impossible$"
  
  newLine db 13,10,'$'
- i db 6
- j db 1
- x db 4
- y db 3 
-   
+ i db 3
+ j db 0
+ x db 5
+ y db 2 
+ dep_possible db ?  
+ turn db ?
+ direct db ?     ;1 direct 2 indirect
+ droite db ?     ;1 droite 0 gauche
+ reussie db " deplacement reussie$"
+ echouer db " deplacement echouer$"
  
 .code
 
@@ -370,13 +444,14 @@ endm
  ;find_column bl,result
  ;getNumber 3,2,result
   board_init board
-  mov board[26],'b'
+  mov board[20],'w'
  ;CaseColor 4,3
  ;getCellState board,3,8,result
   print_board board
-  pre_deplacement i,j,x,y
- 
- 
+  ;pre_deplacement i,j,x,y,dep_possible,'w',direct,droite
+  mov turn,'b'
+  deplacement i,j,x,y,turn,droite,direct
+  print_board board
  
  
 
