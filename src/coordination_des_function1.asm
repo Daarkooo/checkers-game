@@ -160,8 +160,7 @@ getCellState MACRO board, i, j, result
 		
 		XOR ah, ah
 		MOV SI, ax
-		dec si
-		MOV AL, board[SI]        
+		MOV AL, board[SI-1]        
 		MOV result, AL
 		JMP end_label
 			
@@ -205,7 +204,7 @@ print_board MACRO board
 			
 			print_char ' '
 			
-			print_char '0'
+			print_char '-'
 			
 			print_char ' '          ; space
 		LOOP inner_loop1
@@ -213,7 +212,7 @@ print_board MACRO board
 		JMP row_end
 		
 		inner_loop2:
-			print_char '0'
+			print_char '-'
 			
 			print_char ' '          ; space
 			
@@ -230,216 +229,111 @@ print_board MACRO board
 	LOOP outer_loop
 ENDM
 
-pre_deplacement macro i,j,x,y     ;indice 0..9 
+pre_deplacement macro i,j,x,y           ;indice 0..9 
     
-LOCAL hors_damier,case_blanche,case_vide,pion_blanc,deplacement_impossible,deplacement_possible1,deplacement_indirect,cologne_gauche,cologne_droite,cologne_gauche1,cologne_droite1,deplacement_indirect1,cologne_gauche3,cologne_droite3,cologne_gauche2,cologne_droite2,fin           
+LOCAL pion_blanc,deplacement_impossible,deplacement_possible,deplacement_indirect,cologne_gauche,cologne_droite,cologne_gauche2,cologne_droite2,fin,deplacement_direct,blancc,noiree           
 
 cmp x,0              ;verifier si la destination est coerente ou non 
-jl hors_damier:
+jl deplacement_impossible
 cmp x,9                
-jg hors_damier:
+jg deplacement_impossible
 cmp y,0
-jl hors_damier:
+jl deplacement_impossible
 cmp y,9
-jg hors_damier:
+jg deplacement_impossible
 
 cmp j,0
-jl hors_damier:
+jl deplacement_impossible
 cmp j,9
-jg hors_damier:
+jg deplacement_impossible
 cmp i,0              ;verifier si la case de depart est coerente ou non 
-jl hors_damier:
+jl deplacement_impossible
 cmp i,9                
-jg hors_damier:
+jg deplacement_impossible
 
-CaseColor x,y
-push bx               ;verifier si la case d'arriver est blanche ou noire
-xor bx,bx
-lea bx,white           
-cmp dx,bx
-je case_blanche
-xor bx,bx
-pop bx          
-CaseColor i,j              
-push bx               ;verifier si la case de depart est blanche ou noire
-xor bx,bx
-lea bx,white           
-cmp dx,bx
-je case_blanche 
-xor bx,bx
-pop bx
-    
-getCellState board,i,j,result    
+getCellState board,x,y,result
+cmp result,0
+je deplacement_impossible
 cmp result,'0'                      ;verifier si la case est vide ou contient un pion blanc ou noir
-je case_vide    
+jne deplacement_impossible 
+
+getCellState board,i,j,result
+mov al,i
+mov bl,j    
+cmp result,0
+je deplacement_impossible
+cmp result,'0'                      ;verifier si la case est vide ou contient un pion blanc ou noir
+je deplacement_impossible    
 cmp result,'w'    
 je pion_blanc
-;pion noire    
-mov cl,x    
-cmp cl,i                           ;verifier si la destination est coerente ou non 2.0 une seule direction de deplacement
-jle deplacement_impossible         
 
-mov al,i
-mov bl,j
+;pion noire
+mov ch,'w'        
+cmp al,x                           ;verifier si la destination est coerente ou non 2.0 une seule direction de deplacement
+jge deplacement_impossible         
 inc al                        ;prochaine ligne               
-
 cmp x,al
 jne deplacement_indirect
-;deplacement direct
+
+deplacement_direct:                  ;deplacement direct
 cmp bl,y
 jg cologne_gauche
-jl cologne_droite
-
-cologne_droite:                
-inc bl                               
-cmp bl,y                        ;verifier si c'est bien l'indice de la cologne rechercher
-jne deplacement_impossible
-   
-getCellState board,al,bl,result
-cmp result,'0'                        ;verifier si la case est vide
-jne deplacement_impossible
-jmp deplacement_possible
-
+inc bl
+jmp cologne_droite                             
 cologne_gauche:
-dec bl 
+dec bl
+cologne_droite: 
 cmp bl,y                        ;verifier si c'est bien l'indice de la cologne rechercher
-jne deplacement_impossible
-
-getCellState board,al,bl,result
-cmp result,'0'                  ;verifier si la case est vide
 jne deplacement_impossible
 jmp deplacement_possible
 
 deplacement_indirect:
-inc al                 ;2 ligne en dessous
+inc al
+commun:                         ;2 ligne en dessous
 cmp al,x
-jne deplacement_impossible    ;pas de deplacement indirect
-
+jne deplacement_impossible      ;pas de deplacement indirect
 cmp bl,y
 jg cologne_gauche2
-jl cologne_droite2
-
-cologne_droite2:          
 add bl,2                           
 cmp bl,y
 jne deplacement_impossible
-
-getCellState board,al,bl,result
-cmp result,'0'                  ;verifier si la case est vide
-jne deplacement_impossible
-dec al
 dec bl   
-
-getCellState board,al,bl,result
-cmp result,'w'                        ;verifier si la case d'avant est occuper par un piont blanc
-jne deplacement_impossible
-jmp deplacement_possible
-
+jmp cologne_droite2          
 cologne_gauche2:
 sub bl,2
 cmp bl,y
 jne deplacement_impossible
-
-getCellState board,al,bl,result
-cmp result,'0'                       ;verifier si la case est vide
-jne deplacement_impossible
-dec al
 inc bl
+cologne_droite2:
+cmp al,i
+jl blancc
+dec al
+jmp noiree
+blancc:
+inc al
+noiree:
 getCellState board,al,bl,result
-cmp result,'w'                        ;verifier si la case d'avant est occuper par un piont blanc
+cmp result,ch                        ;verifier si la case d'avant est occuper par un piont blanc
 jne deplacement_impossible
 jmp deplacement_possible
 
 pion_blanc:
-mov cl,x    
-cmp cl,i                        ;verifier si la destination est coerente ou non 2.0 une seule direction de deplacement
-jge deplacement_impossible        
-
-mov al,i
-mov bl,j
-dec al                  ;prochaine ligne               
-
+mov ch,'b'    
+cmp al,x                        ;verifier si la destination est coerente ou non 2.0 une seule direction de deplacement
+jle deplacement_impossible        
+dec al                              ;prochaine ligne               
 cmp x,al
-jne deplacement_indirect1
-;deplacement direct
-cmp bl,y
-jg cologne_gauche1
-jl cologne_droite1
-
-cologne_droite1:                          
-inc bl                                   
-cmp bl,y                        ;verifier si c'est bien l'indice de la cologne rechercher
-jne deplacement_impossible
-  
-getCellState board,al,bl,result
-cmp result,'0'                  ;verifier si la case est vide
-jne deplacement_impossible
-jmp deplacement_possible
-
-cologne_gauche1:
-dec bl 
-cmp bl,y                        ;verifier si c'est bien l'indice de la cologne rechercher
-jne deplacement_impossible
-
-getCellState board,al,bl,result
-cmp result,'0'                  ;verifier si la case est vide
-jne deplacement_impossible
-jmp deplacement_possible
-
-deplacement_indirect1:
+je deplacement_direct                                    ;deplacement direct
 dec al
-cmp al,x
-jne deplacement_impossible      ;pas de deplacement indirect
-
-cmp bl,y
-jg cologne_gauche3
-jl cologne_droite3
-
-
-cologne_droite3:          
-add bl,2                            
-cmp bl,y
-jne deplacement_impossible
-getCellState board,al,bl,result
-cmp result,'0'                  ;verifier si la case est vide
-jne deplacement_impossible
-inc al
-dec bl   
-
-getCellState board,al,bl,result
-cmp result,'b'
-jne deplacement_impossible
-jmp deplacement_possible
-
-cologne_gauche3:
-sub bl,2
-cmp bl,y
-jne deplacement_impossible
-
-getCellState board,al,bl,result
-cmp result,'0'                  ;verifier si la case est vide
-jne deplacement_impossible
-inc al
-inc bl
-getCellState board,al,bl,result
-cmp result,'b'
-jne deplacement_impossible
-jmp deplacement_possible
-
+jmp commun:
+ 
 deplacement_possible:
 print_string possible 
 jmp fin
-
-hors_damier:    
-case_blanche:
-case_vide:
 deplacement_impossible:    
-print_string impossible    
-    
+print_string impossible        
 fin:    
 endm    
-
-
 
 .model small
 .data
@@ -456,12 +350,11 @@ endm
  impossible db " deplacement impossible$"
  
  newLine db 13,10,'$'
- i db 1
- j db 2
- x db 2
+ i db 6
+ j db 1
+ x db 4
  y db 3 
- 
- 
+   
  
 .code
 
@@ -477,11 +370,12 @@ endm
  ;find_column bl,result
  ;getNumber 3,2,result
   board_init board
- 
+  mov board[26],'b'
  ;CaseColor 4,3
  ;getCellState board,3,8,result
-  ;print_board board
+  print_board board
   pre_deplacement i,j,x,y
+ 
  
  
  
