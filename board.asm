@@ -11,7 +11,6 @@
         MOV AL, status
         INT 21h
     ENDM
-
     setGraphics MACRO num
         MOV AX, num
         INT 10h
