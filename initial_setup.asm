@@ -12,7 +12,7 @@ DATA SEGMENT PARA 'DATA'
     ;?board vars:end
 
     ;?menu vars:start
-        ; menu_column_to_start dw 360;! the column to start the menu will take the rest of the screen (640-360=280)
+        menu_column_to_start db 06h
         show_menu db 1;! 0=>not showing the menu, 1=>showing the menu
         side_menu_title db 'MENU:', '$'
         side_menu_new_game_multi_player db 'click - M - to play with friend', '$'
@@ -64,7 +64,7 @@ CODE SEGMENT PARA 'CODE'
         CALL __drawBoard
     ENDM
 
-
+;!?________________________________________________________________________________________________________________________
 MAIN PROC FAR
     ;?segments:start
         assume cs:CODE,ds:DATA,ss:STACK
@@ -118,7 +118,7 @@ side_menu PROC NEAR
     mov ah,02h;! set cursor position
     mov bh,0;! page 0
     mov dh,04h;! row
-    mov dl,02h;! column
+    mov dl,menu_column_to_start;! column
     int 10h;! call BIOS
 
     mov ah,09h;! print string
@@ -129,7 +129,7 @@ side_menu PROC NEAR
     mov ah,02h;! set cursor position
     mov bh,0;! page 0
     mov dh,06h;! row
-    mov dl,02h;! column
+    mov dl,menu_column_to_start;! column
     int 10h;! call BIOS
 
     mov ah,09h;! print string
@@ -140,7 +140,7 @@ side_menu PROC NEAR
     mov ah,02h;! set cursor position
     mov bh,0;! page 0
     mov dh,08h;! row
-    mov dl,02h;! column
+    mov dl,menu_column_to_start;! column
     int 10h;! call BIOS
 
     mov ah,09h;! print string
@@ -152,7 +152,7 @@ side_menu PROC NEAR
     mov ah,02h;! set cursor position
     mov bh,0;! page 0
     mov dh,0Ah;! row
-    mov dl,02h;! column
+    mov dl,menu_column_to_start;! column
     int 10h;! call BIOS
 
     mov ah,09h;! print string
@@ -190,7 +190,7 @@ side_menu PROC NEAR
     single_player_game:
     call single_player_function
     RET
-    
+
     ;?catch the key:end
     ;todo RET               ;todo delete this   RET 
 side_menu ENDP
@@ -203,7 +203,7 @@ multi_player_Function PROC NEAR
     mov ah,02h;! set cursor position
     mov bh,0;! page 0
     mov dh,04h;! row
-    mov dl,02h;! column
+    mov dl,menu_column_to_start;! column
     int 10h;! call BIOS
 
     mov ah,09h;! print string
@@ -232,7 +232,7 @@ single_player_function PROC NEAR
     mov bh,0;! page 0
     ;!get in center row and col
     mov dh,04h;! row
-    mov dl,02h;! column
+    mov dl,menu_column_to_start;! column
     int 10h;! call BIOS
 
     mov ah,09h;! print string
