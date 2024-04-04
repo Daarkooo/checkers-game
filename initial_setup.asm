@@ -21,50 +21,54 @@ DATA SEGMENT PARA 'DATA'
         single_player_str db 'single player function invoked press - R - to get back', '$'
         side_menu_exit db 'click - E - to exit', '$'
     ;?menu vars:end
+    ;?time listener:start
+    time_aux db 0;! to check if the time has changed
+    ;?time listener:end
 DATA ENDS
 
 CODE SEGMENT PARA 'CODE'
-    exit MACRO status
-        MOV AH, 4Ch
-        MOV AL, status
-        INT 21h
-    ENDM
+exit MACRO status
+    MOV AH, 4Ch
+    MOV AL, status
+    INT 21h
+ENDM
 
-    setGraphics MACRO num
-        MOV AX, num
-        INT 10h
-    ENDM
+setGraphics MACRO num
+    MOV AX, num
+    INT 10h
+ENDM
 
-    drawCell MACRO color, x, y, size
-        MOV AX, color
-        PUSH AX
-        
-        MOV AX, x
-        PUSH AX
+drawCell MACRO color, x, y, size
+    MOV AX, color
+    PUSH AX
+    
+    MOV AX, x
+    PUSH AX
 
-        MOV AX, y
-        PUSH AX
+    MOV AX, y
+    PUSH AX
 
-        MOV AX, size
-        PUSH AX
+    MOV AX, size
+    PUSH AX
 
-        CALL __drawCell
-    ENDM
+    CALL __drawCell
+ENDM
 
-    drawBoard MACRO whiteColor, blackColor, size
-        MOV AX, whiteColor
-        PUSH AX
+drawBoard MACRO whiteColor, blackColor, size
+    MOV AX, whiteColor
+    PUSH AX
 
-        MOV AX, blackColor
-        PUSH AX
+    MOV AX, blackColor
+    PUSH AX
 
-        MOV AX, size
-        PUSH AX
+    MOV AX, size
+    PUSH AX
 
-        CALL __drawBoard
-    ENDM
+    CALL __drawBoard
+ENDM
 
-;!?________________________________________________________________________________________________________________________
+;!________________________________________________________________________________________________________________________
+
 MAIN PROC FAR
     ;?segments:start
         assume cs:CODE,ds:DATA,ss:STACK
@@ -88,9 +92,9 @@ MAIN PROC FAR
         display_menu:
         call side_menu
         continue_game:
-    
     ;?during game menu:end      
 
+    
     RET
 MAIN ENDP
 
@@ -254,7 +258,6 @@ single_player_function PROC NEAR
     call side_menu
     RET
 single_player_function ENDP
-
 ;?mock functions:end
 
 exit MACRO status
@@ -316,21 +319,7 @@ __drawCell PROC ;? color, x, y, size  (last parameteres are top of stack)
     RET 8                   ; cleaning the stack
 __drawCell ENDP
 
-drawCell MACRO color, x, y, size
-    MOV AX, color
-    PUSH AX
-    
-    MOV AX, x
-    PUSH AX
 
-    MOV AX, y
-    PUSH AX
-
-    MOV AX, size
-    PUSH AX
-
-    CALL __drawCell
-ENDM
 
 __drawBoard PROC ;? whiteCell, blackCell, size (last parameteres are top of stack)
     PUSH BP
@@ -384,18 +373,7 @@ __drawBoard PROC ;? whiteCell, blackCell, size (last parameteres are top of stac
     RET 6
 __drawBoard ENDP
 
-drawBoard MACRO whiteColor, blackColor, size
-    MOV AX, whiteColor
-    PUSH AX
 
-    MOV AX, blackColor
-    PUSH AX
-
-    MOV AX, size
-    PUSH AX
-
-    CALL __drawBoard
-ENDM
 
 
 

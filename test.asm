@@ -10,6 +10,12 @@ DATA SEGMENT PARA 'DATA'
     ;?board vars:start
         str1 DB 's:$'
     ;?board vars:end
+    ;?cursor vars:start
+        cursor_row dw 04h
+        cursor_col dw 02h
+        cursor_move db 02h
+        cursor_size dw 6h
+    ;?cursor vars:end
 
     ;?menu vars:start
         menu_column_to_start db 06h
@@ -27,45 +33,45 @@ DATA SEGMENT PARA 'DATA'
 DATA ENDS
 
 CODE SEGMENT PARA 'CODE'
-exit MACRO status
-    MOV AH, 4Ch
-    MOV AL, status
-    INT 21h
-ENDM
+    exit MACRO status
+        MOV AH, 4Ch
+        MOV AL, status
+        INT 21h
+    ENDM
 
-setGraphics MACRO num
-    MOV AX, num
-    INT 10h
-ENDM
+    setGraphics MACRO num
+        MOV AX, num
+        INT 10h
+    ENDM
 
-drawCell MACRO color, x, y, size
-    MOV AX, color
-    PUSH AX
-    
-    MOV AX, x
-    PUSH AX
+    drawCell MACRO color, x, y, size
+        MOV AX, color
+        PUSH AX
+        
+        MOV AX, x
+        PUSH AX
 
-    MOV AX, y
-    PUSH AX
+        MOV AX, y
+        PUSH AX
 
-    MOV AX, size
-    PUSH AX
+        MOV AX, size
+        PUSH AX
 
-    CALL __drawCell
-ENDM
+        CALL __drawCell
+    ENDM
 
-drawBoard MACRO whiteColor, blackColor, size
-    MOV AX, whiteColor
-    PUSH AX
+    drawBoard MACRO whiteColor, blackColor, size
+        MOV AX, whiteColor
+        PUSH AX
 
-    MOV AX, blackColor
-    PUSH AX
+        MOV AX, blackColor
+        PUSH AX
 
-    MOV AX, size
-    PUSH AX
+        MOV AX, size
+        PUSH AX
 
-    CALL __drawBoard
-ENDM
+        CALL __drawBoard
+    ENDM
 
 ;!________________________________________________________________________________________________________________________
 
@@ -163,41 +169,53 @@ side_menu PROC NEAR
     lea dx,side_menu_exit;! load the address of the string
     int 21h;! call DOS
     ;?exit:end
-
-    ;?wait for key:start
-    mov ah,00h
-    int 16h
-    ;?wait for key:end
-    ;?catch the key:start
-    check_key:
-    cmp al,'M'
-    je multi_player_game
-    cmp al,'m'
-    je multi_player_game
-    cmp al,'E'
-    je exit_game
-    cmp al,'e'
-    je exit_game
-    cmp al,'S'
-    je single_player_game
-    cmp al,'s'
-    je single_player_game
-    jmp check_key
-    multi_player_game:
-    call multi_player_Function
-    ;!mov show_menu,0
-    RET
-    exit_game:
+    ;? time:start
+    check_time:
+    mov ah,2ch;!get current time
+    int 21h;! ch=hour,cl=minutes,dh=seconds,dl=1/100 seconds
+    cmp dl,time_aux;! check if the time has changed
+    je check_time;! if not changed then check again
+    mov time_aux,dl;! if changed then update the time_aux
     call clear_screen
-    exit 0
-    RET
-    single_player_game:
-    call single_player_function
-    RET
+    call side_menu
+    call create_cursor_to_choose_menu_item
+    ;call move_cursor_to_choose_menu_item
+    jmp check_time
+    ;? time:end
+    
 
     ;?catch the key:end
-    ;todo RET               ;todo delete this   RET 
+    RET               ;todo delete this   RET 
 side_menu ENDP
+
+;?create cursor to choose menu item:start
+create_cursor_to_choose_menu_item PROC NEAR
+   MOV cx,cursor_col;!position x column
+   MOV dx,cursor_row;!position y row
+    shamoulig:
+        MOV AH,0Ch;! set pixel
+        MOV AL,0Fh;! the color of the ball is 0Fh (white)
+        MOV bh,0;! page 0
+        INT 10h;! call BIOS
+
+        inc cx;! move to the next column
+        mov ax,cx;! check if we reached the end of the ball
+        sub ax,cursor_col;! calculate the distance from the start
+        cmp ax,cursor_size;! compare with the size of the ball
+        JNG shamoulig;! if we didn't reach the end, draw the next pixel
+
+        mov cx,cursor_col;!position x column
+        inc dx;! move to the next row
+
+        mov ax,dx;! check if we reached the end of the ball
+        sub ax,cursor_row;! calculate the distance from the start
+        cmp ax,cursor_size;! compare with the size of the ball
+        JNG shamoulig;! if we didn't reach the end, draw the next pixel
+    RET
+create_cursor_to_choose_menu_item ENDP
+;?create cursor to choose menu item:end
+
+
 ;?menu procedures:end
 
 ;?mock functions:start
@@ -258,6 +276,7 @@ single_player_function PROC NEAR
     call side_menu
     RET
 single_player_function ENDP
+
 ;?mock functions:end
 
 exit MACRO status
@@ -319,7 +338,21 @@ __drawCell PROC ;? color, x, y, size  (last parameteres are top of stack)
     RET 8                   ; cleaning the stack
 __drawCell ENDP
 
+drawCell MACRO color, x, y, size
+    MOV AX, color
+    PUSH AX
+    
+    MOV AX, x
+    PUSH AX
 
+    MOV AX, y
+    PUSH AX
+
+    MOV AX, size
+    PUSH AX
+
+    CALL __drawCell
+ENDM
 
 __drawBoard PROC ;? whiteCell, blackCell, size (last parameteres are top of stack)
     PUSH BP
@@ -373,7 +406,18 @@ __drawBoard PROC ;? whiteCell, blackCell, size (last parameteres are top of stac
     RET 6
 __drawBoard ENDP
 
+drawBoard MACRO whiteColor, blackColor, size
+    MOV AX, whiteColor
+    PUSH AX
 
+    MOV AX, blackColor
+    PUSH AX
+
+    MOV AX, size
+    PUSH AX
+
+    CALL __drawBoard
+ENDM
 
 
 
