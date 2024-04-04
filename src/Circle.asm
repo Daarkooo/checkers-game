@@ -66,7 +66,7 @@
         
         MOV CX, [BP + 6]
         MOV DX, [BP + 4]
-        ADD DX, 14
+        SUB DX, 14
 
         XOR BX, BX
         XOR SI, SI
