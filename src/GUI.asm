@@ -26,10 +26,10 @@ __drawCell PROC ; color, x, y, size  (last parameteres are top of stack)
 	L1:
 	MOV CX, [BP + 8]    ; reseting the x
 	L2:
-	  INT 10h
-	  INC CX
+	INT 10h
+	INC CX
 	
-	  CMP CX, [BP - 4]
+	CMP CX, [BP - 4]
 	JLE L2
 	
 	INC DX
@@ -44,9 +44,9 @@ __drawCell PROC ; color, x, y, size  (last parameteres are top of stack)
 	MOV SP, BP
 	POP BP
 	RET 8                   ; cleaning the stack
-	__drawCell ENDP
-	
-	drawCell MACRO color, x, y, size
+__drawCell ENDP
+
+drawCell MACRO color, x, y, size
 	MOV AX, color
 	PUSH AX
 	
@@ -62,59 +62,77 @@ __drawCell PROC ; color, x, y, size  (last parameteres are top of stack)
 	CALL __drawCell
 ENDM
 
-__drawBoard PROC ; whiteCell, blackCell, size (last parameteres are top of stack)
+__drawBoard PROC ; initialX, initialY, whiteCell, blackCell, size (last parameteres are top of stack)
 	PUSH BP
 	MOV BP, SP
-	SUB SP, 2
+	SUB SP, 4
 	
-	MOV AX, [BP + 4]    ; size
+	; getting the final X
+	MOV AX, [BP + 4]        ; size
 	MOV BX, 10
 	MUL BX
 	
-	MOV [BP - 2], AX    ; final x, y
+	ADD AX, [BP + 12]       
+	MOV [BP - 2], AX        ; final X
 	
-	XOR CX, CX          ; initial y
+	; getting the final Y
+	MOV AX, [BP + 4]        ; size
+	MOV BX, 10
+	MUL BX
+	
+	ADD AX, [BP + 10]       
+	MOV [BP - 4], AX        ; final Y
+	
+	; setting initial starting points
+	MOV CX, [BP + 10]       ; initial y
 	MOV BX, [BP + 4]
 	outer_loop:
-	  XOR DX, DX      ; initial x
-	
-	  inner_loop1:
-		  MOV AX, [BP + 8]        ; white color
-		  drawCell AX, DX, CX, BX
-		  ADD DX, BX
-	
-		  MOV AX, [BP + 6]        ; black color
-		  drawCell AX, DX, CX, BX
-		  ADD DX, BX
-	
-		  CMP DX, [BP - 2]
-	  JL inner_loop1
-	
-	  XOR DX, DX
-	  ADD CX, BX
-	  inner_loop2:
-		  MOV AX, [BP + 6]        ; black color
-		  drawCell AX, DX, CX, BX
-		  ADD DX, BX
-	
-		  MOV AX, [BP + 8]        ; white color
-		  drawCell AX, DX, CX, BX
-		  ADD DX, BX
-	
-		  CMP DX, [BP - 2]
-	  JL inner_loop2
-	
-	
-	  ADD CX, BX
-	  CMP CX, [BP - 2]
+	    MOV DX, [BP + 12]       ; initial x
+	    
+	    inner_loop1:
+			MOV AX, [BP + 8]        ; white color
+			drawCell AX, DX, CX, BX
+			ADD DX, BX
+		    
+			MOV AX, [BP + 6]        ; black color
+			drawCell AX, DX, CX, BX
+			ADD DX, BX
+		    
+			CMP DX, [BP - 2]
+	    JL inner_loop1
+	    
+	    MOV DX, [BP + 12]
+	    ADD CX, BX
+	    
+		inner_loop2:
+			MOV AX, [BP + 6]        ; black color
+			drawCell AX, DX, CX, BX
+			ADD DX, BX
+		    
+			MOV AX, [BP + 8]        ; white color
+			drawCell AX, DX, CX, BX
+			ADD DX, BX
+		    
+			CMP DX, [BP - 2]
+	    JL inner_loop2
+	    
+	    
+	    ADD CX, BX
+	    CMP CX, [BP - 4]
 	JL outer_loop
 	
 	MOV SP, BP
 	POP BP
-	RET 6
+	RET 10
 __drawBoard ENDP
 
-drawBoard MACRO whiteColor, blackColor, size
+drawBoard MACRO initialX, initialY, whiteColor, blackColor, size
+	MOV AX, initialX
+	PUSH AX
+	
+	MOV AX, initialY
+	PUSH AX        
+	
 	MOV AX, whiteColor
 	PUSH AX
 	
