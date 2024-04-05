@@ -43,12 +43,11 @@
 
 ;CODE SEGMENT
 .code  
-ASSUME CS:CODE, DS:DATA
-
+;ASSUME CS:CODE, DS:DATA
 
 ;------------get_clumn----------------
 get_column MACRO n,result
-    LOCAL not_eqaul_zero, not_less_than_6
+    LOCAL not_eqaul_zero, not_less_than_6, end
 
     MOV AL, n
     XOR AH, AH 
@@ -59,7 +58,7 @@ get_column MACRO n,result
     CMP AH, 0
     JNE not_eqaul_zero
     MOV AL, 8 ; return 8
-    JMP fin
+    JMP end
 not_eqaul_zero:
 
     ; check if x < 6
@@ -68,7 +67,7 @@ not_eqaul_zero:
     MOV AL, AH
     SHL AL, 1
     DEC AL ; retrun ah * 2 -1
-    JMP fin
+    JMP end
 not_less_than_6:
 
     ; x >= 6
@@ -78,7 +77,7 @@ not_less_than_6:
     DEC AL
     DEC AL  ; return (ah-5)*2-1
 
-fin:
+end:
     MOV result,AL
 
 ENDM 
@@ -112,7 +111,7 @@ ENDM
 
 ;------getNumber----------------  
 getNumber MACRO row, column, Num
-    LOCAL calculate_number, fin
+    LOCAL calculate_number, end
         ;pusha
         ; (row % 2 === column % 2)
         mov al, row ;[0002h]
@@ -128,7 +127,7 @@ getNumber MACRO row, column, Num
     
         ; White square
         mov Num, 0
-        jmp fin
+        jmp end
     
     calculate_number:
     
@@ -144,7 +143,7 @@ getNumber MACRO row, column, Num
         ; Store the number
         mov Num, al
     
-    fin:
+    end:
     ;popa
 ENDM       
   
@@ -261,7 +260,7 @@ ENDM
    
 ;----------verify_move----------------   
 verify_move MACRO board,i,j,x,y,turn,verified,isDirect,val1,val2
-    LOCAL impossible_move,done,direct,indirect,case2,white_turn,black_turn,black_turn1,next,next1,next2,next3,impair,impair1,impair2,down,down1,down2,first_column,last_column,continue
+    LOCAL impossible_move,done,direct,indirect,case2,white_turn,black_turn,black_turn1,next,next1,next2,next3,impair,impair1,impair2,down,down1,down2,first_column,last_column,continue,continue1,end
     ;DL=i DH=j BH=x CH=y | i and j must be between 1-10 -> (0-9) 'we do the check & 'DEC 1' in the main'  
 
     getNumber DL,DH,n1
@@ -354,10 +353,11 @@ verify_move MACRO board,i,j,x,y,turn,verified,isDirect,val1,val2
             down: ; n1<n2 => -------going down---------
                 CMP DL,9
                 JE impossible_move ; 1st/2nd column case, cant move 
+        continue:
         CMP DH,8 ; 9th column
         JE next3
-            CMP CH,9 ; last column
-            JNE continue
+            CMP DH,9 ; last column
+            JNE continue1
         next3:
             CMP CL,BH ; CMP n1,n2
             JB down1
@@ -366,7 +366,7 @@ verify_move MACRO board,i,j,x,y,turn,verified,isDirect,val1,val2
             down1: ; n1<n2 => -------going down---------
                 CMP DL,11 
                 JE impossible_move ; 1st/2nd column case, cant move 
-        continue:
+        continue1:
          
         CMP CL,BH ; CMP n1,n2
         JB down2
@@ -417,7 +417,7 @@ move_pawn MACRO board,i,j,x,y,turn
     verify_move board,DL,DH,BH,CH,turn,verified,isDirect,n1,n2 ; n1[i,j] n2[x,y] , in the indirect case isDirect <- numMakla
     
     CMP verified,0
-    JE end   
+    JE end
         XOR AX, AX   
         MOV AL, n1 
         DEC AL   
@@ -449,18 +449,43 @@ ENDM
 START:
     MOV AX, @DATA
     MOV DS, AX 
-    board_init board
-    ;get_column 25,result1 ; calling
-    ;getNumber 3,2,result2   
-    ;getNumber 4,1,result3  
-    ;get_row 40,result3                      
-    ;get_cell_state board,4,1,result4                      
-    MOV board[27],'b'   
-    ;mov board[22],'w'
-    ;mov board[
-    ;verify_move board,3,0,5,2,'b',turn,verified,isDirect,n1,n2 
-    move_pawn board,6,5,4,3,'w',turn,verified,isDirect,n1,n2   
-    ;move_pawn board,3,6,5,4,'b',turn,verified,isDirect,n1,n2 
+    board_init board 
+    
+    
+    ;----BLACK TEST-------------------
+    ;move_pawn board,3,2,4,1,'b',turn,verified,isDirect,n1,n2 ; direct     ; 17->21
+    ;move_pawn board,3,2,4,3,'b',turn,verified,isDirect,n1,n2 ; other way  ; 17->22
+    ;----indirect----    
+    ;mov board[21],'w'; 22<-'w'
+    ;move_pawn board,3,4,5,2,'b',turn,verified,isDirect,n1,n2 ;18->27       
+    ;mov board[22],'w'; 23<-'w'
+    ;move_pawn board,3,4,5,6,'b',turn,verified,isDirect,n1,n2 ;18->29   
+    
+    ;--impossible moves--
+    ;move_pawn board,3,0,3,8,'b',turn,verified,isDirect,n1,n2 ;16->20 ; impossible move first column (direct)
+    ;mov board[15],'w'; 16<-'w'
+    ;move_pawn board,2,1,3,8,'b',turn,verified,isDirect,n1,n2 ;11->20 ; impossible move first column(1/2)            
+    ;mov board[24],'w'; 25<-'w'
+    ;move_pawn board,3,8,6,1,'b',turn,verified,isDirect,n1,n2 ;20->31 ; impossible move last column(9/10)
+     
+     
+    ;----WHITE TEST------------------
+    ;move_pawn board,6,1,5,0,'w',turn,verified,isDirect,n1,n2 ; direct     ; 31->26
+    ;move_pawn board,6,1,5,2,'w',turn,verified,isDirect,n1,n2 ; other way  ; 31->27
+    ;----indirect----      
+    ;mov board[27],'b'; 28<-'b'
+    ;move_pawn board,6,5,4,3,'w',turn,verified,isDirect,n1,n2 ;33->22       
+    ;mov board[28],'b'; 29<-'b'
+    ;move_pawn board,6,5,4,7,'w',turn,verified,isDirect,n1,n2 ;33->24      
+
+    ;--impossible moves--   
+    ;mov board[30],'b'; 31<-'b' 
+    ;move_pawn board,6,9,6,1,'w',turn,verified,isDirect,n1,n2 ;35->31 ; impossible move last column (direct)
+    mov board[30],'b'; 31<-'b'
+    move_pawn board,6,9,5,0,'w',turn,verified,isDirect,n1,n2 ;35->26 ; impossible move last column(9/10)
+    ;mov board[29],'b'; 30<-'b'
+    ;move_pawn board,7,0,4,9,'w',turn,verified,isDirect,n1,n2 ;36->25 ; impossible move first column(1/2)
+    
     print_board board 
     
 
