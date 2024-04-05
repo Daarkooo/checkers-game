@@ -12,7 +12,7 @@ DATA SEGMENT PARA 'DATA'
     ;?board vars:end
 
     ;?menu vars:start
-        menu_column_to_start db 02h
+        menu_column_to_start db 3;! the column to start the menu
         show_menu db 1;! 0=>not showing the menu, 1=>showing the menu
         side_menu_title db 'MENU:', '$'
         side_menu_new_game_multi_player db 'click - M - multiplayer', '$'
@@ -26,14 +26,26 @@ DATA SEGMENT PARA 'DATA'
         menu_border_top_x dw 10
         menu_border_top_y dw 10
         menu_border_top_height dw 0
-        menu_border_top_width dw 12;! the width of the border in pixels is 100pixel(width*2*number of balls)
+        menu_border_top_width dw 12
         ;?menu border top:end
         ;?menu border bottom:start
         menu_border_bottom_x dw 10
         menu_border_bottom_y dw 330
         menu_border_bottom_height dw 0
-        menu_border_bottom_width dw 12;! the width of the border in pixels is 100pixel(width*2*number of balls)
+        menu_border_bottom_width dw 12
         ;?menu border bottom:end
+        ;?menu border left:start
+        menu_border_left_x dw 10
+        menu_border_left_y dw 40
+        menu_border_left_height dw 12
+        menu_border_left_width dw 0
+        ;?menu border left:end
+        ;?menu border right:start
+        menu_border_right_x dw 250
+        menu_border_right_y dw 40
+        menu_border_right_height dw 12
+        menu_border_right_width dw 0
+        ;?menu border right:end
         ball_size dw 10
         ball_black_x dw 0
         ball_black_y dw 0
@@ -144,7 +156,7 @@ clear_screen ENDP
 
 side_menu PROC NEAR
     ;call clear_screen
-    call draw_menu_border_top
+    call draw_menu_border_top_bottom
     mov ax,menu_border_bottom_x
     mov menu_border_top_x,ax
     mov ax,menu_border_bottom_y
@@ -153,8 +165,17 @@ side_menu PROC NEAR
     mov menu_border_top_width,ax
     mov ax,menu_border_bottom_height
     mov menu_border_top_height,ax
-
-    call draw_menu_border_top;!i will make it draw the bottom border
+    call draw_menu_border_top_bottom;!i will make it draw the bottom border
+    call draw_menu_border_left;!i will make it draw the right border
+    mov ax,menu_border_right_x
+    mov menu_border_left_x,ax
+    mov ax,menu_border_right_y
+    mov menu_border_left_y,ax
+    mov ax,menu_border_right_height
+    mov menu_border_left_height,ax
+    mov ax,menu_border_right_width
+    mov menu_border_left_width,ax
+    call draw_menu_border_left
     ;?title:start
     mov ah,02h;! set cursor position
     mov bh,0;! page 0
@@ -349,8 +370,8 @@ draw_ball_white PROC NEAR
     RET
 draw_ball_white ENDP
 
-;?menu border top:start
-draw_menu_border_top PROC NEAR
+;?menu border top & bottom:start
+draw_menu_border_top_bottom PROC NEAR
     mov ax,menu_border_top_x
     mov ball_white_x,ax
     mov ax,menu_border_top_y
@@ -377,8 +398,40 @@ draw_menu_border_top PROC NEAR
         cmp bx,0
         jg start_border_top
     RET
-draw_menu_border_top ENDP
-;?menu border top:end
+draw_menu_border_top_bottom ENDP
+;?menu border top & bottom:end
+
+;?menu border left:start
+draw_menu_border_left PROC NEAR
+    mov ax,menu_border_left_x
+    mov ball_white_x,ax
+    mov ax,menu_border_left_y
+    mov ball_white_y,ax
+    mov ax,menu_border_left_x
+    mov ball_black_x,ax
+    mov ax,menu_border_left_y
+    mov ball_black_y,ax
+    sub bx,bx;! set the counter to 0
+    mov bx,menu_border_left_height;! set the counter to the height of the border
+    mov ax,ball_size
+    start_border_left:
+        ;!draw balls black and white alternately:start
+        call draw_ball_black
+        add menu_border_left_y,ax
+        mov dx,menu_border_left_y
+        mov ball_black_y,dx
+        call draw_ball_white
+        add menu_border_left_y,ax
+        mov dx,menu_border_left_y
+        mov ball_white_y,dx
+        ;!draw balls black and white alternately:end
+        dec bx
+        cmp bx,0
+        jg start_border_left
+    RET
+draw_menu_border_left ENDP
+;?menu border left:end
+
 ;?borders :end
 
 __drawCell PROC ; color, x, y, size  (last parameteres are top of stack)
