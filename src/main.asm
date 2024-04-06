@@ -25,15 +25,15 @@
     j1 DB ?
     x DB ?
     y DB ?
+    pawn_position DB ?
     isDirect DB ?
-    result1 DB ?  
-    result2 DB ? 
-    result3 DB ? 
-    result4 DB ? 
+    path1 DB ?
+    path2 DB ? 
     state DB ?
     turn DB ?
     val1 DB ?
-    val2 DB ?
+    val2 DB ? 
+    main DB ?
     newline DB 10,13,"$"
     verified DB ?
     board DB 50 dup(?)  
@@ -109,12 +109,30 @@ get_row MACRO Num, result
 ENDM
  
 
-;------getNumber----------------  
-getNumber MACRO row, column, Num
-    LOCAL calculate_number, end
-        ;pusha
+;------get_number----------------  
+get_number MACRO row, column, main, Num
+    LOCAL invalid, end, next
         ; (row % 2 === column % 2)
-        mov al, row ;[0002h]
+        MOV AL,column 
+        CMP AL,0
+        JB invalid
+        CMP AL,9
+        JA invalid
+
+        MOV AL,row ;[0002h]
+        CMP AL,0
+        JB invalid
+        CMP AL,9
+        JA invalid
+        
+        MOV DL,'y'
+        CMP DL,main
+        JNE next
+            MOV NUM, 'v'; valid
+            JMP end
+        next:
+        
+        ; MOV AL,row ;[0002h]
         xor ah, ah
         mov cl, 2
         div cl
@@ -123,28 +141,23 @@ getNumber MACRO row, column, Num
         xor ah, ah
         div cl
         cmp ah, bl  ; Compare (row % 2) with (column % 2)
-        jnz calculate_number  ; not a White Square
-    
-        ; White square
+        jz invalid  ; not a White Square
+            ; Calculate the number
+            mov al, row
+            mov bl, 5
+            mul bl  ; AL = row * 5
+            mov bl, column
+            shr bl, 1  ; Divide column by 2 
+            add al, bl  ; AL = AL + (column / 2)
+            inc al  ;the index starts from 0
+        
+            ; Store the number
+            mov Num, al
+            jmp end
+    invalid:
+        ; White square || invalid row/column
         mov Num, 0
-        jmp end
-    
-    calculate_number:
-    
-        ; Calculate the number
-        mov al, row
-        mov bl, 5
-        mul bl  ; AL = row * 5
-        mov bl, column
-        shr bl, 1  ; Divide column by 2 
-        add al, bl  ; AL = AL + (column / 2)
-        inc al  ;the index starts from 0
-    
-        ; Store the number
-        mov Num, al
-    
     end:
-    ;popa
 ENDM       
   
   
@@ -239,7 +252,7 @@ get_cell_state MACRO board,i,j,result
         PUSHA
 		MOV DL, i
 		MOV DH, j
-		getNumber DL, DH, AL        ; Le macro de la question C (Fait par Abdou & Omar)
+		get_number DL, DH, main, AL        ; Le macro de la question C (Fait par Abdou & Omar)
 		
 		TEST AL, AL
 		JZ white_cell
@@ -260,17 +273,18 @@ ENDM
    
 ;----------verify_move----------------   
 verify_move MACRO board,i,j,x,y,turn,verified,isDirect,val1,val2
-    LOCAL impossible_move,done,direct,indirect,case2,white_turn,black_turn,black_turn1,next,next1,next2,next3,impair,impair1,impair2,down,down1,down2,first_column,last_column,continue,continue1,end
-    ;DL=i DH=j BH=x CH=y | i and j must be between 1-10 -> (0-9) 'we do the check & 'DEC 1' in the main'  
+    LOCAL impossible_move,done,direct,indirect,case2,white_turn,black_turn,black_turn1,next,next1,impair,impair1,impair2,down,down1,down2,first_column,last_column,continue,continue1,end
+    ;DL=i DH=j BH=x CH=y | i and j must be between 1-10 -> (0-9) 'we do the check in get_number & 'DEC 1' in the main'  
 
-    getNumber DL,DH,n1
+    get_number DL, DH, main, n1
     get_cell_state board,DL,DH,state
-    cmp state,turn ; to make the move -> 'w'='w' / 'b'='b' else impossible_move
+    MOV AL,state
+    cmp AL,turn ; to make the move -> 'w'='w' / 'b'='b' else impossible_move
     JNE impossible_move
 
-    getNumber BH,CH,n2
-    get_cell_state board,BH,CH,state
-    CMP n1,0 ; 0 -> white cell 'invalid' (check getNumber)
+    get_number BH, CH, main, n2 ; main <- null doesnt effect 
+    get_cell_state board, BH, CH, state
+    CMP n1,0 ; 0 -> white cell 'invalid' (check get_number)
     JE impossible_move   ; checking if it's a valid input 
     CMP n2,0
     JE impossible_move  
@@ -282,12 +296,10 @@ verify_move MACRO board,i,j,x,y,turn,verified,isDirect,val1,val2
     DIV BL ;  divide AL by BL, q -> AL, r -> AH  
     ; I'LL USE AH for (impair/pair) (odd/even) line
 
-    MOV BH,1
-    MOV isDirect,BH ; to check if it's direct/indirect move
     MOV BH,n1
-    MOV val1,BH ; need it in move function (to avoid the getNumber call)
+    MOV val1,BH ; need it in move function (to avoid the get_number call)
     MOV BH,n2 ; need it in indirect for checking 1st,2nd,8th,last (9/11)<-(n1-n2)
-    MOV val2,BH ; need it in move function (to avoid the getNumber call)
+    MOV val2,BH ; need it in move function (to avoid the get_number call)
 
     ;MOV DH, j ; j->DH ; to check if it's the first/last column + 2nd and 8th column for indirect move                
     MOV DL,n2 ; neg when it's white's turn
@@ -295,34 +307,34 @@ verify_move MACRO board,i,j,x,y,turn,verified,isDirect,val1,val2
     CMP CH,'b' ; CH <- turn 
     JE black_turn
         NEG DL ; absolute value----WHITE's TURN---------------------
-    black_turn:  
+    black_turn:
     PUSH DX
+    ;----------show_paths (optimization)---------
+    CMP isDirect,'n'
+    JE indirect
+
+    MOV BH,1
+    MOV isDirect,BH ; to check if it's direct/indirect move
     CMP AH, 0 ; we check if it's odd or even (the remainder of 'AL div 2' -> AH )   --2nd version: TEST AH,0  JNZ impair
     JNE impair
         CMP DL,5 ; the first case of the direct move -----pair------
         JE direct  
-        CMP DH,9 ; DH<-j
-        JE last_column
-            CMP CH,'b'
-            JE black_turn1
-                ADD DL,2  ; CMP DL,4  if true dl =4 -> (4+2 = 6) ----WHITE's TURN------
-            black_turn1:
-            CMP DL,6 ; 2nd case
-            JE direct 
-        last_column:
+        CMP CH,'b'
+        JE black_turn1
+            ADD DL,2  ; CMP DL,4  if true dl =4 -> (4+2 = 6) ----WHITE's TURN------
+        black_turn1:
+        CMP DL,6 ; 2nd case
+        JE direct 
         JMP indirect        
-    impair:
+    impair:3
         CMP DL,5 ; 2nd case
         JE direct  
-        CMP DH,0
-        JE first_column
-            CMP CH,'w'
-            JE white_turn
-                ADD DL,2  ; CMP DL,4  if true dl =4 -> (4+2 = 6) ----BLACK's TURN------
-            white_turn:
-            CMP DL,6 ; the first case of the direct move -----impair-----
-            JE direct 
-        first_column:  
+        CMP CH,'w'
+        JE white_turn
+            ADD DL,2  ; CMP DL,4  if true dl =4 -> (4+2 = 6) ----BLACK's TURN------
+        white_turn:
+        CMP DL,6 ; the first case of the direct move -----impair-----
+        JE direct 
         JMP indirect
 
     direct: 
@@ -333,41 +345,14 @@ verify_move MACRO board,i,j,x,y,turn,verified,isDirect,val1,val2
     indirect:  ; DL contains SUB n1,n2 / n2,n1
         cmp state,'0' ; to make the move -> board[x,y] needs to be empty '0'
         JNE impossible_move 
-
         POP DX
         CMP DL,9  ; check if DL (n1-n2) = 9/11 else impossible
         JE next1
         CMP DL,11
         JNE impossible_move
         next1:
+
         MOV CL,n1
-        CMP DH,0 ; 1st column
-        JE next2
-            CMP DH,1 ; 2nd column
-            JNE continue 
-        next2:
-            CMP CL,BH ; CMP n1,n2
-            JB down
-                CMP DL,11 ; n1>n2 =>------going up--------
-                JE impossible_move ; 1st/2nd column case, cant move 
-            down: ; n1<n2 => -------going down---------
-                CMP DL,9
-                JE impossible_move ; 1st/2nd column case, cant move 
-        continue:
-        CMP DH,8 ; 9th column
-        JE next3
-            CMP DH,9 ; last column
-            JNE continue1
-        next3:
-            CMP CL,BH ; CMP n1,n2
-            JB down1
-                CMP DL,9 ; n1>n2 =>------going up--------
-                JE impossible_move ; last/9th column case, cant move 
-            down1: ; n1<n2 => -------going down---------
-                CMP DL,11 
-                JE impossible_move ; 1st/2nd column case, cant move 
-        continue1:
-         
         CMP CL,BH ; CMP n1,n2
         JB down2
             MOV CL,BH ; n1>n2 =>------going up-------- NEED IT TO AVOID SUB/DEC
@@ -386,15 +371,16 @@ verify_move MACRO board,i,j,x,y,turn,verified,isDirect,val1,val2
             INC CL ; INC n1 (now am using the lower value  (works for both white & black) 'only for indirect part')
         impair2:
 
-        get_column CL,j1 ; for both impair & pair
-        get_row CL,i1 ; I used i&j cuz there's no longer a need for the initial i&j
-        MOV DL,i1
-        MOV DH,j1
-        getNumber DL,DH,isDirect ; isDirect return makla number (for optimization) 'indirect move'
-        get_cell_state board,DL,DH,state ; depends on the colors (white -> black/ black ->white)
+        get_column CL, j1 ; for both impair & pair
+        get_row CL, i1 ; I used i&j cuz there's no longer a need for the initial i&j
+        MOV DL, i1
+        MOV DH, j1
+        get_number DL ,DH , main, isDirect ; isDirect return makla number (for optimization) 'indirect move'
+        get_cell_state board, DL, DH, state ; depends on the colors (white -> black/ black ->white)
         CMP state,'0' ; one step (not for dames)
         JE impossible_move 
-        CMP state,turn ; to make the move -> state needs to be the color of the opposing player (enemy) 
+        MOV AL,turn 
+        CMP AL,state ; to make the move -> state needs to be the color of the opposing player (enemy) 
         JNE done ; make the move
                     
     impossible_move:
@@ -406,23 +392,33 @@ verify_move MACRO board,i,j,x,y,turn,verified,isDirect,val1,val2
 ENDM 
 
 
-;------move_pawn----------
-move_pawn MACRO board,i,j,x,y,turn
-    LOCAL end, indirect
+;------move_pawn---------- 
+move_pawn MACRO board,i,j,x,y,turn,path1,path2,pawn_position,isDirect
+    LOCAL end, indirect, move, move1, no_move
     MOV DL,i
     MOV DH,j
-    MOV BH,x ; cant use the other registers cuz are used in getNumber 
+    MOV BH,x ; cant use the other registers cuz are used in get_number 
     MOV CH,y
-    ;MOV CH,turn
-    verify_move board,DL,DH,BH,CH,turn,verified,isDirect,n1,n2 ; n1[i,j] n2[x,y] , in the indirect case isDirect <- numMakla
     
-    CMP verified,0
-    JE end
+
+   ; MOV AH,0
+   ; INT 16h
+
+    get_number BH,CH,main,num
+    MOV BH,num
+    CMP BH,path1
+    JNE next
+        MOV BH,path1 ; BH <- board[x,y]
+        JE move1
+    next:
+    CMP BH,path2 ; BH <- board[x,y]
+    JNE no_move
+        move1:
         XOR AX, AX   
-        MOV AL, n1 
+        MOV AL, pawn_position
         DEC AL   
         MOV DI, AX    
-        MOV AL, n2
+        MOV AL, BH ; BH <- board[x,y]
         DEC AL   
         MOV SI, AX     
         
@@ -431,7 +427,7 @@ move_pawn MACRO board,i,j,x,y,turn
             MOV AL,board[DI] 
             MOV board[DI],'0'
             MOV board[SI],AL                    
-            JMP end
+            JMP move
         indirect:
             MOV AL,board[DI]
             MOV board[DI],'0'
@@ -442,7 +438,99 @@ move_pawn MACRO board,i,j,x,y,turn
             MOV DI, AX    
             MOV AL,board[DI]
             MOV board[DI],'0'
+    move:
+    ;    move_gui 
+        JMP end
+    no_move:
+        MOV AL,-1
+        MOV turn,AL
     end:
+ENDM
+
+
+;------show_paths----------
+show_paths MACRO board,i,j,turn,path1,path2,pawn_position,isDirect
+    LOCAL end, direct, next, next1, not_verified, not_verified1, not_verified2, not_verified3, down, down1 
+    MOV DL,i
+    MOV DH,j
+    MOV BH,i ; BH<-x
+    MOV CH,j ; CH<-y          
+    MOV BL,turn
+    PUSH BX ; need it in direct move
+    PUSH CX
+
+    MOV AL,-1 ;
+    MOV path1,AL
+    MOV path2,AL ; in case there's no move
+    
+    ;---------INDIRECT---------------- we prioritize the indirect move
+    JMP down
+        SUB BH,2  ;------WHITE's TURN------- x<-(i-2)
+        JMP next
+    down: ;------BLACK's TURN-------
+        ADD BH,2 ; x<-(i+2)
+    next:
+    
+    MOV AL,'n' ; not direct
+    ADD CH,2 ; CH<-(y+2)
+    verify_move board,DL,DH,BH,CH,turn,verified,AL,pawn_position,n2 ; n1[i,j] n2[x,y] 
+
+    CMP verified,0
+    JE not_verified  
+        MOV isDirect,AL
+        MOV AH,n2
+        MOV path1,AH
+    not_verified:
+
+    MOV AL,'n'
+    SUB CH,4 ; CH<-(y-2) ('add 2 -> sub 4' = sub 2)
+    verify_move board,DL,DH,BH,CH,turn,verified,AL,pawn_position,n2 ; n1[i,j] n2[x,y] 
+
+    CMP verified,0
+    JE not_verified1 
+        MOV isDirect,AL
+        MOV AH,n2
+        MOV path2,AH
+    not_verified1:
+    
+    CMP isDirect,'n'
+    JNE end ; if there's a move in indirect, isDirect'll return maklaNum -> isDirect != 'n'
+
+    direct: ;---------DIRECT----------------
+    POP CX ; CH<-y
+    POP BX ; CB<-i + BL<- turn
+    INC CH; CH<-(y+1) 
+
+    JMP down1
+        DEC BH ;------WHITE's TURN------- x<-(i-1)
+        JMP next1
+    down1: ;------BLACK's TURN-------
+        INC BH ; x<-(i+1)
+    next1:
+    
+    MOV AL,'y' ; direct direct
+    MOV isDirect,AL
+    INC CH ; CH<-(y+1)
+    verify_move board,DL,DH,BH,CH,turn,verified,AL,pawn_position,n2 ; n1[i,j] n2[x,y] 
+
+    CMP verified,0
+    JE not_verified2  
+        MOV AH,n2
+        MOV path1,AH
+    not_verified2:
+
+    MOV AL,'y' ; not direct
+    SUB CH,2 ; CH<-(y-1) ('add 1 -> sub 2' = sub 1)
+    verify_move board,DL,DH,BH,CH,turn,verified,AL,pawn_position,n2 ; n1[i,j] n2[x,y] 
+
+    CMP verified,0
+    JE not_verified3 
+        MOV AH,n2
+        MOV path2,AH
+    not_verified3:
+
+    end:
+    ; return pawn_position 
 ENDM
 
 
@@ -461,33 +549,26 @@ START:
     ;mov board[22],'w'; 23<-'w'
     ;move_pawn board,3,4,5,6,'b',turn,verified,isDirect,n1,n2 ;18->29   
     
-    ;--impossible moves--
-    ;move_pawn board,3,0,3,8,'b',turn,verified,isDirect,n1,n2 ;16->20 ; impossible move first column (direct)
-    ;mov board[15],'w'; 16<-'w'
-    ;move_pawn board,2,1,3,8,'b',turn,verified,isDirect,n1,n2 ;11->20 ; impossible move first column(1/2)            
-    ;mov board[24],'w'; 25<-'w'
-    ;move_pawn board,3,8,6,1,'b',turn,verified,isDirect,n1,n2 ;20->31 ; impossible move last column(9/10)
      
      
     ;----WHITE TEST------------------
     ;move_pawn board,6,1,5,0,'w',turn,verified,isDirect,n1,n2 ; direct     ; 31->26
     ;move_pawn board,6,1,5,2,'w',turn,verified,isDirect,n1,n2 ; other way  ; 31->27
+
+
     ;----indirect----      
     ;mov board[27],'b'; 28<-'b'
     ;move_pawn board,6,5,4,3,'w',turn,verified,isDirect,n1,n2 ;33->22       
     ;mov board[28],'b'; 29<-'b'
     ;move_pawn board,6,5,4,7,'w',turn,verified,isDirect,n1,n2 ;33->24      
 
-    ;--impossible moves--   
-    ;mov board[30],'b'; 31<-'b' 
-    ;move_pawn board,6,9,6,1,'w',turn,verified,isDirect,n1,n2 ;35->31 ; impossible move last column (direct)
-    mov board[30],'b'; 31<-'b'
-    move_pawn board,6,9,5,0,'w',turn,verified,isDirect,n1,n2 ;35->26 ; impossible move last column(9/10)
-    ;mov board[29],'b'; 30<-'b'
-    ;move_pawn board,7,0,4,9,'w',turn,verified,isDirect,n1,n2 ;36->25 ; impossible move first column(1/2)
+
+    show_paths board,3,0,'b',path1,path2,pawn_position,isDirect   ;16   
+    ;MOV al,1
+    ;mov path1,1
     
-    print_board board 
-    
+    ;print_board board 
+    ;get_number 9,8,'y',n1
 
 ;CODE ENDS
 END START
