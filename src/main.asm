@@ -250,9 +250,10 @@ ENDM
 ;----CellState----------
 get_cell_state MACRO board,i,j,result
 	LOCAL white_cell, end_label     ; LOCAL LABELS
-		MOV BL, i
-		MOV CL, j
-		get_number BL, CL, main, AL        ; Le macro de la question C (Fait par Abdou & Omar)
+        PUSHA
+		MOV DL, i
+		MOV DH, j
+		get_number DL, DH, main, AL        ; Le macro de la question C (Fait par Abdou & Omar)
 		
 		TEST AL, AL
 		JZ white_cell
@@ -267,12 +268,13 @@ get_cell_state MACRO board,i,j,result
 	    MOV result, 0
 	
 	end_label: 
+    POPA
 ENDM
    
    
 ;----------verify_move----------------   
 verify_move MACRO board, i, j, x, y, turn, verified, isDirect, val1, val2
-    LOCAL impossible_move,done,indirect,second_case,case2,white_turn,black_turn,black_turn1,next,next1,impair,impair1,impair2,down,down1,down2,first_column,last_column,continue,continue1,end
+    LOCAL impossible_move,done,indirect,second_case,case2,other_way,white_turn,black_turn,black_turn1,next,next1,impair,impair1,impair2,down,down1,down2,first_column,last_column,continue,continue1,end
     ;DL=i DH=j BH=x CH=y | i and j must be between 1-10 -> (0-9) 'we do the check in get_number & 'DEC 1' in the main'  
 
     get_number i, j, main, n1 
@@ -297,7 +299,7 @@ verify_move MACRO board, i, j, x, y, turn, verified, isDirect, val1, val2
     
     ;----------show_paths (optimization)---------
     CMP isDirect,'n' ; isDirect <- Al
-    JNE end ;-------DIRECT_MOVE-----(always true if the previous checks were true)
+    JNE done ;-------DIRECT_MOVE-----(always true if the previous checks were true)
     
     ;------------INDIRECT_MOVE------------------------------- 
     MOV DL,i 
@@ -402,10 +404,10 @@ show_paths MACRO board,i1,j1,turn1,path1,path2,pawn_position,isDirect
     mov i,DL  ;i<-dl
     mov j,DH  ;j<-dh
 
-    ; MOV x,DL ; BH<-x
-    ; MOV y,DH ; CH<-y 
-    ; MOV BH,x
-    ; MOV CH,y         
+     MOV x,DL ; BH<-x
+     MOV y,DH ; CH<-y 
+     MOV BH,x
+     MOV CH,y         
     MOV BH,DL
     MOV CH,DH         
     MOV AH,turn1 
@@ -501,7 +503,7 @@ show_paths MACRO board,i1,j1,turn1,path1,path2,pawn_position,isDirect
     JE not_verified3 
         MOV AH,n2 
         MOV path2,AH
-    not_verified3:  
+    not_verified3:
 
     end:
     ; return pawn_position 
@@ -513,8 +515,8 @@ START:
     MOV DS, AX 
     board_init board 
     
-    MOV board[26],'w'
-    show_paths board,5,2,'w',path1,path2,pawn_position,isDirect   ;16 
+    MOV board[20],'w'
+    show_paths board,3,2,'b',path1,path2,pawn_position,isDirect   ;16 
     
     ;----BLACK TEST-------------------
     ;move_pawn board,3,2,4,1,'b',turn,verified,isDirect,n1,n2 ; direct     ; 17->21
