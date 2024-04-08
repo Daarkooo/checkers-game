@@ -250,9 +250,9 @@ ENDM
 ;----CellState----------
 get_cell_state MACRO board,i,j,result
 	LOCAL white_cell, end_label     ; LOCAL LABELS
-		MOV DL, i
-		MOV DH, j
-		get_number DL, DH, main, AL        ; Le macro de la question C (Fait par Abdou & Omar)
+		MOV BL, i
+		MOV CL, j
+		get_number BL, CL, main, AL        ; Le macro de la question C (Fait par Abdou & Omar)
 		
 		TEST AL, AL
 		JZ white_cell
@@ -279,10 +279,9 @@ verify_move MACRO board, i, j, x, y, turn, verified, isDirect, val1, val2
         CMP n1,0 ; 0 -> white cell 'invalid' (check get_number)
         JE impossible_move  ; checking if it's a valid input 
     get_cell_state board,i,j,state  
-    
-    MOV AL, state
-    CMP AL, turn ; to make the move -> 'w'='w' / 'b'='b' else impossible_move
-    JNE impossible_move  
+        MOV AL, state
+        CMP AL, turn ; to make the move -> 'w'='w' / 'b'='b' else impossible_move
+        JNE impossible_move  
     
     get_number x, y, main, n2 ; main <- null doesnt effect  
         CMP n2,0
@@ -290,88 +289,45 @@ verify_move MACRO board, i, j, x, y, turn, verified, isDirect, val1, val2
     get_cell_state board, x, y, state        
         CMP state,'0' ; to make the move -> board[x,y] needs to be empty '0'
         JNE impossible_move 
-    
-    MOV AL, i ; i<-DL
-    XOR AH, AH  ; I'LL USE AH for (impair/pair) (odd/even) line
-    MOV BL, 2 ; TEST BL,01h
-    DIV BL ;  divide AL by BL, q -> AL, r -> AH  
 
     MOV BH,n1
     MOV val1,BH ; need it in move function (to avoid the get_number call)
     MOV BH,n2 ; need it in indirect for checking 1st,2nd,8th,last (9/11)<-(n1-n2)
     MOV val2,BH ; need it in move function (to avoid the get_number call)
-
-    MOV DL,n2 ; neg when it's white's turn
-    SUB DL,n1 ; DL <- n2-n1
-    CMP turn,'b' ; CH <- turn 
-    JE black_turn
-        NEG DL ; absolute value----WHITE's TURN---------------------
-    black_turn: 
     
     ;----------show_paths (optimization)---------
     CMP isDirect,'n' ; isDirect <- Al
-    JE indirect
+    JNE end ;-------DIRECT_MOVE-----(always true if the previous checks were true)
     
-    ;--------------DIRECT_MOVE----------------------------------------
-    CMP DL,5 ; the first case of the direct move
-    JE done 
+    ;------------INDIRECT_MOVE------------------------------- 
+    MOV DL,i 
+    MOV DH,j 
+    MOV AH,y 
 
-    CMP AH, 0 ; we check if it's odd or even (the remainder of 'AL div 2' -> AH )   
-    JNE impair 
-        CMP turn,'b'
-        JE second_case
-            ADD DL,2  ; CMP DL,4  if true dl =4 -> (4+2 = 6) ----WHITE's TURN------
-        JMP second_case 
-    impair: 
-        CMP turn,'w'
-        JE second_case
-            ADD DL,2  ; CMP DL,4  if true dl =4 -> (4+2 = 6) ----BLACK's TURN------
+    MOV CL,n1
+    CMP CL,BH ; CMP n1,n2
+    JB down2 
+        MOV DL,x ; n1>n2 =>------going up-------- to avoid the check of both cases(up &down) in different blocks
+        MOV DH,y
+        MOV AH,j
+    down2:
+    CMP DH,AH ; cmp j,y | if we going up we swap 'cmp y,j' ; cmp 6,4 | cmp 8,6
+    JB other_way
+        DEC DH ; dec n1[,j] 
+        JMP next
+    other_way:
+        INC DH ; inc n1[,j]
+    next:
+    INC DL 
 
-    second_case:
-        CMP DL,6 ; the second case of the direct move -----impair-----
-        JE done 
-        JMP impossible_move
-
-    indirect: ;------------INDIRECT_MOVE------------------------------- 
-        cmp state,'0' ; to make the move -> board[x,y] needs to be empty '0'
-        JNE impossible_move ; DL contains SUB n1,n2 / n2,n1 
-        CMP DL,9  ; check if DL (n1-n2) = 9/11 else impossible
-        JE next1
-        CMP DL,11
-        JNE impossible_move
-        next1:
-
-        MOV CL,n1
-        CMP CL,BH ; CMP n1,n2
-        JB down2 
-            MOV CL,BH ; n1>n2 =>------going up-------- NEED IT TO AVOID SUB/DEC
-        down2: 
-        CMP DL,11 
-        JE case2 
-        ;---------case 1------------------
-            ADD CL,4 ; now am using the lower value  (works for both white & black) 'only for indirect part'
-            JMP next
-        case2: ; ---the other way----- 
-            ADD CL,5 ;---BLACK's TURN------ ADD n1,5
-        next:
-
-        CMP AH, 0 ; we check if it's odd or even (the remainder of 'AL div 2' -> AH )
-        JNE impair2 ; for odd lines, no need to inc and dec
-            INC CL ; INC n1 (now am using the lower value  (works for both white & black) 'only for indirect part')
-        impair2:
-
-        get_column CL, j1 ; for both impair & pair
-        get_row CL, i1 ; I used i&j cuz there's no longer a need for the initial i&j
-        MOV DL, i1
-        MOV DH, j1
-        get_number DL ,DH , main, isDirect ; isDirect return makla number (for optimization) 'indirect move'
-        get_cell_state board, DL, DH, state ; depends on the colors (white -> black/ black ->white)
-        CMP state,'0' ; one step (not for dames)
-        JE impossible_move 
-        MOV AL,turn 
-        CMP AL,state ; to make the move -> state needs to be the color of the opposing player (enemy) 
-        JNE done ; make the move
-                    
+    get_cell_state board, DL, DH, state ; depends on the colors (white -> black/ black ->white)
+    CMP state,'0' ; one step (not for dames)
+    JE impossible_move 
+    get_number DL,DH , main, isDirect ; isDirect return makla number (for optimization) 'indirect move'
+    MOV AL,turn 
+    CMP AL,state ; to make the move -> state needs to be the color of the opposing player (enemy) 
+    JNE done ; make the move
+        
     impossible_move:
         MOV verified,0 
         JMP end
@@ -446,10 +402,12 @@ show_paths MACRO board,i1,j1,turn1,path1,path2,pawn_position,isDirect
     mov i,DL  ;i<-dl
     mov j,DH  ;j<-dh
 
-    MOV x,DL ; BH<-x
-    MOV y,DH ; CH<-y 
-    MOV BH,x
-    MOV CH,y         
+    ; MOV x,DL ; BH<-x
+    ; MOV y,DH ; CH<-y 
+    ; MOV BH,x
+    ; MOV CH,y         
+    MOV BH,DL
+    MOV CH,DH         
     MOV AH,turn1 
     MOV turn,AH   
     
@@ -461,32 +419,44 @@ show_paths MACRO board,i1,j1,turn1,path1,path2,pawn_position,isDirect
     CMP turn,'b'
     JE down
         SUB BH,2  ;------WHITE's TURN------- x<-(i-2)
+        DEC DL ; need it to find the maklaNum      
         JMP next
     down: ;------BLACK's TURN-------
         ADD BH,2 ; x<-(i+2)
+        INC DL ; need it to find the maklaNum
     next:
-    MOV x,BH
-    
+    ; MOV x,BH
     MOV AL,'n' ; not direct 
     MOV isDirect,AL
+    
+    INC DH ; need it to find the maklaNum
     ADD CH,2 ; CH<-(y+2) 
     MOV y,CH
-    ;verify_move board,i,j,x,y,turn,verified,isDirect,pawn_position,n2 ; n1[i,j] n2[x,y]      
-         
+    ; PUSH DX
+    verify_move board,i,j,BH,CH,turn,verified,isDirect,pawn_position,n2 ; n1[i,j] n2[x,y]      
+    ; POP DX    
     CMP verified,0
-    JE not_verified  
+    JE not_verified 
+        get_cell_state board, DL, DH, state
+            CMP state,'0' ; one step (not for dames)
+            JE not_verified
         MOV bool,1
         MOV AH,n2
         MOV path1,AH
     not_verified:
 
+    SUB DH,2 ; need it to find the maklaNum
     MOV CH,j
     SUB CH,2 ; CH<-(y-2) 
     MOV y,CH
-    ;verify_move board,i,j,x,y,turn,verified,isDirect,pawn_position,n2 ; n1[i,j] n2[x,y] 
+    
+    verify_move board,i,j,x,y,turn,verified,isDirect,pawn_position,n2 ; n1[i,j] n2[x,y] 
     
     CMP verified,0
     JE not_verified1 
+        get_cell_state board, DL, DH, state
+            CMP state,'0' ; one step (not for dames)
+            JE not_verified
         MOV bool,1
         MOV AH,n2
         MOV path2,AH
