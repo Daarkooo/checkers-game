@@ -250,7 +250,6 @@ ENDM
 ;----CellState----------
 get_cell_state MACRO board,i,j,result
 	LOCAL white_cell, end_label     ; LOCAL LABELS
-        PUSHA
 		MOV DL, i
 		MOV DH, j
 		get_number DL, DH, main, AL        ; Le macro de la question C (Fait par Abdou & Omar)
@@ -268,13 +267,12 @@ get_cell_state MACRO board,i,j,result
 	    MOV result, 0
 	
 	end_label: 
-    POPA
 ENDM
    
    
 ;----------verify_move----------------   
 verify_move MACRO board, i, j, x, y, turn, verified, isDirect, val1, val2
-    LOCAL impossible_move,done,indirect,second_case,case2,other_way,white_turn,black_turn,black_turn1,next,next1,impair,impair1,impair2,down,down1,down2,first_column,last_column,continue,continue1,end
+    LOCAL impossible_move, done, other_way, down, end, next
     ;DL=i DH=j BH=x CH=y | i and j must be between 1-10 -> (0-9) 'we do the check in get_number & 'DEC 1' in the main'  
 
     get_number i, j, main, n1 
@@ -297,7 +295,7 @@ verify_move MACRO board, i, j, x, y, turn, verified, isDirect, val1, val2
     MOV BH,n2 ; need it in indirect for checking 1st,2nd,8th,last (9/11)<-(n1-n2)
     MOV val2,BH ; need it in move function (to avoid the get_number call)
     
-    ;----------show_paths (optimization)---------
+    ;----------show_paths (optimization)---------(to check only one block direct/indirect)
     CMP isDirect,'n' ; isDirect <- Al
     JNE done ;-------DIRECT_MOVE-----(always true if the previous checks were true)
     
@@ -308,12 +306,12 @@ verify_move MACRO board, i, j, x, y, turn, verified, isDirect, val1, val2
 
     MOV CL,n1
     CMP CL,BH ; CMP n1,n2
-    JB down2 
+    JB down
         MOV DL,x ; n1>n2 =>------going up-------- to avoid the check of both cases(up &down) in different blocks
         MOV DH,y
         MOV AH,j
-    down2:
-    CMP DH,AH ; cmp j,y | if we going up we swap 'cmp y,j' ; cmp 6,4 | cmp 8,6
+    down:
+    CMP DH,AH ; cmp j,y | if we going up we swap 'cmp y,j' 
     JB other_way
         DEC DH ; dec n1[,j] 
         JMP next
@@ -404,12 +402,10 @@ show_paths MACRO board,i1,j1,turn1,path1,path2,pawn_position,isDirect
     mov i,DL  ;i<-dl
     mov j,DH  ;j<-dh
 
-     MOV x,DL ; BH<-x
-     MOV y,DH ; CH<-y 
-     MOV BH,x
-     MOV CH,y         
-    MOV BH,DL
-    MOV CH,DH         
+    MOV x,DL ; BH<-x
+    MOV y,DH ; CH<-y 
+    MOV BH,x
+    MOV CH,y                
     MOV AH,turn1 
     MOV turn,AH   
     
@@ -421,44 +417,35 @@ show_paths MACRO board,i1,j1,turn1,path1,path2,pawn_position,isDirect
     CMP turn,'b'
     JE down
         SUB BH,2  ;------WHITE's TURN------- x<-(i-2)
-        DEC DL ; need it to find the maklaNum      
         JMP next
     down: ;------BLACK's TURN-------
         ADD BH,2 ; x<-(i+2)
-        INC DL ; need it to find the maklaNum
     next:
-    ; MOV x,BH
+    MOV x,BH
     MOV AL,'n' ; not direct 
     MOV isDirect,AL
     
-    INC DH ; need it to find the maklaNum
     ADD CH,2 ; CH<-(y+2) 
     MOV y,CH
-    ; PUSH DX
-    verify_move board,i,j,BH,CH,turn,verified,isDirect,pawn_position,n2 ; n1[i,j] n2[x,y]      
-    ; POP DX    
+    verify_move board,i,j,x,y,turn,verified,isDirect,pawn_position,n2 ; n1[i,j] n2[x,y]      
+
     CMP verified,0
     JE not_verified 
-        get_cell_state board, DL, DH, state
-            CMP state,'0' ; one step (not for dames)
-            JE not_verified
         MOV bool,1
         MOV AH,n2
         MOV path1,AH
     not_verified:
-
-    SUB DH,2 ; need it to find the maklaNum
+    
+    MOV AL,'n' ; not direct 
+    MOV isDirect,AL
+    
     MOV CH,j
     SUB CH,2 ; CH<-(y-2) 
     MOV y,CH
-    
     verify_move board,i,j,x,y,turn,verified,isDirect,pawn_position,n2 ; n1[i,j] n2[x,y] 
     
     CMP verified,0
     JE not_verified1 
-        get_cell_state board, DL, DH, state
-            CMP state,'0' ; one step (not for dames)
-            JE not_verified
         MOV bool,1
         MOV AH,n2
         MOV path2,AH
@@ -484,7 +471,6 @@ show_paths MACRO board,i1,j1,turn1,path1,path2,pawn_position,isDirect
     MOV isDirect,AL 
     INC CH ; CH<-(j+1)  
     MOV y,CH
-
     verify_move board,i,j,x,y,turn,verified,isDirect,pawn_position,n2 ; n1[i,j] n2[x,y] 
 
     CMP verified,0
@@ -496,7 +482,6 @@ show_paths MACRO board,i1,j1,turn1,path1,path2,pawn_position,isDirect
     MOV CH,j
     DEC CH ; CH<-(j-1) 
     MOV y,CH 
-    
     verify_move board,i,j,x,y,turn,verified,isDirect,pawn_position,n2 ; n1[i,j] n2[x,y] 
 
     CMP verified,0
@@ -506,7 +491,6 @@ show_paths MACRO board,i1,j1,turn1,path1,path2,pawn_position,isDirect
     not_verified3:
 
     end:
-    ; return pawn_position 
 ENDM
 
 
@@ -515,9 +499,14 @@ START:
     MOV DS, AX 
     board_init board 
     
-    MOV board[20],'w'
+    MOV board[20],'b'   
+    MOV board[21],'w'
     show_paths board,3,2,'b',path1,path2,pawn_position,isDirect   ;16 
-    
+      
+    ;MOV board[28],'w'   
+    ;MOV board[29],'w'
+    ;show_paths board,6,3,'w',path1,path2,pawn_position,isDirect
+      
     ;----BLACK TEST-------------------
     ;move_pawn board,3,2,4,1,'b',turn,verified,isDirect,n1,n2 ; direct     ; 17->21
     ;move_pawn board,3,2,4,3,'b',turn,verified,isDirect,n1,n2 ; other way  ; 17->22
