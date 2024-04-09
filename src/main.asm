@@ -37,6 +37,7 @@
     main DB ? 
     newline DB 10,13,"$"
     verified DB ?
+    moves DB 50 dup(?)
     board DB 50 dup(?) 
     bool DB 0 ; need it in showpaths 
     num DB ?  
@@ -296,7 +297,7 @@ verify_move MACRO board, i, j, x, y, turn, verified, isDirect, val1, val2
     MOV BH,n2 ; need it in indirect for checking 1st,2nd,8th,last (9/11)<-(n1-n2)
     MOV val2,BH ; need it in move function (to avoid the get_number call)
     
-    ;----------show_paths (optimization)---------(to check only one block direct/indirect)
+    ;----------show_path (optimization)---------(to check only one block direct/indirect)
     CMP isDirect,'n' ; isDirect <- Al
     JNE done ;-------DIRECT_MOVE-----(always true if the previous checks were true)
     
@@ -390,8 +391,8 @@ move_pawn MACRO board,x,y,path1,path2,pawn_position,makla,isDirect
 ENDM
 
 
-;------show_paths----------
-show_paths MACRO board,i1,j1,turn1,path1,path2,pawn_position,makla,isDirect
+;------show_path----------
+show_path MACRO board,i1,j1,turn1,path1,path2,pawn_position,makla,isDirect
     LOCAL end, next, next1, not_verified, not_verified1, not_verified2, not_verified3, down, down1 
    
     MOV DL,i1
@@ -491,6 +492,143 @@ show_paths MACRO board,i1,j1,turn1,path1,path2,pawn_position,makla,isDirect
     end:
 ENDM
 
+show_path_dame MACRO board,i1,j1,turn1,path1,path2,pawn_position,makla,isDirect
+    LOCAL end, next, next1, not_verified, not_verified1, not_verified2, not_verified3, down, down1 
+   
+    MOV DL,i1
+    MOV DH,j1
+    mov i,DL  ;i<-dl
+    mov j,DH  ;j<-dh
+
+    MOV x,DL ; BH<-x
+    MOV y,DH ; CH<-y 
+    MOV BH,x
+    MOV CH,y                
+    MOV AH,turn1 
+    MOV turn,AH   
+    
+    MOV AL,-1 ;
+    MOV path1,AL
+    MOV path2,AL ; in case there's no move
+    
+    ;---------INDIRECT---------------- we prioritize the indirect move  
+    SUB BH,2  ; x<-(i-2)
+
+    MOV CX,2
+    down:
+        PUSH CX
+
+        MOV x,BH
+        MOV AL,'n' ; not direct 
+        MOV isDirect,AL
+        
+        ADD CH,2 ; CH<-(y+2) 
+        MOV y,CH
+        verify_move board,i,j,x,y,turn,verified,isDirect,pawn_position,n2 ; n1[i,j] n2[x,y]      
+
+        CMP verified,0
+        JE not_verified 
+            MOV bool,1
+            MOV AH,n2
+            MOV path1,AH
+            MOV AH,isDirect
+            MOV makla,AH ; return maklaNum for path1
+        not_verified:
+        MOV AL,'n' ; not direct 
+        MOV isDirect,AL
+
+        MOV CH,j
+        SUB CH,2 ; CH<-(y-2) 
+        MOV y,CH
+        verify_move board,i,j,x,y,turn,verified,isDirect,pawn_position,n2 ; n1[i,j] n2[x,y] 
+        
+        CMP verified,0 
+        JE not_verified1 
+            MOV bool,1 ; isDirect'll return maklaNum for path2
+            MOV AH,n2
+            MOV path2,AH
+        not_verified1:
+
+        MOV BH,i
+        MOV CH,j
+
+        ADD BH,2 ; x<-(i+2)
+        POP CX
+    LOOP down 
+
+    CMP bool,1
+    JE end ; if there's a move in indirect, isDirect'll return maklaNum -> isDirect != 'n'
+    
+    ;---------DIRECT----------------
+    MOV BH,i
+    MOV CH,j
+
+    DEC BH ; x<-(i-1)
+    
+    MOV CX,2
+    down1:
+        PUSH CX
+        MOV x,BH
+
+        MOV AL,'y' ; direct direct
+        MOV isDirect,AL 
+        INC CH ; CH<-(j+1)  
+        MOV y,CH
+        PUSH CX 
+
+        LEA SI,moves
+        long_moves:
+            PUSH SI
+            verify_move board,i,j,x,y,turn,verified,isDirect,pawn_position,n2 ; n1[i,j] n2[x,y]
+            POP SI
+            MOV BYTE PTR [SI],n2 ; byte pointer
+		    INC SI
+
+            INC CH ; CH<-(j+1)  
+            MOV y,CH
+
+            cmp isDirect,1
+            JE long_moves 
+
+        POP CX
+        CMP verified,0
+        JE not_verified2  
+            MOV AH,n2
+            MOV path1,AH
+        not_verified2:
+    
+        MOV CH,j
+        DEC CH ; CH<-(j-1) 
+        MOV y,CH 
+
+        long_moves:
+            PUSH SI
+            verify_move board,i,j,x,y,turn,verified,isDirect,pawn_position,n2 ; n1[i,j] n2[x,y]
+            POP SI
+            MOV BYTE PTR [SI],n2 ; byte pointer
+		    INC SI
+
+            DEC CH ; CH<-(j-1)  
+            MOV y,CH
+
+            cmp isDirect,1
+            JE long_moves 
+
+        CMP verified,0
+        JE not_verified3 
+            MOV AH,n2 
+            MOV path2,AH
+        not_verified3:
+
+        MOV BH,i
+        MOV CH,j
+        
+        INC BH ; x<-(i+1)
+        POP CX
+    LOOP down1    
+
+    end:
+ENDM
 
 START:
     MOV AX, @DATA
@@ -500,12 +638,12 @@ START:
     ;----BLACK TEST-------------------                    
     ;MOV board[20],'b'   
     ;MOV board[21],'w'
-    ;show_paths board,3,2,'b',path1,path2,pawn_position,makla,isDirect
+    ;show_path board,3,2,'b',path1,path2,pawn_position,makla,isDirect
 
     ;move_pawn board,5,4,path1,path2,pawn_position,makla,isDirect  
     ;
     ;mov board[23],'w'
-    ;show_paths board,3,8,'b',path1,path2,pawn_position,makla,
+    ;show_path board,3,8,'b',path1,path2,pawn_position,makla,
 
     ;move_pawn board,5,6,path1,path2,pawn_position,makla,isDirect
                                                              
@@ -513,11 +651,11 @@ START:
     ;----WHITE TEST------------------  
     ;MOV board[28],'w'   
     MOV board[29],'b'
-    show_paths board,6,7,'w',path1,path2,pawn_position,makla,isDirect
+    show_path board,6,7,'w',path1,path2,pawn_position,makla,isDirect
                                                                
     move_pawn board,4,9,path1,path2,pawn_position,makla,isDirect
     
-    ;show_paths board,6,1,'w',path1,path2,pawn_position,makla,isDirect
+    ;show_path board,6,1,'w',path1,path2,pawn_position,makla,isDirect
                                                                
     ;move_pawn board,5,2,path1,path2,pawn_position,makla,isDirect 
     
