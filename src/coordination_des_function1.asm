@@ -185,7 +185,10 @@ print_string MACRO reference
 	LEA DX, reference
 	INT 21h
 ENDM
-
+scan_char macro 
+    mov ah,01h
+    int 21h
+endm
 
 print_board MACRO board
 	LOCAL outer_loop, inner_loop1, inner_loop2,row_end
@@ -234,7 +237,7 @@ ENDM
 pre_deplacement macro i,j,x,y,dep_possible,turn,direct,droite;j)macro qui verifie si le deplacement est possible de i,j a x,y    ;indice 0..9;possible 1 oui 0 non;direct 1 indirect 2 ;droite 1 gauche 0
     
 LOCAL pion_blanc,deplacement_impossible,deplacement_possible,deplacement_indirect,cologne_gauche,cologne_droite,cologne_gauche2,cologne_droite2,fin,deplacement_direct,blancc,noiree,commun           
-
+pusha
 cmp x,0                     ;verifier si la destination est coerente ou non 
 jl deplacement_impossible
 cmp x,9                
@@ -320,6 +323,7 @@ jmp noiree
 blancc:
 inc al
 noiree:
+
 getCellState board,al,bl,result
 cmp result,ch                        ;verifier si la case d'avant est occuper par un pion approprie pour le deplacement
 jne deplacement_impossible                                                                     
@@ -347,17 +351,35 @@ print_string impossible
 print_string newLine db 13,10,'$'
 mov dep_possible,0         
 fin:
-    
+popa    
 endm    
 
 deplacement macro i,j,x,y,turn,droite,direct              ;k)macro qui effectue le deplacement
-    
-LOCAL etiquette,droitee,gauchee,impossiblee,blacke,whitee,fin                   ;)by rayanch
-     
-pre_deplacement i,j,x,y,dep_possible,turn,direct,droite     ;verifier si le deplacement est possible
-cmp dep_possible,1
-jne impossiblee
+pusha    
+LOCAL etiquette,droitee,gauchee,impossiblee,blacke,whitee,fin,finn,continue,deplacement_gauche,not_long,blackee,whiteee,debut                   ;)by rayanch
 
+mov dep_possible2,0
+debut: 
+    
+pre_deplacement i,j,x,y,dep_possible,turn,direct,droite     ;verifier si le deplacement est possible
+cmp dep_possible,0
+je deplacement_gauche
+
+cmp dep_possible2,0
+je  continue
+print_string chaine
+print_string newLine
+scan_char
+cmp al,'d'
+je continue
+                           ;choisir entre droite et gauche
+deplacement_gauche:
+cmp dep_possible2,0
+je  impossiblee
+add bl,4
+mov y,bl
+
+continue:
 mov al,i           ;deplacement possible
 mov bl,j
 mov cl,direct       ;direct represente si c'est un deplecament direct ou indirect
@@ -392,8 +414,8 @@ getNumber i,j,result
 mov dl,result
 xor dh,dh                 ;remplacement de la case d'arriver selon notre pion
 mov si,dx
-mov al,turn
-mov board[si-1],al
+mov cl,turn
+mov board[si-1],cl
 
 print_string reussie
 print_string newLine db 13,10,'$'
@@ -401,7 +423,30 @@ jmp fin
 impossiblee:
 print_string echouer
 print_string newLine db 13,10,'$'
+jmp finn
 fin:
+
+mov al,i
+cmp direct,2
+jne finn
+cmp turn,'b'          ;selectionne la direction a emprunter selon notre toure
+ je blackee                                                                  
+ sub al,2           ;black en avant  blanc e arriere                                                          
+ jmp whiteee
+ blackee:
+ add al,2
+ whiteee:
+ mov x,al
+add bl,2                     ;verifier la case de droite
+mov y,bl
+                                                         ;possibilite de long move      ;temps d'arret input
+pre_deplacement i,j,x,y,dep_possible2,turn,direct,droite       ;verifier si le deplacement est possible
+sub bl,4
+mov y,bl                                                               ;makla nas sif
+jmp debut
+
+finn:
+popa
 endm
 
 .model small
@@ -419,16 +464,19 @@ endm
  impossible db " deplacement impossible$"
  
  newLine db 13,10,'$'
- i db 3
- j db 0
- x db 5
- y db 2 
- dep_possible db ?  
+ i db 6
+ j db 1
+ x db 4
+ y db 3 
+ dep_possible db ?
+ dep_possible2 db ?  
  turn db ?
  direct db ?     ;1 direct 2 indirect
  droite db ?     ;1 droite 0 gauche
  reussie db " deplacement reussie$"
  echouer db " deplacement echouer$"
+ long db ?       ;1 long move 0 none
+ chaine db "choisie entre la gauche et la droite d pour droite g pour gauche$"
  
 .code
 
@@ -444,12 +492,14 @@ endm
  ;find_column bl,result
  ;getNumber 3,2,result
   board_init board
-  mov board[20],'w'
+  mov board[26],'b'
+  mov board[10],'0'
+  mov board[12],'0'
  ;CaseColor 4,3
  ;getCellState board,3,8,result
-  print_board board
+  ;print_board board
   ;pre_deplacement i,j,x,y,dep_possible,'w',direct,droite
-  mov turn,'b'
+  mov turn,'w'
   deplacement i,j,x,y,turn,droite,direct
   print_board board
  
