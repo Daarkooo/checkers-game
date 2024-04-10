@@ -354,7 +354,7 @@ fin:
 popa    
 endm    
 
-deplacement macro i,j,x,y,turn,droite,direct              ;k)macro qui effectue le deplacement
+deplacement macro i,j,x,y,turn              ;k)macro qui effectue le deplacement
 pusha    
 LOCAL etiquette,droitee,gauchee,impossiblee,blacke,whitee,fin,finn,continue,deplacement_gauche,not_long,blackee,whiteee,debut                   ;)by rayanch
 
@@ -370,14 +370,16 @@ je  continue
 print_string chaine
 print_string newLine
 scan_char
+
 cmp al,'d'
-je continue
+jne continue
                            ;choisir entre droite et gauche
 deplacement_gauche:
 cmp dep_possible2,0
 je  impossiblee
 add bl,4
 mov y,bl
+mov droite,1
 
 continue:
 mov al,i           ;deplacement possible
@@ -429,9 +431,9 @@ fin:
 mov al,i
 cmp direct,2
 jne finn
-cmp turn,'b'          ;selectionne la direction a emprunter selon notre toure
+cmp turn,'b'          ;selectionne la direction a emprunter selon notre tour
  je blackee                                                                  
- sub al,2           ;black en avant  blanc e arriere                                                          
+ sub al,2           ;black en avant  blanc en arriere                                                          
  jmp whiteee
  blackee:
  add al,2
@@ -448,6 +450,10 @@ jmp debut
 finn:
 popa
 endm
+
+
+
+
 
 .model small
 .data
@@ -497,7 +503,7 @@ endm
   mov board[12],'0'
  ;CaseColor 4,3
  ;getCellState board,3,8,result
-  ;print_board board
+  print_board board
   ;pre_deplacement i,j,x,y,dep_possible,'w',direct,droite
   mov turn,'w'
   deplacement i,j,x,y,turn,droite,direct
