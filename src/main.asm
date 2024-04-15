@@ -247,7 +247,35 @@ print_board MACRO board
 		POP CX
 	LOOP outer_loop
 ENDM
-   
+;-----get_cell_color-------------
+ get_cell_color MACRO row, column
+    LOCAL BlackCase, fin
+
+        ; (row % 2 === column % 2)
+        mov al, column
+        xor ah, ah
+        mov cl, 2
+        div cl
+        mov bl, ah  ; Store (column % 2) in bl
+        mov al, row
+        xor ah, ah
+        div cl
+        cmp ah, bl  ; Compare (row % 2) with (column % 2)
+        jnz BlackCase  ; not a White Square
+    
+        ; White square
+        lea dx,White
+        mov ah,09
+        int 21h
+        jmp fin
+    
+    BlackCase:
+        lea dx,Black
+        mov ah,09
+        int 21h
+    
+    fin: 
+ENDM  
    
 ;----CellState----------
 get_cell_state MACRO board,i,j,result
@@ -325,7 +353,7 @@ verify_move MACRO board, i, j, x, y, turn, verified, isDirect, val1, val2
     get_number DL,DH , main, isDirect ; isDirect return makla number (for optimization) 'indirect move'
     get_cell_state board, DL, DH, state ; depends on the colors (white -> black/ black ->white)
     CMP state,'0' ; one step (not for dames)
-    JE impossible_move 
+    JE impossible_move  
     MOV AL,turn 
     CMP AL,state ; to make the move -> state needs to be the color of the opposing player (enemy) 
     JNE done ; make the move
@@ -367,12 +395,12 @@ move_pawn MACRO board,x,y,path1,path2,pawn_position,makla,isDirect
         
         CMP isDirect,'y'
         JNE indirect 
-            MOV AL,board[DI] 
+            MOV AL,board[DI] ;---DIRECT MOVE---------
             MOV board[DI],'0'
             MOV board[SI],AL                    
             JMP move
         indirect:
-            MOV AL,board[DI]
+            MOV AL,board[DI] ;---INDIRECT MOVE---------
             MOV board[DI],'0'
             MOV board[SI],AL 
             
@@ -572,22 +600,22 @@ show_path_dame MACRO board,i1,j1,turn1,path1,path2,pawn_position,makla,isDirect
 
         MOV AL,'y' ; direct direct
         MOV isDirect,AL 
-        INC CH ; CH<-(j+1)  
+        INC CH ; CH<-(j+1)  ; a -> b 
         MOV y,CH
         PUSH CX 
-
         LEA SI,moves
         long_moves:
             PUSH SI
             verify_move board,i,j,x,y,turn,verified,isDirect,pawn_position,n2 ; n1[i,j] n2[x,y]
             POP SI
+            
             MOV BYTE PTR [SI],n2 ; byte pointer
 		    INC SI
 
             INC CH ; CH<-(j+1)  
             MOV y,CH
-
-            cmp isDirect,1
+            ; i+=1 (x+=1)
+            cmp verified,1
             JE long_moves 
 
         POP CX
