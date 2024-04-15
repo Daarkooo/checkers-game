@@ -72,6 +72,38 @@
         CALL __awaitMouseLeftClick
     ENDM
 
+    getCoordsFromMouseClick PROC ; xOffset, yOffset, cellSize, xPosition, yPosition
+        PUSH BP
+        MOV BP, SP
+
+        ; [BP + 12]: xOffset
+        ; [BP + 10]: yOffset
+        ; [BP + 8]: size
+        ; [BP + 6]: xPosition
+        ; [BP + 4]: yPosition
+
+        ; x = column * size + xOffset
+        ; y = row * size + yOffset
+
+        ; x position 
+        XOR DX, DX
+        MOV AX, [BP + 6]
+        SUB AX, [BP + 12]
+        DIV WORD PTR [BP + 8]
+        MOV CX, AX
+
+        ; y position
+        XOR DX, DX
+        MOV AX, [BP + 4]
+        SUB AX, [BP + 10]
+        DIV WORD PTR [BP + 8]
+        MOV DX, AX
+
+        MOV SP, BP
+        POP BP
+        RET 10
+    getCoordsFromMouseClick ENDP
+    
     main PROC
         MOV AX, @DATA
         MOV DS, AX
@@ -80,7 +112,7 @@
         MOV BP, SP
 
         ; set up video mode
-        MOV AX, 0012h   ; 640x480 16-color
+        MOV AX, 0010h   ; 640x350 16 colors
         INT 10h
 
         ; set up mouse
@@ -91,26 +123,55 @@
         MOV AX, 0001h
         INT 33h
 
-        ; went for maximum range
+        ; will do (maximum range - 3)
         ; horizontal range
         MOV AX, 0007h
         MOV CX, 0
-        MOV DX, 640
+        MOV DX, 637
         INT 33h
 
         ; vertical range
         MOV AX, 0008h
         MOV CX, 0
-        MOV DX, 480
+        MOV DX, 347
         INT 33h
 
-        ; print str1
-        LEA DX, str1
-        MOV AH, 09h
-        INT 21h
+        ; drawBoard 295, 5, 0Fh, 06h, 34
 
-        LEA AX, eventHandler
-        awaitMouseLeftClick AX
+        ; TESTING FOR ABDOU'S FUNCTION MAKEMOVE_GUI WITH MOUSE, FAILED MISERABLY
+        
+        ; ; ************************************************************
+        ; Board_init_GUI myBoard, 04h, 00h
+
+        ; main_L1:
+        ;     LEA AX, getCoordsFromMouseClick
+        ;     awaitMouseClick AX, 0, 0, 34
+
+        ;     ; CALL liveUsage
+
+        ;     get_number DL, CL, main, num1
+
+        ;     XOR AX, AX
+        ;     MOV AL, num1
+
+        ;     ; CALL liveUsage
+
+        ;     LEA AX, getCoordsFromMouseClick
+        ;     awaitMouseClick AX, 0, 0, 34
+
+        ;     get_number DL, CL, main, num2
+
+        ;     XOR AX, AX
+        ;     XOR BX, BX
+
+        ;     MOV AL, num1
+        ;     MOV BL, num2
+
+        ;     ; CALL liveUsage
+
+        ;     Move_GUI num1, num2, 0000h
+        ; JMP main_L1
+        ; ; ************************************************************
 
         POP BP
         MOV AX, 4C00h
