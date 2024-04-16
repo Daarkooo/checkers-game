@@ -12,16 +12,20 @@ DATA SEGMENT PARA 'DATA'
     ;?board vars:end
 
     ;?menu vars:start
-        menu_column_to_start db 3;! the column to start the menu
+        menu_column_to_start db 30;! the column to start the menu
         show_menu db 1;! 0=>not showing the menu, 1=>showing the menu
         side_menu_title db 'MENU:', '$'
         side_menu_play_multi_player db 'Multi player - S -', '$'
         side_menu_play_single_player db 'Single player - M -', '$'
+        side_menu_theme db 'Choose Theme:','$'
+        themes_row dw 167
         wanna_play_multi_player dw 1
+        side_menu_makla_machi_sif db 'makla: machi sif - A -','$'
+        side_menu_makla_sif db 'makla: sif - B -','$'
+        wanna_eat_by_my_choise dw 1
         side_menu_functions db 'functions: - f -', '$'
-        mlti_player_str db 'multi player function press - R - to get back', '$'
-        single_player_str db 'single player function press - R - to get back', '$'
         side_menu_exit db 'click - E - to exit', '$'
+        side_menu_start_game db 'Start - G -','$'
     ;?menu vars:end
     ;?border vars:start
         ;?menu border top:start
@@ -49,6 +53,7 @@ DATA SEGMENT PARA 'DATA'
         menu_border_right_width dw 0
         ;?menu border right:end
         ball_size dw 10 ;! the size of the ball ===== the size of the border(height)
+        ball_color db 06h;
         ball_black_x dw 0
         ball_black_y dw 0
         ball_white_x dw 0
@@ -123,7 +128,7 @@ MAIN PROC FAR
     ;?board:start the hex of white color is:
         setGraphics 10h;! set graphics mode 10h (640x350, 16 colors)
         ;drawBoard 0Fh, 06h, 35;! draw the board with white and black cells and size 35 for each cell=>the width of the board is 35*10=350 and the height is 35*10=350
-        drawBoard 300, 0Ah, 0Fh, 06h, 33;! draw the board with white and black cells and size 35 for each cell=>the width of the board is 35*10=350 and the height is 35*10=350
+        ; drawBoard 300, 0Ah, 0Fh, 06h, 33;! draw the board with white and black cells and size 35 for each cell=>the width of the board is 35*10=350 and the height is 35*10=350
     ;?board:start
     ;?during game menu:start
     CMP show_menu, 1
@@ -192,7 +197,7 @@ side_menu PROC NEAR
     lea dx,side_menu_title;! load the address of the string
     int 21h;! call DOS
     ;?title:end
-    ;?new game multi player:start
+    ;?new game play:start
     mov ah,02h;! set cursor position
     mov bh,0;! page 0
     mov dh,0Ah;! row
@@ -208,12 +213,106 @@ side_menu PROC NEAR
     lea dx,side_menu_play_multi_player;! load the address of the string
     pipit:
     int 21h;! call DOS
-    ;?new game multi player:end
+    ;?new game play:end
+
+    ;?themes :start
+    ; mov ah,02h;! set cursor position
+    ; mov bh,0;! page 0
+    ; mov dh,12;! row
+    ; mov dl,menu_column_to_start;! column
+    ; int 10h;! call BIOS
+
+    ; mov ah,09h;! print string
+    ; lea dx,side_menu_theme;!
+    ; int 21h;! call DOS
+    ;?themes :end
+    
+    ;?draw the balls like themes:start
+    mov ax,10
+    mov ball_size,ax
+    ;?first theme white black :start
+    mov ball_white_x,250
+    mov ax,themes_row
+    mov ball_white_y,ax
+    mov al,0Fh
+    mov ball_color,al;
+    call draw_ball_white
+
+    mov ax,ball_white_x
+    add ax,ball_size
+    mov ball_black_x,ax
+    mov ax,themes_row
+    mov ball_black_y,ax
+    mov al,06h
+    mov ball_color,al
+    call draw_ball_black
+    ;?first theme white black :end
+
+    ;?second theme red white :start
+    mov ax,ball_black_x
+    add ax,ball_size
+    add ax,ball_size
+    mov ball_white_x,ax
+    mov ax,themes_row
+    mov ball_white_y,ax
+    ;!white ball
+    mov ball_color,0Fh
+    call draw_ball_white
+
+    mov ax,ball_white_x
+    add ax,ball_size
+    mov ball_black_x,ax
+    mov ax,themes_row
+    mov ball_black_y,ax
+    ;!red ball
+    mov al,04h
+    mov ball_color,al
+    call draw_ball_black
+    ;?second theme red white :end
+
+    ;?third theme red black :start
+    mov ax,ball_black_x
+    add ax,ball_size
+    add ax,ball_size
+    mov ball_white_x,ax
+    mov ax,themes_row
+    mov ball_white_y,ax
+    mov ball_color,06h
+    call draw_ball_white
+
+    mov ax,ball_white_x
+    add ax,ball_size
+    mov ball_black_x,ax
+    mov ax,themes_row
+    mov ball_black_y,ax
+    ;!red ball
+    mov al,04h
+    mov ball_color,al
+    call draw_ball_black
+    ;?third theme red black :end
+    ;?makla types:start
+    mov ah,02h;! set cursor position
+    mov bh,0;! page 0
+    mov dh,12h;! row
+    mov dl,menu_column_to_start;! column
+    int 10h;! call BIOS
+
+    mov ah,09h;! print string
+    cmp wanna_eat_by_my_choise,1
+    je self_eat
+    lea dx,side_menu_makla_sif
+    jmp sot
+    self_eat:
+    lea dx,side_menu_makla_machi_sif;
+    sot:
+    int 21h;! call DOS
+    ;?makla types:end
+    ;?draw the balls like themes:end
 
     ;?functions:start
     mov ah,02h;! set cursor position
     mov bh,0;! page 0
-    mov dh,12;! row
+    mov dh,14;! row
     mov dl,menu_column_to_start;! column
     int 10h;! call BIOS
 
@@ -225,7 +324,7 @@ side_menu PROC NEAR
     ;?exit:start
     mov ah,02h;! set cursor position
     mov bh,0;! page 0
-    mov dh,14;! row
+    mov dh,16;! row
     mov dl,menu_column_to_start;! column
     int 10h;! call BIOS
 
@@ -233,6 +332,17 @@ side_menu PROC NEAR
     lea dx,side_menu_exit;! load the address of the string
     int 21h;! call DOS
     ;?exit:end
+    ;?start game:start
+    mov ah,02h;! set cursor position
+    mov bh,0;! page 0
+    mov dh,20;! row
+    mov dl,menu_column_to_start;! column
+    int 10h;! call BIOS
+
+    mov ah,09h;! print string
+    lea dx,side_menu_start_game;
+    int 21h;! call DOS
+    ;?start game:end
 
     ;?wait for key:start
     mov ah,00h
@@ -244,18 +354,40 @@ side_menu PROC NEAR
     je multi_player_game
     cmp al,'m'
     je multi_player_game
+    cmp al,'A'
+    je maklaSif
+    cmp al,'a'
+    je maklaSif
+    cmp al,'B'
+    je maklaMashiSif
+    cmp al,'b'
+    je maklaMashiSif
     cmp al,'E'
     je exit_game
     cmp al,'e'
     je exit_game
     cmp al,'S'
     je single_player_game
+    cmp al,'G'
+    je startGame
+    cmp al,'g'
+    je startGame
     cmp al,'s'
     je single_player_game
     jmp check_key
     multi_player_game:
     call multi_player_Function
     ;!mov show_menu,0
+    RET
+    maklaSif:
+    call print_maklaSif
+    RET
+    maklaMashiSif:
+    call print_maklaMashiSif
+    RET
+    startGame:
+    call clear_screen
+    drawBoard 300, 0Ah, 0Fh, 06h, 33;! draw the board with white and black cells and size 35 for each cell=>the width of the board is 35*10=350 and the height is 35*10=350
     RET
     exit_game:
     call clear_screen
@@ -286,16 +418,27 @@ single_player_function PROC NEAR
     call side_menu
     RET
 single_player_function ENDP
+print_maklaSif PROC NEAR
+    mov wanna_eat_by_my_choise,0
+    call side_menu
+    RET
+print_maklaSif ENDP
+print_maklaMashiSif PROC NEAR
+    mov wanna_eat_by_my_choise,1
+    call side_menu
+    RET
+print_maklaMashiSif ENDP
 ;?mock functions:end
 
 ;?borders :start
+
 draw_ball_black PROC NEAR
  ;todo draw the ball:start
    MOV cx,ball_black_x;!position x column
    MOV dx,ball_black_y;!position y row
     draw_ball_black_horizontal:
         MOV AH,0Ch;! set pixel
-        MOV AL,06h;! color black
+        MOV AL,ball_color;
         MOV bh,0;! page 0
         INT 10h;! call BIOS
 
@@ -314,13 +457,14 @@ draw_ball_black PROC NEAR
         JNG draw_ball_black_horizontal;! if we didn't reach the end, draw the next pixel
     RET
 draw_ball_black ENDP
+
 draw_ball_white PROC NEAR
  ;todo draw the ball:start
    MOV cx,ball_white_x;!position x column
    MOV dx,ball_white_y;!position y row
     draw_ball_white_horizontal:
         MOV AH,0Ch;! set pixel
-        MOV AL,0Fh;! color white
+        MOV AL,ball_color;
         MOV bh,0;! page 0
         INT 10h;! call BIOS
 
