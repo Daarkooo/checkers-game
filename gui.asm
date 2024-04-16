@@ -26,13 +26,13 @@ DATA SEGMENT PARA 'DATA'
         menu_border_top_x dw 10
         menu_border_top_y dw 10
         menu_border_top_height dw 0
-        menu_border_top_width dw 12
+        menu_border_top_width dw 12;! the width of the border
         ;?menu border top:end
         ;?menu border bottom:start
         menu_border_bottom_x dw 10
         menu_border_bottom_y dw 330
         menu_border_bottom_height dw 0
-        menu_border_bottom_width dw 12
+        menu_border_bottom_width dw 12;! the width of the border
         ;?menu border bottom:end
         ;?menu border left:start
         menu_border_left_x dw 10
@@ -46,7 +46,7 @@ DATA SEGMENT PARA 'DATA'
         menu_border_right_height dw 12
         menu_border_right_width dw 0
         ;?menu border right:end
-        ball_size dw 10
+        ball_size dw 10 ;! the size of the ball ===== the size of the border(height)
         ball_black_x dw 0
         ball_black_y dw 0
         ball_white_x dw 0
@@ -156,17 +156,18 @@ clear_screen ENDP
 
 side_menu PROC NEAR
     ;call clear_screen
-    call draw_menu_border_top_bottom
-    mov ax,menu_border_bottom_x
-    mov menu_border_top_x,ax
-    mov ax,menu_border_bottom_y
-    mov menu_border_top_y,ax
-    mov ax,menu_border_bottom_width
-    mov menu_border_top_width,ax
-    mov ax,menu_border_bottom_height
-    mov menu_border_top_height,ax
-    call draw_menu_border_top_bottom;!i will make it draw the bottom border
-    call draw_menu_border_left;!i will make it draw the right border
+    ;?draw the borders:start
+    ; call draw_menu_border_top_bottom
+    ; mov ax,menu_border_bottom_x
+    ; mov menu_border_top_x,ax
+    ; mov ax,menu_border_bottom_y
+    ; mov menu_border_top_y,ax
+    ; mov ax,menu_border_bottom_width
+    ; mov menu_border_top_width,ax
+    ; mov ax,menu_border_bottom_height
+    ; mov menu_border_top_height,ax
+    ; call draw_menu_border_top_bottom;!i will make it draw the bottom border
+    ; call draw_menu_border_left;!i will make it draw the right border
     mov ax,menu_border_right_x
     mov menu_border_left_x,ax
     mov ax,menu_border_right_y
@@ -176,6 +177,8 @@ side_menu PROC NEAR
     mov ax,menu_border_right_width
     mov menu_border_left_width,ax
     call draw_menu_border_left
+    ;?draw the borders:end
+    
     ;?title:start
     mov ah,02h;! set cursor position
     mov bh,0;! page 0

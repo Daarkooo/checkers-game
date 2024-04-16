@@ -26,13 +26,13 @@ DATA SEGMENT PARA 'DATA'
         menu_border_top_x dw 10
         menu_border_top_y dw 10
         menu_border_top_height dw 0
-        menu_border_top_width dw 12
+        menu_border_top_width dw 12;! the width of the border
         ;?menu border top:end
         ;?menu border bottom:start
         menu_border_bottom_x dw 10
         menu_border_bottom_y dw 330
         menu_border_bottom_height dw 0
-        menu_border_bottom_width dw 12
+        menu_border_bottom_width dw 12;! the width of the border
         ;?menu border bottom:end
         ;?menu border left:start
         menu_border_left_x dw 10
@@ -46,7 +46,7 @@ DATA SEGMENT PARA 'DATA'
         menu_border_right_height dw 12
         menu_border_right_width dw 0
         ;?menu border right:end
-        ball_size dw 10
+        ball_size dw 10 ;! the size of the ball ===== the size of the border(height)
         ball_black_x dw 0
         ball_black_y dw 0
         ball_white_x dw 0
