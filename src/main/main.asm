@@ -25,7 +25,7 @@
     EXIT_Y          EQU     312
     EXIT_MSG        DB      "EXIT$"
 
-    INCLUDE procs.inc
+    INCLUDE mouse.inc
     INCLUDE GUI.inc
     INCLUDE print.inc
 
@@ -69,81 +69,83 @@
         MOV DX, 347
         INT 33h
 
-        ; SP/MP TOGGLE
-        drawRectangle SPMP_X, SPMP_Y, 120, 50, 0006h
-        printGraphicalString SP_MSG, 0F1h, 34, 7
+        ; ***************************************** DRAWING MENU *****************************************
+        ; ; SP/MP TOGGLE
+        ; drawRectangle SPMP_X, SPMP_Y, 120, 50, 0006h
+        ; printGraphicalString SP_MSG, 0F1h, 34, 7
 
-        ; MAKLA TOGGLE
-        drawRectangle MAKLA_X, MAKLA_Y, 120, 50, 0002h
-        printGraphicalString MKLASIF_MSG, 0F2h, 35, 12
+        ; ; MAKLA TOGGLE
+        ; drawRectangle MAKLA_X, MAKLA_Y, 120, 50, 0002h
+        ; printGraphicalString MKLASIF_MSG, 0F2h, 35, 12
 
-        ; START BUTTON
-        drawRectangle START_X, START_Y, 120, 50, 0001h
-        printGraphicalString START_MSG, 0F6h, 37, 17
+        ; ; START BUTTON
+        ; drawRectangle START_X, START_Y, 120, 50, 0001h
+        ; printGraphicalString START_MSG, 0F6h, 37, 17
 
-        ; EXIT BUTTON
-        drawRectangle EXIT_X, EXIT_Y, 70, 30, 0004h
-        printGraphicalString EXIT_MSG, 0F4h, 3, 23
+        ; ; EXIT BUTTON
+        ; drawRectangle EXIT_X, EXIT_Y, 70, 30, 0004h
+        ; printGraphicalString EXIT_MSG, 0F4h, 3, 23
 
-        MAIN_L1:
-            LEA AX, getMenuOptionClicked
-            awaitMouseClick AX, 0, 0, 0
+        ; MAIN_L1:
+        ;     LEA AX, getMenuOptionClicked
+        ;     awaitMouseClick AX, 0, 0, 0
 
-            CMP AX, 0001h
-            JZ SPMP_clicked
+        ;     CMP AX, 0001h
+        ;     JZ SPMP_clicked
 
-            CMP AX, 0002h
-            JNZ MAKLA_notClicked
-            JMP MAKLA_clicked
-            MAKLA_notClicked:
+        ;     CMP AX, 0002h
+        ;     JNZ MAKLA_notClicked
+        ;     JMP MAKLA_clicked
+        ;     MAKLA_notClicked:
 
-            CMP AX, 0003h
-            JNZ START_notClicked
-            JMP START_clicked
-            START_notClicked:
-            
-            CMP AX, 000Fh
-            JNZ MAIN_L1
-            JMP EXIT_clicked
+        ;     CMP AX, 0003h
+        ;     JNZ START_notClicked
+        ;     JMP START_clicked
+        ;     START_notClicked:
 
-            SPMP_clicked:
-                CMP isSP, 1
-                JZ SP_TOGGLE
-                    printGraphicalString MP_MSG, 0F1h, 34, 7
-                    printGraphicalString SP_MSG, 0F1h, 34, 7
-                    MOV isSP, 1
-                    JMP SPMP_end
+        ;     CMP AX, 000Fh
+        ;     JNZ MAIN_L1
+        ;     JMP EXIT_clicked
 
-                SP_TOGGLE:
-                    printGraphicalString SP_MSG, 0F1h, 34, 7
-                    printGraphicalString MP_MSG, 0F1h, 34, 7
-                    MOV isSP, 0
+        ;     SPMP_clicked:
+        ;         CMP isSP, 1
+        ;         JZ SP_TOGGLE
+        ;             printGraphicalString MP_MSG, 0F1h, 34, 7
+        ;             printGraphicalString SP_MSG, 0F1h, 34, 7
+        ;             MOV isSP, 1
+        ;             JMP SPMP_end
 
-                SPMP_end:
-                JMP MAIN_L1
-            
-            MAKLA_clicked:
-                CMP isMaklaSif, 1
-                JZ MAKLA_TOGGLE
-                    printGraphicalString MKLASIF_MSG , 0F2h, 35, 12
-                    printGraphicalString MKLANSIF_MSG, 0F2h, 35, 12
-                    MOV isMaklaSif, 1
-                    JMP MAKLA_end
+        ;         SP_TOGGLE:
+        ;             printGraphicalString SP_MSG, 0F1h, 34, 7
+        ;             printGraphicalString MP_MSG, 0F1h, 34, 7
+        ;             MOV isSP, 0
 
-                MAKLA_TOGGLE:
-                    printGraphicalString MKLANSIF_MSG, 0F2h, 35, 12
-                    printGraphicalString MKLASIF_MSG , 0F2h, 35, 12
-                    MOV isMaklaSif, 0
+        ;         SPMP_end:
+        ;         JMP MAIN_L1
 
-                MAKLA_end:
-                JMP MAIN_L1
+        ;     MAKLA_clicked:
+        ;         CMP isMaklaSif, 1
+        ;         JZ MAKLA_TOGGLE
+        ;             printGraphicalString MKLASIF_MSG , 0F2h, 35, 12
+        ;             printGraphicalString MKLANSIF_MSG, 0F2h, 35, 12
+        ;             MOV isMaklaSif, 1
+        ;             JMP MAKLA_end
 
-            START_clicked:
-                ; START_GAME
-                JMP EXIT_clicked
-                JMP MAIN_L1
-        
-            EXIT_clicked:
+        ;         MAKLA_TOGGLE:
+        ;             printGraphicalString MKLANSIF_MSG, 0F2h, 35, 12
+        ;             printGraphicalString MKLASIF_MSG , 0F2h, 35, 12
+        ;             MOV isMaklaSif, 0
+
+        ;         MAKLA_end:
+        ;         JMP MAIN_L1
+
+        ;     START_clicked:
+        ;         ; START_GAME
+        ;         JMP EXIT_clicked
+        ;         JMP MAIN_L1
+
+        ;     EXIT_clicked:
+        ; ***************************************** END OF DRAWING MENU *****************************************
 
         POP BP
         MOV AX, 4C00h
