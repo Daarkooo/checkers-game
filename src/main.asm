@@ -30,15 +30,19 @@
     makla DB ?
     path1 DB ?
     path2 DB ? 
-    state DB ?
-    turn DB ?
+    state DB ?  
+    
+    switcher DB 1
+    turn DB 'b'
+    
     val1 DB ?
     val2 DB ? 
     main DB ? 
+    multiple_jumps DB ?
     newline DB 10,13,"$"
     verified DB ?
     moves DB 50 dup(?)
-    board DB 50 dup(?) 
+    Board DB 50 dup(?) 
     bool DB 0 ; need it in showpaths 
     num DB ?  
     msg_result DB "result: $"
@@ -417,7 +421,7 @@ ENDM
 
 
 ;------show_path----------
-show_path MACRO board,i1,j1,turn1,path1,path2,pawn_position,makla,isDirect
+show_path MACRO board,i1,j1,turn1,path1,path2,pawn_position,makla,isDirect,multiple_jumps
     LOCAL end, next, next1, not_verified, not_verified1, not_verified2, not_verified3, down, down1 
    
     MOV DL,i1
@@ -477,6 +481,9 @@ show_path MACRO board,i1,j1,turn1,path1,path2,pawn_position,makla,isDirect
 
     CMP bool,1
     JE end ; if there's a move in indirect, isDirect'll return maklaNum -> isDirect != 'n'
+
+    CMP multiple_jumps,1 ; need this after making the first move -> to avoid showing direct moves 
+    JNE end
     
     ;---------DIRECT----------------
     MOV BH,i
@@ -517,8 +524,8 @@ show_path MACRO board,i1,j1,turn1,path1,path2,pawn_position,makla,isDirect
     end:
 ENDM
 
-show_path_dame MACRO board,i1,j1,turn1,path1,path2,pawn_position,makla,isDirect
-    LOCAL end, next, next1, not_verified, not_verified1, not_verified2, not_verified3, down, down1 
+show_path_dame MACRO board,i1,j1,turn1,path1,path2,pawn_position,makla,isDirect,multiple_jumps
+    LOCAL end, next, next1, next2, next3, not_verified, not_verified1, not_verified2, not_verified3, down, down1, long_move, long_move1
    
     MOV DL,i1
     MOV DH,j1
@@ -584,6 +591,9 @@ show_path_dame MACRO board,i1,j1,turn1,path1,path2,pawn_position,makla,isDirect
     CMP bool,1
     JE end ; if there's a move in indirect, isDirect'll return maklaNum -> isDirect != 'n'
     
+    CMP multiple_jumps,1 ; need this after making the first move -> to avoid showing direct moves 
+    JNE end
+
     ;---------DIRECT----------------
     MOV BH,i
     MOV CH,j
@@ -601,49 +611,58 @@ show_path_dame MACRO board,i1,j1,turn1,path1,path2,pawn_position,makla,isDirect
         MOV y,CH
         PUSH CX 
         LEA SI,moves
-        long_moves:
+        long_move:
             PUSH SI
             verify_move board,i,j,x,y,turn,verified,isDirect,pawn_position,n2 ; n1[i,j] n2[x,y]
             POP SI
             
+            cmp verified,1
+            JNE next2
+
             MOV BYTE PTR [SI],n2 ; byte pointer
 		    INC SI
 
             INC CH ; CH<-(j+1)  
             MOV y,CH
-            ; i+=1 (x+=1)
-            cmp verified,1
-            JE long_moves 
+            
+            MOV BH,x 
+            DEC BH ;  BH<-(x-1)
+            MOV x,BH
+            ; I need to check if I DEC BH (cx=2) or INC BH (cx=1)
+            JMP long_move 
+        next2:
 
         POP CX
-        CMP verified,0
-        JE not_verified2  
-            MOV AH,n2
-            MOV path1,AH
-        not_verified2:
     
         MOV CH,j
         DEC CH ; CH<-(j-1) 
         MOV y,CH 
 
-        long_moves:
+        MOV BH,i 
+        DEC BH ;  BH<-(i-1)
+        MOV x,BH
+
+        long_move1:
             PUSH SI
             verify_move board,i,j,x,y,turn,verified,isDirect,pawn_position,n2 ; n1[i,j] n2[x,y]
             POP SI
+
+            cmp verified,1
+            JNE next3
+
             MOV BYTE PTR [SI],n2 ; byte pointer
 		    INC SI
 
             DEC CH ; CH<-(j-1)  
             MOV y,CH
 
-            cmp isDirect,1
-            JE long_moves 
-
-        CMP verified,0
-        JE not_verified3 
-            MOV AH,n2 
-            MOV path2,AH
-        not_verified3:
+            MOV BH,x 
+            DEC BH ;  BH<-(x-1)
+            MOV x,BH
+            ; I need to check if I DEC BH (cx=2) or INC BH (cx=1)
+            JMP long_move1
+        
+        next3:
 
         MOV BH,i
         MOV CH,j
@@ -653,7 +672,29 @@ show_path_dame MACRO board,i1,j1,turn1,path1,path2,pawn_position,makla,isDirect
     LOOP down1    
 
     end:
+ENDM 
+
+
+switch_turn MACRO turn
+    LOCAL switch,next_move
+
+    mov AL,1
+    cmp AL,switcher
+    JE switch
+        mov AL,'b'
+        mov turn,AL
+        JMP next_move
+    switch:
+        mov AL,'w'
+        mov turn,AL
+    next_move:
+
+    MOV AL,switcher
+    MOV BL,-1
+    MUL BL
+    MOV switcher,AL
 ENDM
+
 
 START:
     MOV AX, @DATA
@@ -709,11 +750,19 @@ START:
     ;move_pawn board,6,5,4,7,'w',turn,verified,isDirect,n1,n2 ;33->24      
     ;get_number 3,0,'n',n1
     
-    get_column 6,num
+    ;get_column 6,num
      
     ;MOV al,1
     ;mov path1,1
-    
+      
+    switch_turn turn 
+    board_init board
+    switch_turn turn   
+    board_init board
+    switch_turn turn
+    board_init board
+    switch_turn turn
+      
     ;print_board board 
     ;get_number 9,8,'y',n1
 
