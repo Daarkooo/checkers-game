@@ -50,39 +50,35 @@
 
 ;------------get_clumn----------------
 get_column MACRO n,result
-    LOCAL not_eqaul_zero, not_less_than_6, end
+    LOCAL not_eqaul_zero, less_than_6, less1_than_6, end
 
     MOV AL, n
     XOR AH, AH 
     MOV BL, 10
     DIV BL    ; divide AL by BL, q -> AL, r -> AH
 
-    ; check if x == 0
-    CMP AH, 0
+    MOV AL,AH
+    CMP AH, 0 ; check if x == 0
     JNE not_eqaul_zero
-    MOV AL, 8 ; return 8
-    JMP end
-not_eqaul_zero:
+        MOV AL, 8 ; return 8
+        JMP end
+    not_eqaul_zero:
 
-    ; check if x < 6
-    CMP AH, 6
-    JGE not_less_than_6
-    MOV AL, AH
-    SHL AL, 1
-    DEC AL ; retrun ah * 2 -1
-    JMP end
-not_less_than_6:
+    CMP AH, 6 
+    JB less_than_6
+        SUB AL, 5   ; return (ah-5)*2-1 -1
+    less_than_6:
 
-    ; x >= 6
-    MOV AL, AH
-    SUB AL, 5
     SHL AL, 1
-    DEC AL
-    DEC AL  ; return (ah-5)*2-1
+    DEC AL  ; retrun ah * 2 -1
+
+    CMP AH, 6 
+    JB less1_than_6
+        DEC AL  ; return (ah-5)*2-1 -1
+    less1_than_6:
 
 end:
     MOV result,AL
-
 ENDM 
  
  
@@ -381,34 +377,35 @@ move_pawn MACRO board,x,y,path1,path2,pawn_position,makla,isDirect
         JE move1
     next:
     CMP BH,path2 ; BH <- board[x,y]     
+    JNE no_move
     MOV AH,isDirect
     MOV makla,AH ; isDirect return maklaNum for path2
-    JNE no_move
-        move1:
-        XOR AX, AX   
-        MOV AL, pawn_position
-        DEC AL   
-        MOV DI, AX    
-        MOV AL, BH ; BH <- board[x,y]
-        DEC AL   
-        MOV SI, AX     
+
+    move1:
+    XOR AX, AX   
+    MOV AL, pawn_position
+    DEC AL   
+    MOV DI, AX    
+    MOV AL, BH ; BH <- board[x,y]
+    DEC AL   
+    MOV SI, AX     
         
-        CMP isDirect,'y'
-        JNE indirect 
-            MOV AL,board[DI] ;---DIRECT MOVE---------
-            MOV board[DI],'0'
-            MOV board[SI],AL                    
-            JMP move
-        indirect:
-            MOV AL,board[DI] ;---INDIRECT MOVE---------
-            MOV board[DI],'0'
-            MOV board[SI],AL 
+    CMP isDirect,'y'
+    JNE indirect 
+        MOV AL,board[DI] ;---DIRECT MOVE---------
+        MOV board[DI],'0'
+        MOV board[SI],AL                    
+        JMP move
+    indirect:
+        MOV AL,board[DI] ;---INDIRECT MOVE---------
+        MOV board[DI],'0'
+        MOV board[SI],AL 
             
-            MOV AL, makla 
-            DEC AL  
-            MOV DI, AX    
-            MOV AL,board[DI]
-            MOV board[DI],'0'
+        MOV AL, makla 
+        DEC AL  
+        MOV DI, AX    
+        MOV AL,board[DI]
+        MOV board[DI],'0'
     move:
     ;    move_gui 
         JMP end
@@ -661,7 +658,7 @@ ENDM
 START:
     MOV AX, @DATA
     MOV DS, AX 
-    board_init board 
+    ;board_init board 
                      
     ;----BLACK TEST-------------------                    
     ;MOV board[20],'b'   
@@ -678,10 +675,10 @@ START:
                                                              
     ;----WHITE TEST------------------  
     ;MOV board[28],'w'   
-    MOV board[29],'b'
-    show_path board,6,7,'w',path1,path2,pawn_position,makla,isDirect
+    ; MOV board[29],'b'
+    ; show_path board,6,7,'w',path1,path2,pawn_position,makla,isDirect
                                                                
-    move_pawn board,4,9,path1,path2,pawn_position,makla,isDirect
+    ; move_pawn board,4,9,path1,path2,pawn_position,makla,isDirect
     
     ;show_path board,6,1,'w',path1,path2,pawn_position,makla,isDirect
                                                                
@@ -711,12 +708,13 @@ START:
     ;mov board[28],'b'; 29<-'b'
     ;move_pawn board,6,5,4,7,'w',turn,verified,isDirect,n1,n2 ;33->24      
     ;get_number 3,0,'n',n1
-
+    
+    get_column 6,num
      
     ;MOV al,1
     ;mov path1,1
     
-    print_board board 
+    ;print_board board 
     ;get_number 9,8,'y',n1
 
 ;CODE ENDS

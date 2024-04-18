@@ -3,6 +3,8 @@
     strCS   DB  'CS: $'
     strSS   DB  'SS: $'
     strES   DB  'ES: $'
+    strSI   DB  'SI: $'
+    strDI   DB  'DI: $'
     strAX   DB  'AX: $'
     strBX   DB  'BX: $'    
     strCX   DB  'CX: $'
@@ -18,6 +20,8 @@
         PUSH BX
         PUSH CX
         PUSH DX
+        PUSH SI
+        PUSH DI
 
         MOV AX, [BP + 4]
         MOV CX, 10
@@ -46,6 +50,9 @@
         JMP printDecimal_L2
 
         printDecimal_end:
+        
+        POP DI
+        POP SI
         POP DX
         POP CX
         POP BX
@@ -56,6 +63,16 @@
         RET 2
     __printDecimal ENDP
 
+    printDecimal MACRO num
+        PUSH AX
+
+        MOV AX, num
+        PUSH AX
+
+        CALL __printDecimal
+        POP AX
+    ENDM
+
     print_string MACRO ref
         PUSH AX
         PUSH DX
@@ -65,16 +82,6 @@
         INT 21h
 
         POP DX
-        POP AX
-    ENDM
-
-    printDecimal MACRO num
-        PUSH AX
-
-        MOV AX, num
-        PUSH AX
-
-        CALL __printDecimal
         POP AX
     ENDM
 
@@ -102,6 +109,8 @@
         PUSH BX
         PUSH CX
         PUSH DX
+        PUSH SI
+        PUSH DI
 
         print_string strCS
         printDecimal CS
@@ -117,6 +126,14 @@
 
         print_string strES
         printDecimal ES
+        print_string newLine
+
+        print_string strSI
+        printDecimal SI
+        print_string newLine
+
+        print_string strDI
+        printDecimal DI
         print_string newLine
 
         print_string strAX
@@ -137,6 +154,8 @@
 
         print_string newLine
 
+        POP DI
+        POP SI
         POP DX
         POP CX
         POP BX

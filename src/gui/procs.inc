@@ -33,14 +33,17 @@
         POP AX
     ENDM
 
-    __awaitMouseClick PROC; callback, arg1, arg2
+    __awaitMouseClick PROC; callback, arg1, arg2, arg3
         PUSH BP
         MOV BP, SP
 
-        MOV AX, [BP + 8]
+        MOV AX, [BP + 8]    ; arg1
         PUSH AX
 
-        MOV AX, [BP + 6]
+        MOV AX, [BP + 6]    ; arg2
+        PUSH AX
+
+        MOV AX, [BP + 4]    ; arg3
         PUSH AX
 
         __awaitMouseClick_mainLoop:
@@ -52,19 +55,29 @@
 
         sleep 0003h, 0D40h
 
-        PUSH CX
-        PUSH DX
+        PUSH CX     ; column (x) 
+        PUSH DX     ; row (y)
 
-        CALL [BP + 4]
+        CALL [BP + 10]
 
         MOV SP, BP
         POP BP
-        RET 6
+        RET 8
     __awaitMouseClick ENDP
 
-    ; arg1 and arg2 arguments to callback; order of PUSH: arg1 --> arg2 --> CX (X position) --> DX (Y position)
-    ; it is Advisable to push 'arg1' & 'arg2', even if their values is 0
-    awaitMouseClick MACRO callback, arg1, arg2      
+    ; arg1 and arg2 arguments to callback; order of PUSH: arg1 --> arg2 --> arg3 --> CX (X position) --> DX (Y position)
+    ; it is Advisable to push 'arg1', 'arg2' & 'arg3'; even if their values is 0
+    awaitMouseClick MACRO callback, arg1, arg2, arg3
         PUSH callback  ; Push the offset of the callback
+        
+        MOV AX, arg1
+        PUSH AX
+
+        MOV AX, arg2
+        PUSH AX
+
+        MOV AX, arg3
+        PUSH AX
+
         CALL __awaitMouseClick
     ENDM
