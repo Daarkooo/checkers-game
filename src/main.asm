@@ -34,6 +34,7 @@
     
     switcher DB 1
     turn DB 'b'
+    checked DB ?
     
     val1 DB ?
     val2 DB ? 
@@ -419,6 +420,31 @@ move_pawn MACRO board,x,y,path1,path2,pawn_position,makla,isDirect
     end:
 ENDM
 
+;------check_move_pawn_gui----------    
+check_move_pawn_gui MACRO x,y,path1,path2,checked
+    LOCAL end, move, no_move, next  
+    MOV BH,x ; cant use the other registers cuz are used in get_number 
+    MOV CH,y 
+
+    get_number BH,CH,main,num
+    MOV BH,num
+    CMP BH,path1
+    JNE next
+        MOV BH,path1 ; BH <- board[x,y]
+        JE move
+    next:
+    CMP BH,path2 ; BH <- board[x,y]     
+    JNE no_move
+    
+    move:
+        MOV AL,1
+        MOV checked,AL 
+        JMP end
+    no_move:
+        MOV AL,-1
+        MOV checked,AL
+    end:
+ENDM
 
 ;------show_path----------
 show_path MACRO board,i1,j1,turn1,path1,path2,pawn_position,makla,isDirect,multiple_jumps
@@ -755,13 +781,7 @@ START:
     ;MOV al,1
     ;mov path1,1
       
-    switch_turn turn 
-    board_init board
-    switch_turn turn   
-    board_init board
-    switch_turn turn
-    board_init board
-    switch_turn turn
+    check_move_pawn_gui 1,2,7,2,checked
       
     ;print_board board 
     ;get_number 9,8,'y',n1
