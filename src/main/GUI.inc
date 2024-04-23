@@ -1,9 +1,10 @@
 .DATA
-    xArray      DW  2, 3, 2, 5 DUP(1), 0, 1, 2 DUP(0), 1, 0, 0
-    CaseSize    DB  34
-    CaseSize2   DB  17
-    board       DB  20 DUP('w'), 10 DUP('e'), 20 DUP('b')
-    blackColor  DW  06h
+    xArray28        DW      2, 3, 2, 5 DUP(1), 0, 1, 2 DUP(0), 1, 2 DUP(0)
+    xArray14        DW      2, 2, 2 DUP(1), 0, 1, 0
+    CaseSize        DB      34
+    CaseSize2       DB      17
+    board           DB      20 DUP('w'), 10 DUP('e'), 20 DUP('b')
+    blackColor      DW      06h
 
 .CODE
     PushReg MACRO
@@ -171,12 +172,11 @@
 		PUSH BP
 		MOV BP, SP
 
-        PushReg
-
         ; [BP +  4]: size
         ; [BP +  6]: initialY
         ; [BP +  8]: initialX
         ; [BP + 10]: color
+        pushReg
 
         MOV AX, [BP + 8]
         MOV DX, [BP + 6]
@@ -186,14 +186,13 @@
         drawRectangle AX, DX, BX, BX, CX
 
         popReg
-
 		MOV SP, BP
 		POP BP
 		RET 8                   ; cleaning the stack
 	__drawCell ENDP
 
     drawCell MACRO color, x, y, size
-		MOV AX, color
+        MOV AX, color
 		PUSH AX
 
 		MOV AX, x
@@ -204,8 +203,8 @@
 
 		MOV AX, size
 		PUSH AX
-
-		CALL __drawCell
+		
+        CALL __drawCell
 	ENDM
 
 	__drawBoard PROC ; initialX, initialY, whiteCell, blackCell, size (last parameteres are top of stack)
@@ -299,7 +298,7 @@
         popReg
 	ENDM
 
-	__drawCircle PROC ; color, initialX, initialY (last parameters top of stack)
+	__drawCircle28 PROC ; color, initialX, initialY (last parameters top of stack)
 		PUSH BP
 		MOV BP, SP
 
@@ -313,40 +312,40 @@
 
 		XOR BX, BX
 		XOR SI, SI
-		__drawCircle_L1:
+		__drawCircle28_L1:
 			MOV AX, [BP + 8]
-			SUB CX, xArray[SI]      ; new X
+			SUB CX, xArray28[SI]      ; new X
 
-			ADD BX, xArray[SI]      ; distance is double
-			ADD BX, xArray[SI]
+			ADD BX, xArray28[SI]      ; distance is double
+			ADD BX, xArray28[SI]
 
 			drawHorizontalLine AX, CX, DX, BX
 
 			ADD SI, 2
 			INC DX
 			CMP SI, 30
-		JL __drawCircle_L1
+		JL __drawCircle28_L1
 
 			SUB SI, 2
 
-		__drawCircle_L2:
+		__drawCircle28_L2:
 			MOV AX, [BP + 8]
-			ADD CX, WORD PTR xArray[SI]      ; new X
+			ADD CX, WORD PTR xArray28[SI]      ; new X
 
-			SUB BX, WORD PTR xArray[SI]      ; distance is double
-			SUB BX, WORD PTR xArray[SI]
+			SUB BX, WORD PTR xArray28[SI]      ; distance is double
+			SUB BX, WORD PTR xArray28[SI]
 
 			drawHorizontalLine AX, CX, DX, BX
 
 			SUB SI, 2
 			INC DX
 			TEST SI, SI
-		JNZ __drawCircle_L2
+		JNZ __drawCircle28_L2
 
 		MOV SP, BP
 		POP BP
 		RET 6
-	__drawCircle ENDP
+	__drawCircle28 ENDP
 
 	drawCircle MACRO color, initialX, initialY
 		PushReg
@@ -360,7 +359,73 @@
 		MOV AX, initialY
 		PUSH AX
 
-		CALL __drawCircle
+		CALL __drawCircle28
+
+		popReg
+	ENDM
+
+    __drawCircle14 PROC ; color, initialX, initialY (last parameters top of stack)
+		PUSH BP
+		MOV BP, SP
+
+		; [BP + 4] initialY
+		; [BP + 6] initialX
+		; [BP + 8] color
+
+		MOV CX, [BP + 6]
+		MOV DX, [BP + 4]
+		SUB DX, 7
+
+		XOR BX, BX
+		XOR SI, SI
+		__drawCircle14_L1:
+			MOV AX, [BP + 8]
+			SUB CX, xArray14[SI]      ; new X
+
+			ADD BX, xArray14[SI]      ; distance is double
+			ADD BX, xArray14[SI]
+
+			drawHorizontalLine AX, CX, DX, BX
+
+			ADD SI, 2
+			INC DX
+			CMP SI, 14
+		JL __drawCircle14_L1
+
+			SUB SI, 2
+
+		__drawCircle14_L2:
+			MOV AX, [BP + 8]
+			ADD CX, WORD PTR xArray14[SI]      ; new X
+
+			SUB BX, WORD PTR xArray14[SI]      ; distance is double
+			SUB BX, WORD PTR xArray14[SI]
+
+			drawHorizontalLine AX, CX, DX, BX
+
+			SUB SI, 2
+			INC DX
+			TEST SI, SI
+		JNZ __drawCircle14_L2
+
+		MOV SP, BP
+		POP BP
+		RET 6
+	__drawCircle14 ENDP
+
+    drawCircle14 MACRO color, initialX, initialY
+		PushReg
+
+		MOV AX, color
+		PUSH AX
+
+		MOV AX, initialX
+		PUSH AX
+
+		MOV AX, initialY
+		PUSH AX
+
+		CALL __drawCircle14
 
 		popReg
 	ENDM
@@ -424,6 +489,101 @@
         CALL __printGraphicalString
     ENDM
 
+    __drawBorder PROC ; color, startX, startY, distance, width
+        PUSH BP
+        MOV BP, SP
+
+        ; [BP +  4]: width
+        ; [BP +  6]: distance
+        ; [BP +  8]: startY
+        ; [BP + 10]: startX
+        ; [BP + 12]: color
+
+        ; Upper and left border
+        MOV CX, [BP +  4]       ; width (times to run the loop)
+        MOV SI, [BP +  6]       ; distance
+        MOV DX, [BP +  8]       ; startY
+        MOV BX, [BP + 10]       ; startX
+        MOV AX, [BP + 12]       ; color
+
+        ADD SI, 2
+        DEC DX
+        DEC BX
+
+        __drawBorder_upperLeftBorder:
+            drawHorizontalLine AX, BX, DX, SI
+            drawVerticalLine AX, BX, DX, SI
+            ADD SI, 2
+            DEC DX
+            DEC BX
+        LOOP __drawBorder_upperLeftBorder
+
+        ; Right border
+        MOV CX, [BP +  4]       ; width (times to run the loop)
+        MOV SI, [BP +  6]       ; distance
+        MOV DX, [BP +  8]       ; startY
+        MOV BX, [BP + 10]       ; startX
+        MOV AX, [BP + 12]       ; color
+
+        ADD BX, SI
+        DEC DX
+        INC BX
+        ADD SI, 2
+
+        __drawBorder_rightBorder:
+            drawVerticalLine AX, BX, DX, SI
+            ADD SI, 2
+            DEC DX
+            INC BX
+        LOOP __drawBorder_rightBorder
+
+        ; Lower border
+        MOV CX, [BP +  4]       ; width (times to run the loop)
+        MOV SI, [BP +  6]       ; distance
+        MOV DX, [BP +  8]       ; startY
+        MOV BX, [BP + 10]       ; startX
+        MOV AX, [BP + 12]       ; color
+
+        ADD DX, SI
+        INC DX
+        DEC BX
+        ADD SI, 2
+
+        __drawBorder_lowerBorder:
+            drawHorizontalLine AX, BX, DX, SI
+            ADD SI, 2
+            INC DX
+            DEC BX
+        LOOP __drawBorder_lowerBorder
+
+        MOV SP, BP
+        POP BP
+        RET 10
+    __drawBorder ENDP
+
+    drawBorder MACRO color, startX, startY, distance, width
+        pushReg
+
+        MOV AX, color
+        PUSH AX
+
+        MOV AX, startX
+        PUSH AX
+
+        MOV AX, startY
+        PUSH AX
+
+        MOV AX, distance
+        PUSH AX
+
+        MOV AX, width
+        PUSH AX
+
+        CALL __drawBorder
+
+        popReg
+    ENDM
+
     ; *************************************************************************************************************
     get_column MACRO n,result
         LOCAL not_eqaul_zero, not_less_than_6, end
@@ -484,109 +644,9 @@
         endLabel:
             MOV result, AL
     ENDM
-
-    ; *************************************************************************************************************
-
-    __drawBorder PROC; N, color, xOffset, yOffset, cellSize
-        PUSH BP
-        MOV BP, SP
-        SUB SP, 4
-
-        ; [BP + 12] N
-        ; [BP + 10] color
-        ; [BP +  8] xOffset
-        ; [BP +  6] yOffset
-        ; [BP +  4] cellSize
-
-        ; [BP -  2] column (x)
-        ; [BP -  4] row (y)
-
-        ; got column (x)
-        MOV BL, BYTE PTR [BP + 12]
-        get_column BL, AL
-        XOR AH, AH
-        MOV [BP - 2], AX
-
-        ; got row (y)
-        MOV BL, BYTE PTR [BP + 12]
-        getRow BL, AL
-        XOR AH, AH
-        MOV [BP - 4], AX
-
-        ; initial column (px)
-        MOV AX, [BP - 2]
-        MOV BX, [BP + 4]
-        XOR DX, DX
-        MUL BX
-        ADD AX, [BP + 8]
-        MOV CX, AX
-
-        ; initial row (px)
-        MOV AX, [BP - 4]
-        MOV BX, [BP + 4]
-        XOR DX, DX
-        MUL BX
-        ADD AX, [BP + 6]
-        MOV DX, AX
-
-        ; Upper border
-        MOV AX, [BP + 10]
-        MOV BX, [BP + 4]
-        drawHorizontalLine AX, CX, DX, BX
-        INC DX
-        drawHorizontalLine AX, CX, DX, BX       ; 2 pixels
-        DEC DX
-
-        ; Left border
-        drawVerticalLine AX, CX, DX, BX
-        ; INC CX
-        ; drawVerticalLine AX, CX, DX, BX
-        ; DEC CX
-
-        ; Right border
-        ADD CX, [BP + 4]
-        drawVerticalLine AX, CX, DX, BX
-        DEC CX
-        drawVerticalLine AX, CX, DX, BX         ; 2 pixels
-        INC CX
-
-        ; Lower border
-        ADD DX, [BP + 4]
-        SUB CX, [BP + 4]
-        drawHorizontalLine AX, CX, DX, BX
-        ; DEC DX
-        ; drawHorizontalLine AX, CX, DX, BX
-        ; INC DX
-
-        MOV SP, BP
-        POP BP
-        RET 10
-    __drawBorder ENDP
-
-    drawBorder MACRO N, color, xOffset, yOffset, cellSize
-        PushReg
-
-        MOV AL, N
-        PUSH AX
-
-        MOV AL, color
-        PUSH AX
-
-        MOV AL, xOffset
-        PUSH AX
-
-        MOV AL, yOffset
-        PUSH AX
-
-        MOV AL, cellSize
-        PUSH AX
-
-        CALL __drawBorder
-
-        popReg
-    ENDM
-
+ 
     ; *******************************************************************
+
 	Board_init_GUI Macro Board,whiteColor,blackColor
         drawBoard 0, 0, 000Fh, 0006h, 34
         MOV CX,16
