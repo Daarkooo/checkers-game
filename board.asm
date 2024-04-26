@@ -428,33 +428,35 @@ print_maklaMashiSif PROC NEAR
     call side_menu
     RET
 print_maklaMashiSif ENDP
+
 ;?mock functions:end
 
 ;?borders :start
 
+
 draw_ball_black PROC NEAR
- ;todo draw the ball:start
-   MOV cx,ball_black_x;!position x column
-   MOV dx,ball_black_y;!position y row
+    ;todo draw the ball:start
+    MOV cx,ball_black_x;!position x column
+    MOV dx,ball_black_y;!position y row
     draw_ball_black_horizontal:
-        MOV AH,0Ch;! set pixel
-        MOV AL,ball_color;
-        MOV bh,0;! page 0
-        INT 10h;! call BIOS
+    MOV AH,0Ch;! set pixel
+    MOV AL,ball_color;
+    MOV bh,0;! page 0
+    INT 10h;! call BIOS
 
-        inc cx;! move to the next column
-        mov ax,cx;! check if we reached the end of the ball
-        sub ax,ball_black_x;! calculate the distance from the start
-        cmp ax,ball_size;! compare with the size of the ball
-        JNG draw_ball_black_horizontal;! if we didn't reach the end, draw the next pixel
+    inc cx;! move to the next column
+    mov ax,cx;! check if we reached the end of the ball
+    sub ax,ball_black_x;! calculate the distance from the start
+    cmp ax,ball_size;! compare with the size of the ball
+    JNG draw_ball_black_horizontal;! if we didn't reach the end, draw the next pixel
 
-        mov cx,ball_black_x;! reset the column position
-        inc dx;! move to the next row
+    mov cx,ball_black_x;! reset the column position
+    inc dx;! move to the next row
 
-        mov ax,dx;! check if we reached the end of the ball
-        sub ax,ball_black_y;! calculate the distance from the start
-        cmp ax,ball_size;! compare with the size of the ball
-        JNG draw_ball_black_horizontal;! if we didn't reach the end, draw the next pixel
+    mov ax,dx;! check if we reached the end of the ball
+    sub ax,ball_black_y;! calculate the distance from the start
+    cmp ax,ball_size;! compare with the size of the ball
+    JNG draw_ball_black_horizontal;! if we didn't reach the end, draw the next pixel
     RET
 draw_ball_black ENDP
 
