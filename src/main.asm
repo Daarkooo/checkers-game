@@ -45,7 +45,8 @@
     moves DB 50 dup(?)
     Board DB 50 dup(?) 
     bool DB 0 ; need it in showpaths 
-    num DB ?  
+    num DB ? 
+    num1 DB ? 
     msg_result DB "result: $"
 ;DATA ENDS
 
@@ -374,8 +375,10 @@ move_pawn MACRO board,x,y,path1,path2,pawn_position,makla,isDirect
     MOV BH,x ; cant use the other registers cuz are used in get_number 
     MOV CH,y 
 
-    get_number BH,CH,main,num
-    MOV BH,num
+    get_number BH,CH,main,num1
+    MOV BH,num1
+
+    MOV num,BH
     CMP BH,path1
     JNE next
         MOV BH,path1 ; BH <- board[x,y]
@@ -383,6 +386,7 @@ move_pawn MACRO board,x,y,path1,path2,pawn_position,makla,isDirect
     next:
     CMP BH,path2 ; BH <- board[x,y]     
     JNE no_move
+    
     MOV AH,isDirect
     MOV makla,AH ; isDirect return maklaNum for path2
 
@@ -412,7 +416,8 @@ move_pawn MACRO board,x,y,path1,path2,pawn_position,makla,isDirect
         MOV AL,board[DI]
         MOV board[DI],'0'
     move:
-    ;    move_gui 
+        MOV AL,num
+        MOV isDirect, AL
         JMP end
     no_move:
         MOV AL,-1
@@ -552,7 +557,7 @@ ENDM
 
 show_path_dame MACRO board,i1,j1,turn1,path1,path2,pawn_position,makla,isDirect,multiple_jumps
     LOCAL end, next, next1, next2, next3, not_verified, not_verified1, not_verified2, not_verified3, down, down1, long_move, long_move1
-   
+    
     MOV DL,i1
     MOV DH,j1
     mov i,DL  ;i<-dl
@@ -781,7 +786,7 @@ START:
     ;MOV al,1
     ;mov path1,1
       
-    check_move_pawn_gui 1,2,7,2,checked
+    move_pawn board,3,2,4,3,'b',turn,verified,isDirect,n1,n2 
       
     ;print_board board 
     ;get_number 9,8,'y',n1

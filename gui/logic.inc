@@ -725,16 +725,20 @@ ENDM
 
 switch_turn MACRO turn
     LOCAL switch,next_move
-
+          
     mov AL,1
     cmp AL,switcher
     JE switch
         mov AL,'b'
         mov turn,AL
+        ; mov AX,0001h
+        ; MOV PColor,AX
         JMP next_move
     switch:
         mov AL,'w'
         mov turn,AL
+        ; mov AX,0000h
+        ; MOV PColor,AX
     next_move:
 
     MOV AL,switcher

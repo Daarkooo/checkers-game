@@ -566,7 +566,7 @@
         RET 10
     __drawBorder ENDP
 
-    drawBorder MACRO N, color, xOffset, yOffset, cellSize
+    drawBorder MACRO N, color, xOffset, yOffset, cellSize 
         PushReg
 
         MOV AL, N
