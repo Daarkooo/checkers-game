@@ -65,7 +65,7 @@
         ADD CX, BX
         MOV AX, [BP + 12]
         drawCell AX, CX, DX, BX
-        
+
         ADD CX, [BP - 2]
         ADD DX, [BP - 2]
         MOV AX, [BP + 8]
@@ -79,7 +79,7 @@
 
         ADD CX, [BP -  2]
         ADD DX, [BP -  2]
-        MOV AX, [BP + 10]
+        MOV AX, [BP +  6]
         drawCircle14 AX, CX, DX
 
         MOV CX, [BP + 16]
@@ -95,6 +95,8 @@
     __drawThemeTemplate ENDP
 
     drawThemeTemplate MACRO initialX, initialY, blackCellColor, whiteCellColor, blackPieceColor, whitePieceColor, cellSize
+        pushReg
+
         MOV AX, initialX
         PUSH AX
 
@@ -117,6 +119,8 @@
         PUSH AX
 
         CALL __drawThemeTemplate
+
+        popReg
     ENDM
 
     graphicalMenu PROC
@@ -148,8 +152,8 @@
 
         drawThemeTemplate THEME1_X, THEME1_Y, 0000h, 000Fh, 0007h, 000Fh, 17 ; THEME 2
         drawBorder 0008h, THEME1_X, THEME1_Y, 34, 3
-        
-        drawThemeTemplate THEME2_X, THEME2_Y, 0002h, 000Fh, 0000h, 000Fh, 17 ; THEME 3
+
+        drawThemeTemplate THEME2_X, THEME2_Y, 0000h, 0004h, 0004h, 0008h, 17 ; THEME 3
         drawBorder 0008h, THEME2_X, THEME2_Y, 34, 3
 
         drawThemeTemplate THEME3_X, THEME3_Y, 0000h, 000Fh, 0004h, 0001h, 17 ; THEME 4
@@ -245,14 +249,14 @@
                 MOV whiteCell , 000Fh
                 MOV blackPiece, 0007h
                 MOV whitePiece, 000Fh
-                
+
                 JMP MAIN_L1
 
             THEME2_clicked:
-                MOV blackCell , 0002h
-                MOV whiteCell , 000Fh
-                MOV blackPiece, 0000h
-                MOV whitePiece, 000Fh
+                MOV blackCell , 0000h
+                MOV whiteCell , 0004h
+                MOV blackPiece, 0004h
+                MOV whitePiece, 0008h
 
                 JMP MAIN_L1
 
