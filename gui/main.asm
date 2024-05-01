@@ -5,11 +5,11 @@
 .DATA
     board           DB  20 DUP('b'), 10 DUP('0'), 20 DUP('w')
 
-    SPMP_X          EQU     260
-    SPMP_Y          EQU     80
-    MP_MSG          DB      "Multi player$"
-    SP_MSG          DB      "Single player$"
-    isSP            DB      1
+    ; MEDJBER'S NEW VARIABLES, FOR CHOSING THEME WHEN GAME STARTS
+    blackCell       DW      0006h
+    whiteCell       DW      000Fh
+    blackPiece      DW      0000h
+    whitePiece      DW      000Fh
 
     MAKLA_X         EQU     260
     MAKLA_Y         EQU     150
@@ -42,7 +42,6 @@
     INCLUDE logic.inc
 
 .CODE
-
     main PROC
         MOV AX, @DATA
         MOV DS, AX
@@ -54,32 +53,21 @@
         MOV AX, 0010h   ; 640x350 16 colors
         INT 10h
 
-        ; set up mouse
-        XOR AX, AX
-        INT 33h
+        ; setting up mouse
+        setupMouse 0, 0, 0, 0, 637, 347
 
-        ; ; set initial mouse position to (0, 0) to avoid distrubing the menu
+        ; set initial mouse position to (0, 0) to avoid distrubing the menu
         ; MOV AX, 0004h
-        ; XOR CX, CX
-        ; XOR DX, DX
+        ; XOR CX, 100
+        ; XOR DX, 100
         ; INT 33h
+        ; CALL graphicalMenu
 
-        ; display mouse
-        MOV AX, 0001h
-        INT 33h
+        ; CMP AX, 1
+        ; JZ startClicked
+        ; JMP main_endLabel
+        ; startClicked:
 
-        ; will do (maximum range - 3)
-        ; horizontal range
-        MOV AX, 0007h
-        MOV CX, 0
-        MOV DX, 637
-        INT 33h
-
-        ; vertical range
-        MOV AX, 0008h
-        MOV CX, 0
-        MOV DX, 347
-        INT 33h
 
         Board_init_GUI board,0000h,0001h
 
@@ -97,6 +85,7 @@
             awaitMouseClick AX,0,0,34 ; CX <- x DX <- y
 
             move_pawn board,DL,CL,path1,path2,source_pawn,makla,isDirect
+            setupMouse 0, 0, 0, 0, 637, 347
 
             drawBorder path1, 06h, 0, 0, 34
             drawBorder path2, 06h, 0, 0, 34
@@ -125,10 +114,15 @@
         ; ; SP/MP TOGGLE
         ; drawRectangle SPMP_X, SPMP_Y, 120, 50, 0006h
         ; printGraphicalString SP_MSG, 0F1h, 34, 7
+       
+            ; setMousePosition 0, 0
 
-        ; ; MAKLA TOGGLE
-        ; drawRectangle MAKLA_X, MAKLA_Y, 120, 50, 0002h
-        ; printGraphicalString MKLASIF_MSG, 0F2h, 35, 12
+            ; Board_init_GUI myBoard, blackCell, whiteCell, blackPiece, whitePiece
+            ; drawBorder 0008h, offsetX, offsetY, 340, 5
+            ; markCell 0004h, offsetX, offsetY, 34, 21
+            ; markCell 0004h, offsetX, offsetY, 34, 26
+            ; markCell 0007h, offsetX, offsetY, 34, 22
+            ; markCell 0007h, offsetX, offsetY, 34, 27
 
         ; ; START BUTTON
         ; drawRectangle START_X, START_Y, 120, 50, 0001h
@@ -199,6 +193,8 @@
         ;     EXIT_clicked:
         ; ***************************************** END OF DRAWING MENU *****************************************
        
+        main_endLabel:
+
         POP BP
         MOV AX, 4C00h
         INT 21h
