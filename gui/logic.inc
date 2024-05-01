@@ -367,7 +367,7 @@ verify_move MACRO board, i, j, x, y, turn, verified, isDirect, val1, val2
         MOV AH,j
     down:
     CMP DH,AH ; cmp j,y | if we going up we swap 'cmp y,j' 
-    JB label3
+    JA label3
         JMP other_way
     label3:
         DEC DH ; dec n1[,j] 
@@ -731,14 +731,14 @@ switch_turn MACRO turn
     JE switch
         mov AL,'b'
         mov turn,AL
-        ; mov AX,0001h
-        ; MOV PColor,AX
+        mov AX,0000h  ; the white side color
+        MOV PColor,AX
         JMP next_move
     switch:
         mov AL,'w'
         mov turn,AL
-        ; mov AX,0000h
-        ; MOV PColor,AX
+        mov AX,0001h ; the black side color
+        MOV PColor,AX
     next_move:
 
     MOV AL,switcher

@@ -542,9 +542,9 @@
 
         ; Left border
         drawVerticalLine AX, CX, DX, BX
-        ; INC CX
-        ; drawVerticalLine AX, CX, DX, BX
-        ; DEC CX
+        INC CX
+        drawVerticalLine AX, CX, DX, BX
+        DEC CX
 
         ; Right border
         ADD CX, [BP + 4]
@@ -557,9 +557,9 @@
         ADD DX, [BP + 4]
         SUB CX, [BP + 4]
         drawHorizontalLine AX, CX, DX, BX
-        ; DEC DX
-        ; drawHorizontalLine AX, CX, DX, BX
-        ; INC DX
+        DEC DX
+        drawHorizontalLine AX, CX, DX, BX
+        INC DX
 
         MOV SP, BP
         POP BP
@@ -568,6 +568,9 @@
 
     drawBorder MACRO N, color, xOffset, yOffset, cellSize 
         PushReg
+        
+        xor ah,ah
+        xor bh,bh
 
         MOV AL, N
         PUSH AX

@@ -84,67 +84,39 @@
         Board_init_GUI board,0000h,0001h
 
         ; MOV CX,6
-        ; play:
-        ;     LEA AX,getCoordsFromMouseClick
-        ;     awaitMouseClick AX,0,0,34 ; CX <- y DX <- x
+        play:
+            LEA AX,getCoordsFromMouseClick
+            awaitMouseClick AX,0,0,34 ; CX <- y DX <- x
             
-        ;     show_path board,DL,CL,turn,path1,path2,num,makla,isDirect,multiple_jumps
-        ;     xor ah,ah
-        ;     xor bh,bh
-        ;     MOV al,path1
-        ;     mov bl,path2
+            show_path board,DL,CL,turn,path1,path2,source_pawn,makla,isDirect,multiple_jumps
 
-        ;     ; CALL liveUsage
-
-        ;     drawBorder path1, 0Ah, 0, 0, 34
-        ;     drawBorder path2, 0Ah, 0, 0, 34
-
+            drawBorder path1, 0Ah, 0, 0, 34
+            drawBorder path2, 0Ah, 0, 0, 34
             
-        ;     MOV AL,num
-        ;     MOV source_pawn,AL
+            LEA AX,getCoordsFromMouseClick
+            awaitMouseClick AX,0,0,34 ; CX <- x DX <- y
 
+            move_pawn board,DL,CL,path1,path2,source_pawn,makla,isDirect
 
-        ;     LEA AX,getCoordsFromMouseClick
-        ;     awaitMouseClick AX,0,0,34 ; CX <- x DX <- y
-
-        ;     ; CALL liveUsage
-
-        ;     move_pawn board,DL,CL,path1,path2,source_pawn,makla,isDirect
-
-        ;     xor ch,ch
-        ;     xor dh,dh
-        ;     mov dl,source_pawn
-        ;     mov cl,isDirect
-        ;     ; CALL liveUsage
+            drawBorder path1, 06h, 0, 0, 34
+            drawBorder path2, 06h, 0, 0, 34
             
-        ;     cmp turn,'b'
-        ;     JE blackT
-        ;         mov AX,0000h
-        ;         MOV PColor,AX
-        ;         jmp whiteT
-        ;     blackT:
-        ;         mov AX,0001h
-        ;         MOV PColor,AX
-        ;     whiteT:
 
-
-            drawCell 000CH, 2*34, 3*34, 34
-            drawCircle 00001H, 2*40, 3*40
-            ;drawCell 000AH, 3*34, 34*4, 34
+            ; drawCell 000CH, 2*34, 3*34, 34
+            ; drawCircle 00001H, 2*40, 3*40
+            ; drawCell 000AH, 3*34, 34*4, 34
             ; drawCell color, x, y, size
             
-            ; Move_GUI source_pawn,isDirect,PColor ; isDirect <- board[x,y] if the move is valid
-
-            ; switch_turn turn
-            ; xor dh,dh
-            ; mov dl,turn 
-            ; CALL liveUsage
+            switch_turn turn ; make it here to change the color of the pawns (depends on player's turn)
             
+            Move_GUI source_pawn,isDirect,PColor ; isDirect <- board[x,y] if the move is valid
+
+           
 
         ; DEC CX
         ; CMP CX,0
         ; JNZ next
-        ; JMP play
+        JMP play
         ; next:
 
 
