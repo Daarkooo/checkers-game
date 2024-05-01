@@ -26,34 +26,8 @@
         MOV AX, 0010h   ; 640x350 16 colors
         INT 10h
 
-        ; ***************************************** SETTING UP MOUSE *****************************************
-        ; set up mouse
-        XOR AX, AX
-        INT 33h
-
-        ; set initial mouse position to (0, 0) to avoid distrubing the menu
-        MOV AX, 0004h
-        XOR CX, CX
-        XOR DX, DX
-        INT 33h
-
-        ; display mouse
-        MOV AX, 0001h
-        INT 33h
-
-        ; will do (maximum range - 3)
-        ; horizontal range
-        MOV AX, 0007h
-        MOV CX, 0
-        MOV DX, 637
-        INT 33h
-
-        ; vertical range
-        MOV AX, 0008h
-        MOV CX, 0
-        MOV DX, 347
-        INT 33h
-        ; ***************************************** END OF SETTING UP MOUSE *****************************************
+        ; setting up mouse
+        setupMouse 0, 0, 0, 0, 637, 347
 
         CALL graphicalMenu
 
@@ -66,8 +40,18 @@
             MOV AX, 0010h   ; 640x350 16 colors
             INT 10h
 
-            drawBoard 295, 5, blackCell, whiteCell, 34
-            drawBorder 0008h, 295, 5, 340, 5
+            ; display mouse
+            MOV AX, 0001h
+            INT 33h
+
+            setMousePosition 0, 0
+
+            Board_init_GUI myBoard, blackCell, whiteCell, blackPiece, whitePiece
+            drawBorder 0008h, offsetX, offsetY, 340, 5
+            markCell 0004h, offsetX, offsetY, 34, 21
+            markCell 0004h, offsetX, offsetY, 34, 26
+            markCell 0007h, offsetX, offsetY, 34, 22
+            markCell 0007h, offsetX, offsetY, 34, 27
 
         main_endLabel:
 
