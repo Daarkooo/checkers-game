@@ -53,7 +53,7 @@
             TEST BL, 1          ; Check if left button is pressed
         JZ __awaitMouseClick_mainLoop
 
-        sleep 0Fh, 4240h
+        sleep 0h, 1h
 
         PUSH CX     ; column (x) 
         PUSH DX     ; row (y)

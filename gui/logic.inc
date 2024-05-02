@@ -388,7 +388,7 @@ ENDM
 
 ;------move_pawn---------- 
 
-move_pawn MACRO board,x,y,path1,path2,pawn_position,makla,isDirect
+move_pawn MACRO board,x,y,path1,path2,pawn_position,makla,makla2,isDirect
     LOCAL end, indirect, move, move1, no_move, next  
     MOV BH,x ; cant use the other registers cuz are used in get_number 
     MOV CH,y 
@@ -403,7 +403,7 @@ move_pawn MACRO board,x,y,path1,path2,pawn_position,makla,isDirect
     next:
     CMP BH,path2 ; BH <- board[x,y]     
     JNE no_move
-    MOV AH,isDirect
+    MOV AH,makla2
     MOV makla,AH ; isDirect return maklaNum for path2
 
     move1:
@@ -505,6 +505,8 @@ show_path MACRO board,i1,j1,turn1,path1,path2,pawn_position,makla,isDirect,multi
         MOV bool,1 ; isDirect'll return maklaNum for path2
         MOV AH,n2
         MOV path2,AH
+        MOV AH,isDirect
+        MOV makla2,AH ; return maklaNum for path1
     not_verified1:
 
     CMP bool,1
@@ -809,4 +811,3 @@ ENDM
 
 ; ;CODE ENDS
 ; END START
-

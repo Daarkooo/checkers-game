@@ -3,7 +3,7 @@
 .STACK 100h
 
 .DATA
-    board           DB  20 DUP('b'), 10 DUP('0'), 20 DUP('w')
+    board           DB  25 DUP('b'), 5 DUP('0'), 20 DUP('w')
     ; board           DB  20 DUP('b'), 25 DUP('w')
 
     SPMP_X          EQU     260
@@ -29,6 +29,7 @@
     path2           DB      ?
     num             DB      ?
     makla           DB      ?
+    makla2          DB      ?
     isDirect        DB      ?
     multiple_jumps  DB      ?
 
@@ -37,8 +38,8 @@
     EXIT_Y          EQU     312
     EXIT_MSG        DB      "EXIT$"
 
-    INCLUDE mouse.inc
-    INCLUDE GUI.inc
+    ; INCLUDE mouse.inc
+    ; INCLUDE GUI.inc
     INCLUDE print.inc
     INCLUDE logic.inc
 
@@ -90,7 +91,7 @@
                 LEA AX,getCoordsFromMouseClick
                 awaitMouseClick AX,0,0,34 ; CX <- y DX <- x
                 
-                show_path board,DL,CL,turn,path1,path2,source_pawn,makla,isDirect,multiple_jumps
+                show_path board,DL,CL,turn,path1,path2,source_pawn,makla,makla2,isDirect,multiple_jumps
 
             CMP path1,-1
             JE label1
@@ -115,7 +116,7 @@
             LEA AX,getCoordsFromMouseClick
             awaitMouseClick AX,0,0,34 ; CX <- x DX <- y
 
-            move_pawn board,DL,CL,path1,path2,source_pawn,makla,isDirect
+            move_pawn board,DL,CL,path1,path2,source_pawn,makla,makla2,isDirect
 
             CMP isDirect,-1
             JNE label3
