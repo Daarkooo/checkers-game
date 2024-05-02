@@ -116,64 +116,54 @@ ENDM
 
 ;------get_number----------------  
 get_number MACRO row, column, menu, Num
-    LOCAL invalid, end, next,invalid_1,invalid_2,invalid1,invalid2,nextt
-        ; (row % 2 === column % 2) 
-        MOV AL,column 
-        CMP AL,0
-        JNB invalid_1
-            JMP invalid
-        invalid_1:
-        CMP AL,9
-        JNA invalid_2  ; m[1,0] m[3,0]
-            JMP invalid
-        invalid_2:          
+        LOCAL invalid, end, next,invalid_1,invalid_2,invalid1,invalid2,nextt
+            ; (row % 2 === column % 2)
+            MOV AL,column
+            CMP AL,9
+            JA invalid
 
-        MOV AL,row ;[0002h]
-        CMP AL,0
-        JNB invalid1
-            JMP invalid
-        invalid1:
-        CMP AL,9
-        JA invalid
-        
-        MOV AH,'y'
-        CMP AH,menu
-            JE nextt
-                JMP next
-            nextt:  
-            MOV NUM, 'v'; valid
-            JMP end
-        next:
-        
-        ; MOV AL,row ;[0002h]
-        xor ah, ah
-        mov cl, 2
-        div cl
-        mov bl, ah  ; Store (column % 2) in bl
-        mov al, column
-        xor ah, ah
-        div cl
-        cmp ah, bl  ; Compare (row % 2) with (column % 2)
-        jnz invalid2  ; not a White Square
-            JMP invalid
-        invalid2:
-            ; Calculate the number
-            mov al, row
-            mov bl, 5
-            mul bl  ; AL = row * 5
-            mov bl, column
-            shr bl, 1  ; Divide column by 2 
-            add al, bl  ; AL = AL + (column / 2)
-            inc al  ;the index starts from 0
-        
-            ; Store the number
-            mov Num, al
-            jmp end
-    invalid:
-        ; White square || invalid row/column
-        mov Num, 0
-    end:
-ENDM       
+            MOV AL,row ;[0002h]
+            CMP AL,9
+            JA invalid
+
+            MOV AH,'y'
+            CMP AH,menu
+                JE nextt
+                    JMP next
+                nextt:
+                MOV NUM, 'v'; valid
+                JMP end
+            next:
+
+            ; MOV AL,row ;[0002h]
+            xor ah, ah
+            mov cl, 2
+            div cl
+            mov bl, ah  ; Store (column % 2) in bl
+            mov al, column
+            xor ah, ah
+            div cl
+            cmp ah, bl  ; Compare (row % 2) with (column % 2)
+            jnz invalid2  ; not a White Square
+                JMP invalid
+            invalid2:
+                ; Calculate the number
+                mov al, row
+                mov bl, 5
+                mul bl  ; AL = row * 5
+                mov bl, column
+                shr bl, 1  ; Divide column by 2
+                add al, bl  ; AL = AL + (column / 2)
+                inc al  ;the index starts from 0
+
+                ; Store the number
+                mov Num, al
+                jmp end
+        invalid:
+            ; White square || invalid row/column
+            mov Num, 0
+        end:
+ENDM      
   
   
 ;-----board_init_board---------- 
@@ -519,6 +509,7 @@ show_path MACRO board,i1,j1,turn1,path1,path2,pawn_position,makla,isDirect,multi
 
     CMP bool,1
     JNE label1 ; if there's a move in indirect, isDirect'll return maklaNum -> isDirect != 'n'
+        MOV bool,0
         JMP end
     label1:
 

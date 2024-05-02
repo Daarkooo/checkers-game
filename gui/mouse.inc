@@ -33,81 +33,6 @@
         POP AX
     ENDM
 
-    __setupMouse PROC ; initialX, initialY, minXRange, minYRange, maxXRange, maxYRange
-        PUSH BP
-        MOV BP, SP
-
-        ; [BP +  4]: maxYRange
-        ; [BP +  6]: maxXRange
-        ; [BP +  8]: minYRange
-        ; [BP + 10]: minXRange
-        ; [BP + 12]: initialY
-        ; [BP + 14]: initialX
-
-        ; set up mouse drivers
-        XOR AX, AX
-        INT 33h
-
-        ; set initial mouse position to (0, 0) to avoid distrubing the menu
-        MOV AX, 0004h
-        MOV CX, [BP + 14]
-        MOV DX, [BP + 12]
-        INT 33h
-
-        ; display mouse
-        MOV AX, 0001h
-        INT 33h
-
-        ; will do (maximum range - 3)
-        ; horizontal range
-        MOV AX, 0007h
-        MOV CX, [BP + 10]
-        MOV DX, [BP + 6]
-        INT 33h
-
-        ; vertical range
-        MOV AX, 0008h
-        MOV CX, [BP + 8]
-        MOV DX, [BP + 4]
-        INT 33h
-
-        MOV SP, BP
-        POP BP
-        RET 12
-    __setupMouse ENDP
-
-    setupMouse MACRO initialX, initialY, minXRange, minYRange, maxXRange, maxYRange
-        PUSH AX
-        PUSH BX
-        PUSH CX
-        PUSH DX
-
-        MOV AX, initialX
-        PUSH AX
-
-        MOV AX, initialY
-        PUSH AX
-
-        MOV AX, minXRange
-        PUSH AX
-
-        MOV AX, minYRange
-        PUSH AX
-
-        MOV AX, maxXRange
-        PUSH AX
-
-        MOV AX, maxYRange
-        PUSH AX
-
-        CALL __setupMouse
-
-        POP DX
-        POP CX
-        POP BX
-        POP AX
-    ENDM
-
     __awaitMouseClick PROC; callback, arg1, arg2, arg3
         PUSH BP
         MOV BP, SP
@@ -130,7 +55,7 @@
 
         sleep 0Fh, 4240h
 
-        PUSH CX     ; column (x)
+        PUSH CX     ; column (x) 
         PUSH DX     ; row (y)
 
         CALL [BP + 10]
@@ -144,7 +69,7 @@
     ; it is Advisable to push 'arg1', 'arg2' & 'arg3'; even if their values is 0
     awaitMouseClick MACRO callback, arg1, arg2, arg3
         PUSH callback  ; Push the offset of the callback
-
+        
         MOV AX, arg1
         PUSH AX
 
@@ -180,8 +105,6 @@
         DIV WORD PTR [BP + 8]
         MOV CX, AX
 
-        ; y = line * size + offset
-
         ; y position
         XOR DX, DX
         MOV AX, [BP + 4]
@@ -199,10 +122,6 @@
     ; 1: SP/MP
     ; 2: makla
     ; 3: start
-    ; 4: theme1
-    ; 5: theme2
-    ; 6: theme3
-    ; 7: theme4
     ; F: exit
     getMenuOptionClicked PROC ; fakeArg1, fakeArg2, fakeArg3, xPosition, yPosition
         PUSH BP
@@ -217,7 +136,7 @@
 
             MOV AX, EXIT_Y
             ADD AX, 30
-            CMP [BP + 4], AX
+            CMP [BP + 4], AX 
             JG SPMP_LABEL
 
             CMP WORD PTR [BP + 6], EXIT_X
@@ -273,102 +192,22 @@
 
         START_LABEL:
             CMP WORD PTR [BP + 4], START_Y
-            JL THEME0_LABEL
+            JL NOTHING_LABEL
 
             MOV AX, START_Y
             ADD AX, 50
             CMP [BP + 4], AX
-            JG THEME0_LABEL
+            JG NOTHING_LABEL
 
             CMP WORD PTR [BP + 6], START_X
-            JL THEME0_LABEL
+            JL NOTHING_LABEL
 
             MOV AX, START_X
             ADD AX, 120
             CMP [BP + 6], AX
-            JG THEME0_LABEL
+            JG NOTHING_LABEL
 
             MOV AX, 0003h
-        JMP END_LABEL
-
-        THEME0_LABEL:
-            CMP WORD PTR [BP + 4], THEME0_Y
-            JL THEME1_LABEL
-
-            MOV AX, THEME0_Y
-            ADD AX, 34
-            CMP [BP + 4], AX
-            JG THEME1_LABEL
-
-            CMP WORD PTR [BP + 6], THEME0_X
-            JL THEME1_LABEL
-
-            MOV AX, THEME0_X
-            ADD AX, 34
-            CMP [BP + 6], AX
-            JG THEME1_LABEL
-
-            MOV AX, 0004h
-        JMP END_LABEL
-
-        THEME1_LABEL:
-            CMP WORD PTR [BP + 4], THEME1_Y
-            JL THEME2_LABEL
-
-            MOV AX, THEME1_Y
-            ADD AX, 34
-            CMP [BP + 4], AX
-            JG THEME2_LABEL
-
-            CMP WORD PTR [BP + 6], THEME1_X
-            JL THEME2_LABEL
-
-            MOV AX, THEME1_X
-            ADD AX, 34
-            CMP [BP + 6], AX
-            JG THEME2_LABEL
-
-            MOV AX, 0005h
-        JMP END_LABEL
-
-        THEME2_LABEL:
-            CMP WORD PTR [BP + 4], THEME2_Y
-            JL THEME3_LABEL
-
-            MOV AX, THEME2_Y
-            ADD AX, 34
-            CMP [BP + 4], AX
-            JG THEME3_LABEL
-
-            CMP WORD PTR [BP + 6], THEME2_X
-            JL THEME3_LABEL
-
-            MOV AX, THEME2_X
-            ADD AX, 34
-            CMP [BP + 6], AX
-            JG THEME3_LABEL
-
-            MOV AX, 0006h
-        JMP END_LABEL
-
-        THEME3_LABEL:
-            CMP WORD PTR [BP + 4], THEME3_Y
-            JL NOTHING_LABEL
-
-            MOV AX, THEME3_Y
-            ADD AX, 34
-            CMP [BP + 4], AX
-            JG NOTHING_LABEL
-
-            CMP WORD PTR [BP + 6], THEME3_X
-            JL NOTHING_LABEL
-
-            MOV AX, THEME3_X
-            ADD AX, 34
-            CMP [BP + 6], AX
-            JG NOTHING_LABEL
-
-            MOV AX, 0007h
         JMP END_LABEL
 
         NOTHING_LABEL:
