@@ -743,6 +743,110 @@
         popReg
     ENDM
 
+    ; -----------------------------------------------
+    
+    __drawBorderCell PROC; N, color, xOffset, yOffset, cellSize
+        PUSH BP
+        MOV BP, SP
+        SUB SP, 4
+
+        ; [BP + 12] N
+        ; [BP + 10] color
+        ; [BP +  8] xOffset
+        ; [BP +  6] yOffset
+        ; [BP +  4] cellSize
+
+        ; [BP -  2] column (x)
+        ; [BP -  4] row (y)
+
+        ; got column (x)
+        MOV BL, BYTE PTR [BP + 12]
+        get_column BL, AL
+        XOR AH, AH
+        MOV [BP - 2], AX
+
+        ; got row (y)
+        MOV BL, BYTE PTR [BP + 12]
+        getRow BL, AL
+        XOR AH, AH
+        MOV [BP - 4], AX
+
+        ; initial column (px)
+        MOV AX, [BP - 2]
+        MOV BX, [BP + 4]
+        XOR DX, DX
+        MUL BX
+        ADD AX, [BP + 8]
+        MOV CX, AX
+
+        ; initial row (px)
+        MOV AX, [BP - 4]
+        MOV BX, [BP + 4]
+        XOR DX, DX
+        MUL BX
+        ADD AX, [BP + 6]
+        MOV DX, AX
+
+        ; Upper border
+        MOV AX, [BP + 10]
+        MOV BX, [BP + 4]
+        drawHorizontalLine AX, CX, DX, BX
+        INC DX
+        drawHorizontalLine AX, CX, DX, BX       ; 2 pixels
+        DEC DX
+
+        ; Left border
+        drawVerticalLine AX, CX, DX, BX
+        INC CX
+        drawVerticalLine AX, CX, DX, BX
+        DEC CX
+
+        ; Right border
+        ADD CX, [BP + 4]
+        drawVerticalLine AX, CX, DX, BX
+        DEC CX
+        drawVerticalLine AX, CX, DX, BX         ; 2 pixels
+        INC CX
+
+        ; Lower border
+        ADD DX, [BP + 4]
+        SUB CX, [BP + 4]
+        drawHorizontalLine AX, CX, DX, BX
+        DEC DX
+        drawHorizontalLine AX, CX, DX, BX
+        INC DX
+
+        MOV SP, BP
+        POP BP
+        RET 10
+    __drawBorderCell ENDP
+
+    drawBorderCell MACRO N, color, xOffset, yOffset, cellSize 
+        PushReg
+        
+        xor ah,ah
+        xor bh,bh
+
+        MOV AL, N
+        PUSH AX
+
+        MOV AL, color
+        PUSH AX
+
+        MOV AL, xOffset
+        PUSH AX
+
+        MOV AL, yOffset
+        PUSH AX
+
+        MOV AL, cellSize
+        PUSH AX
+
+        CALL __drawBorderCell
+
+        popReg
+    ENDM
+
     __setMousePosition PROC
         PUSH BP
         MOV BP, SP

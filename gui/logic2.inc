@@ -1,4 +1,5 @@
 .model small
+;-------------assembly--------------
 ;DATA SEGMENT 
 .data
     n1 db ?
@@ -10,19 +11,15 @@
     x DB ?
     y DB ?
     pawn_position DB ?
-    state DB ?  
+    state DB ?
     switcher DB 1
-    checked DB ?
-    
+    menu DB ?
     val1 DB ?
     val2 DB ? 
-    menu DB ? 
     verified DB ?
     moves DB 50 dup(?)
     bool DB 0 ; need it in showpaths 
-    num1 DB ? 
-    msg_result DB "result: $"
-
+    num1 DB ?  
 .code  
 
 ;------------get_clumn----------------
@@ -87,7 +84,7 @@ ENDM
 
 ;------get_number----------------  
 get_number MACRO row, column, menu, Num
-        LOCAL invalid, end, next
+        LOCAL invalid, end, next,invalid_1,invalid_2,invalid1,invalid2,nextt
             ; (row % 2 === column % 2)
             MOV AL,column
             CMP AL,9
@@ -99,7 +96,9 @@ get_number MACRO row, column, menu, Num
 
             MOV AH,'y'
             CMP AH,menu
-                JNE next
+                JE nextt
+                    JMP next
+                nextt:
                 MOV NUM, 'v'; valid
                 JMP end
             next:
@@ -113,7 +112,9 @@ get_number MACRO row, column, menu, Num
             xor ah, ah
             div cl
             cmp ah, bl  ; Compare (row % 2) with (column % 2)
-            jz invalid  ; not a White Square
+            jnz invalid2  ; not a White Square
+                JMP invalid
+            invalid2:
                 ; Calculate the number
                 mov al, row
                 mov bl, 5
@@ -130,92 +131,93 @@ get_number MACRO row, column, menu, Num
             ; White square || invalid row/column
             mov Num, 0
         end:
-ENDM      
+ENDM        
   
   
 ;-----board_init_board---------- 
 board_init MACRO board
-    LOCAL L1, L2, L3
-    LEA SI, board
-        
-    MOV CX, 20
-    L1:
-        MOV BYTE PTR [SI], 'b'
-        INC SI
-    LOOP L1
-    
-    MOV CX, 10
-    L2:
-        MOV BYTE PTR [SI], '0'
-        INC SI
-    LOOP L2
+	LOCAL L1, L2, L3
+	LEA SI, board
+		
+	MOV CX, 20
+	L1:
+		MOV BYTE PTR [SI], 'b'
+		INC SI
+	LOOP L1
+	
+	MOV CX, 10
+	L2:
+		MOV BYTE PTR [SI], '0'
+		INC SI
+	LOOP L2
 
-    MOV CX, 20
-    L3:
-        MOV BYTE PTR [SI], 'w'
-        INC SI
-    LOOP L3
+	MOV CX, 20
+	L3:
+		MOV BYTE PTR [SI], 'w'
+		INC SI
+	LOOP L3
 ENDM 
 
 ;----print_char---------
 print_char MACRO asciiCode
-    MOV AH, 02h
-    MOV DL, asciiCode
-    INT 21h
+	MOV AH, 02h
+	MOV DL, asciiCode
+	INT 21h
 ENDM
  
  
 ;----print_string-------    
 print_string MACRO reference
-    MOV AH, 09h
-    LEA DX, reference
-    INT 21h
+	MOV AH, 09h
+	LEA DX, reference
+	INT 21h
 ENDM
  
 ;---print_board-------- 
 print_board MACRO board
-    LOCAL outer_loop, inner_loop1, inner_loop2
-        MOV CX, 10
-        XOR SI, SI
-    
-    outer_loop:
-        PUSH CX
-        TEST CX, 01h                ; get first bit to know whether it's parity
-        MOV CX, 5
-        MOV AH, 02h
-        
-        JZ inner_loop2
-        
-        inner_loop1:
-            print_char board[SI]
-            INC SI
-            
-            print_char ' '
-            
-            print_char 2EH
-            
-            print_char ' '          ; space
-        LOOP inner_loop1
-        
-        JMP row_end
-        
-        inner_loop2:
-            print_char 2EH
-            
-            print_char ' '          ; space
-            
-            print_char board[SI]
-            INC SI
-            
-            print_char ' '
-        LOOP inner_loop2
-        
-        row_end:
-        print_string newLine        ; new line
+	LOCAL outer_loop, inner_loop1, inner_loop2
+		MOV CX, 10
+		XOR SI, SI
+	
+	outer_loop:
+		PUSH CX
+		TEST CX, 01h                ; get first bit to know whether it's parity
+		MOV CX, 5
+		MOV AH, 02h
+		
+		JZ inner_loop2
+		
+		inner_loop1:
+			print_char board[SI]
+			INC SI
+			
+			print_char ' '
+			
+			print_char 2EH
+			
+			print_char ' '          ; space
+		LOOP inner_loop1
+		
+		JMP row_end
+		
+		inner_loop2:
+			print_char 2EH
+			
+			print_char ' '          ; space
+			
+			print_char board[SI]
+			INC SI
+			
+			print_char ' '
+		LOOP inner_loop2
+		
+		row_end:
+		print_string newLine        ; new line
 
-        POP CX
-    LOOP outer_loop
+		POP CX
+	LOOP outer_loop
 ENDM
+   
 ;-----get_cell_color-------------
  get_cell_color MACRO row, column
     LOCAL BlackCase, fin
@@ -244,37 +246,34 @@ ENDM
         int 21h
     
     fin: 
-ENDM  
+ENDM     
    
 ;----CellState----------
 get_cell_state MACRO board,i,j,result
-    LOCAL white_cell, end_label, white_celll     ; LOCAL LABELS
-        MOV DL, i
-        MOV DH, j
-        get_number DL, DH, menu, AL        ; Le macro de la question C (Fait par Abdou & Omar)
-        
-        TEST AL, AL
-        JNZ white_celll
-            JMP white_cell
-        white_celll:
-        
-        XOR AH, AH
-        MOV SI, AX
-        MOV AL, board[SI - 1]        
-        MOV result, AL
-        JMP end_label
-            
-    white_cell:
-        MOV result, 0
-    
-    end_label: 
+	LOCAL white_cell, end_label     ; LOCAL LABELS
+		MOV DL, i
+		MOV DH, j
+		get_number DL, DH, main, AL        ; Le macro de la question C (Fait par Abdou & Omar)
+		
+		TEST AL, AL
+		JZ white_cell
+		
+		XOR AH, AH
+		MOV SI, AX
+		MOV AL, board[SI - 1]        
+		MOV result, AL
+		JMP end_label
+			
+	white_cell:
+	    MOV result, 0
+	
+	end_label: 
 ENDM
    
    
 ;----------verify_move----------------   
 verify_move MACRO board, i, j, x, y, turn, verified, isDirect, val1, val2
     LOCAL impossible_move, done, other_way, down, end, next,impossible_move1,impossible_move2,continue,continue1,label1
-    ;DL=i DH=j BH=x CH=y | i and j must be between 1-10 -> (0-9) 'we do the check in get_number & 'DEC 1' in the main'  
 
     get_number i, j, menu, n1 
         CMP n1,0 ; 0 -> white cell 'invalid' (check get_number)
@@ -304,11 +303,12 @@ verify_move MACRO board, i, j, x, y, turn, verified, isDirect, val1, val2
     MOV BH,n2 ; need it in indirect for checking 1st,2nd,8th,last (9/11)<-(n1-n2)
     MOV val2,BH ; need it in move function (to avoid the get_number call)
     
-    ;----------show_path (optimization)---------(to check only one block direct/indirect)
+    ;----------show_paths (optimization)---------(to check only one block direct/indirect)
     CMP isDirect,'n' ; isDirect <- Al
     JE label1 ;-------DIRECT_MOVE-----(always true if the previous checks were true)
         JMP done
     label1:
+    
     ;------------INDIRECT_MOVE------------------------------- 
     MOV DL,i 
     MOV DH,j 
@@ -328,9 +328,9 @@ verify_move MACRO board, i, j, x, y, turn, verified, isDirect, val1, val2
     other_way:
         INC DH ; inc n1[,j]
     next:
-    INC DL
+    INC DL 
 
-    get_number DL,DH , menu, isDirect ; isDirect return makla number (for optimization) 'indirect move'
+    get_number DL,DH , main, isDirect ; isDirect return makla number (for optimization) 'indirect move'
     get_cell_state board, DL, DH, state ; depends on the colors (white -> black/ black ->white)
     CMP state,'0' ; one step (not for dames)
     JE impossible_move 
@@ -348,13 +348,12 @@ ENDM
 
 
 ;------move_pawn---------- 
-
-move_pawn MACRO board,x,y,path1,path2,pawn_position,makla,makla2,isDirect
+move_pawn MACRO board,x,y,path1,path2,pawn_position,makla,isDirect
     LOCAL end, indirect, move, move1, no_move, next  
     MOV BH,x ; cant use the other registers cuz are used in get_number 
     MOV CH,y 
 
-    get_number BH,CH,menu,num1
+    get_number BH,CH,main,num1
     MOV BH,num1
     MOV num,BH
     CMP BH,path1
@@ -363,35 +362,34 @@ move_pawn MACRO board,x,y,path1,path2,pawn_position,makla,makla2,isDirect
         JE move1
     next:
     CMP BH,path2 ; BH <- board[x,y]     
-    JNE no_move
-    MOV AH,makla2
+    MOV AH,isDirect
     MOV makla,AH ; isDirect return maklaNum for path2
-
-    move1:
-    XOR AX, AX   
-    MOV AL, pawn_position
-    DEC AL   
-    MOV DI, AX    
-    MOV AL, BH ; BH <- board[x,y]
-    DEC AL   
-    MOV SI, AX     
-        
-    CMP isDirect,'y'
-    JNE indirect 
-        MOV AL,board[DI] ;---DIRECT MOVE---------
-        MOV board[DI],'0'
-        MOV board[SI],AL                    
-        JMP move
-    indirect:
-        MOV AL,board[DI] ;---INDIRECT MOVE---------
-        MOV board[DI],'0'
-        MOV board[SI],AL 
-            
-        MOV AL, makla 
-        DEC AL  
+    JNE no_move
+        move1:
+        XOR AX, AX   
+        MOV AL, pawn_position
+        DEC AL   
         MOV DI, AX    
-        MOV AL,board[DI]
-        MOV board[DI],'0'
+        MOV AL, BH ; BH <- board[x,y]
+        DEC AL   
+        MOV SI, AX     
+        
+        CMP isDirect,'y'
+        JNE indirect 
+            MOV AL,board[DI] 
+            MOV board[DI],'0'
+            MOV board[SI],AL                    
+            JMP move
+        indirect:
+            MOV AL,board[DI]
+            MOV board[DI],'0'
+            MOV board[SI],AL 
+            
+            MOV AL, makla 
+            DEC AL  
+            MOV DI, AX    
+            MOV AL,board[DI]
+            MOV board[DI],'0'
     move:
         MOV AL,num
         MOV isDirect, AL
@@ -404,8 +402,8 @@ ENDM
 
 
 ;------show_path----------
-show_path MACRO board,i1,j1,turn1,path1,path2,pawn_position,makla,isDirect,multiple_jumps
-    LOCAL end, next, next1, not_verified, not_verified1, not_verified2,  down, down1, label1, label2
+show_path MACRO board,i1,j1,turn1,path1,path2,pawn_position,makla,isDirect
+    LOCAL end, next, next1, not_verified, not_verified1, not_verified2, not_verified3, down, down1 ,label1 
    
     MOV DL,i1
     MOV DH,j1
@@ -465,14 +463,11 @@ show_path MACRO board,i1,j1,turn1,path1,path2,pawn_position,makla,isDirect,multi
     CMP bool,1
     JNE label1 ; if there's a move in indirect, isDirect'll return maklaNum -> isDirect != 'n'
         MOV bool,0
+        MOV AL,'n' ; not direct 
+        MOV isDirect,AL
         JMP end
     label1:
-
-    ;CMP multiple_jumps,1 ; need this after making the first move -> to avoid showing direct moves 
-    ;JNE label2
-    ;    JMP end 
-    ;label2:
-
+    
     ;---------DIRECT----------------
     MOV BH,i
     MOV CH,j
@@ -501,16 +496,17 @@ show_path MACRO board,i1,j1,turn1,path1,path2,pawn_position,makla,isDirect,multi
     MOV CH,j
     DEC CH ; CH<-(j-1) 
     MOV y,CH 
-    
     verify_move board,i,j,x,y,turn,verified,isDirect,pawn_position,n2 ; n1[i,j] n2[x,y] 
 
     CMP verified,0
-    JE end
+    JE not_verified3 
         MOV AH,n2 
         MOV path2,AH
+    not_verified3:
 
     end:
 ENDM
+
 
 show_path_dame MACRO board,i1,j1,turn1,path1,path2,pawn_position,makla,isDirect,multiple_jumps
     LOCAL end, next, next1, next2, next3, not_verified, not_verified1, not_verified2, not_verified3, down, down1, long_move, long_move1
@@ -662,6 +658,7 @@ show_path_dame MACRO board,i1,j1,turn1,path1,path2,pawn_position,makla,isDirect,
     end:
 ENDM
 
+
 switch_turn MACRO turn
     LOCAL switch,next_move
           
@@ -686,74 +683,72 @@ switch_turn MACRO turn
     MOV switcher,AL
 ENDM
 
-
-
-
 ; START:
 ;     MOV AX, @DATA
 ;     MOV DS, AX 
 ;     board_init board 
                      
-;     ;----BLACK TEST-------------------                    
-;     ;MOV board[20],'b'   
-;     ;MOV board[21],'w'
-;     ;show_path board,3,2,'b',path1,path2,pawn_position,makla,isDirect
+    ;----BLACK TEST-------------------                    
+    ;MOV board[20],'b'   
+    ;MOV board[21],'w'
+    ;show_paths board,3,2,'b',path1,path2,pawn_position,makla,isDirect
 
-;     ;move_pawn board,5,4,path1,path2,pawn_position,makla,isDirect  
-;     ;
-;     ;mov board[23],'w'
-;     ;show_path board,3,8,'b',path1,path2,pawn_position,makla,
+    ;move_pawn board,5,4,path1,path2,pawn_position,makla,isDirect  
+    ;
+    ;mov board[23],'w'
+    ;show_paths board,3,8,'b',path1,path2,pawn_position,makla,
 
-;     ;move_pawn board,5,6,path1,path2,pawn_position,makla,isDirect
+    ;move_pawn board,5,6,path1,path2,pawn_position,makla,isDirect
                                                              
                                                              
-;     ;----WHITE TEST------------------  
-;     ;MOV board[28],'w'   
-;     ; MOV board[29],'b'
-;     ; show_path board,6,7,'w',path1,path2,pawn_position,makla,isDirect
-                                                               
-;     ; move_pawn board,4,9,path1,path2,pawn_position,makla,isDirect
+    ;----WHITE TEST------------------  
+    ;MOV board[28],'w'
     
-;     ;show_path board,6,1,'w',path1,path2,pawn_position,makla,isDirect
+    ; MOV board[21],'w'  
+      
+      
+       
+    ; MOV board[21],'w'
+    ; show_paths board,3,4,'b',path1,path2,pawn_position,makla,isDirect
                                                                
-;     ;move_pawn board,5,2,path1,path2,pawn_position,makla,isDirect 
+    ; move_pawn board,5,2,path1,path2,pawn_position,makla,isDirect
+    
+    ;show_paths board,6,1,'w',path1,path2,pawn_position,makla,isDirect
+                                                               
+    ;move_pawn board,5,2,path1,path2,pawn_position,makla,isDirect 
     
     
                                                                
-;     ;----BLACK TEST-------------------
-;     ;move_pawn board,3,2,4,1,'b',turn,verified,isDirect,n1,n2 ; direct     ; 17->21
-;     ;move_pawn board,3,2,4,3,'b',turn,verified,isDirect,n1,n2 ; other way  ; 17->22
-;     ;----indirect----    
-;     ;mov board[21],'w'; 22<-'w'
-;     ;move_pawn board,3,4,5,2,'b',turn,verified,isDirect,n1,n2 ;18->27       
-;     ;mov board[22],'w'; 23<-'w'
-;     ;move_pawn board,3,4,5,6,'b',turn,verified,isDirect,n1,n2 ;18->29   
+    ;----BLACK TEST-------------------
+    ;move_pawn board,3,2,4,1,'b',turn,verified,isDirect,n1,n2 ; direct     ; 17->21
+    ;move_pawn board,3,2,4,3,'b',turn,verified,isDirect,n1,n2 ; other way  ; 17->22
+    ;----indirect----    
+    ;mov board[21],'w'; 22<-'w'
+    ;move_pawn board,3,4,5,2,'b',turn,verified,isDirect,n1,n2 ;18->27       
+    ;mov board[22],'w'; 23<-'w'
+    ;move_pawn board,3,4,5,6,'b',turn,verified,isDirect,n1,n2 ;18->29   
   
     
         
-;     ;----WHITE TEST------------------
-;     ;move_pawn board,6,1,5,0,'w',turn,verified,isDirect,n1,n2 ; direct     ; 31->26
-;     ;move_pawn board,6,1,5,2,'w',turn,verified,isDirect,n1,n2 ; other way  ; 31->27
+    ;----WHITE TEST------------------
+    ;move_pawn board,6,1,5,0,'w',turn,verified,isDirect,n1,n2 ; direct     ; 31->26
+    ;move_pawn board,6,1,5,2,'w',turn,verified,isDirect,n1,n2 ; other way  ; 31->27
 
 
-;     ;----indirect----      
-;     ;mov board[27],'b'; 28<-'b'
-;     ;move_pawn board,6,5,4,3,'w',turn,verified,isDirect,n1,n2 ;33->22       
-;     ;mov board[28],'b'; 29<-'b'
-;     ;move_pawn board,6,5,4,7,'w',turn,verified,isDirect,n1,n2 ;33->24      
-;     ;get_number 3,0,'n',n1
-    
-;     ;get_column 6,num
+    ;----indirect----      
+    ;mov board[27],'b'; 28<-'b'
+    ;move_pawn board,6,5,4,3,'w',turn,verified,isDirect,n1,n2 ;33->22       
+    ;mov board[28],'b'; 29<-'b'
+    ;move_pawn board,6,5,4,7,'w',turn,verified,isDirect,n1,n2 ;33->24      
+    ;get_number 3,0,'n',n1
+                          
+
      
-;     ;MOV al,1
-;     ;mov path1,1
+    ;MOV al,1
+    ;mov path1,1
     
-;     show_path board,6,7,'w',path1,path2,pawn_position,makla,isDirect
-                                                               
-;     move_pawn board,5,8,path1,path2,pawn_position,makla,isDirect
-;    ; show_path board,3,2,'b',path1,path2,pawn_position,makla,isDirect  
-;     print_board board 
-;     ;get_number 9,8,'y',n1
+    ; print_board board 
+    ;get_number 9,8,'y',n1
 
-; ;CODE ENDS
+;CODE ENDS
 ; END START

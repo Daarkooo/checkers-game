@@ -3,24 +3,13 @@
 .STACK 100h
 
 .DATA
-    board           DB  25 DUP('b'), 5 DUP('0'), 20 DUP('w')
+    board           DB  20 DUP('b'), 10 DUP('0'), 20 DUP('w')
     ; board           DB  20 DUP('b'), 25 DUP('w')
 
-    SPMP_X          EQU     260
-    SPMP_Y          EQU     80
-    MP_MSG          DB      "Multi player$"
-    SP_MSG          DB      "Single player$"
-    isSP            DB      1
-
-    MAKLA_X         EQU     260
-    MAKLA_Y         EQU     150
-    MKLASIF_MSG     DB      "makla sif$"
-    MKLANSIF_MSG    DB      "machi sif$"
-    isMaklaSif      DB      1
-
-    START_X         EQU     260
-    START_Y         EQU     220
-    START_MSG       DB      "START$"
+    blackCell       DW      0006h ; brown
+    whiteCell       DW      000Fh ; white
+    blackPiece      DW      0001h ; blue
+    whitePiece      DW      0000h ; black
 
     PColor          DW      ?
     source_pawn     DB      ?
@@ -34,12 +23,7 @@
     multiple_jumps  DB      ?
 
 
-    EXIT_X          EQU     5
-    EXIT_Y          EQU     312
-    EXIT_MSG        DB      "EXIT$"
-
-    ; INCLUDE mouse.inc
-    ; INCLUDE GUI.inc
+    INCLUDE menu.inc
     INCLUDE print.inc
     INCLUDE logic.inc
 
@@ -56,34 +40,23 @@
         MOV AX, 0010h   ; 640x350 16 colors
         INT 10h
 
-        ; set up mouse
-        XOR AX, AX
-        INT 33h
+        setupMouse 0, 0, 0, 0, 637, 347
 
-        ; ; set initial mouse position to (0, 0) to avoid distrubing the menu
-        MOV AX, 0004h
-        XOR CX, 100
-        XOR DX, 100
-        INT 33h
+        CALL graphicalMenu
 
-        ; display mouse
-        MOV AX, 0001h
-        INT 33h
+        CMP AX, 1
+        JZ startClicked
+        JMP main_endLabel
+        startClicked:
 
-        ; will do (maximum range - 3)
-        ; horizontal range
-        MOV AX, 0007h
-        MOV CX, 0
-        MOV DX, 637
-        INT 33h
+        ; Clear screen by re-setting video mode
+        MOV AX, 0010h   ; 640x350 16 colors
+        INT 10h
 
-        ; vertical range
-        MOV AX, 0008h
-        MOV CX, 0
-        MOV DX, 347
-        INT 33h
 
-        Board_init_GUI board,0000h,0001h
+        Board_init_GUI board, blackCell, whiteCell, blackPiece, whitePiece
+
+        setupMouse 500, 270, 0, 0, 637, 347
 
         ; MOV CX,6
         play:
@@ -92,6 +65,8 @@
                 awaitMouseClick AX,0,0,34 ; CX <- y DX <- x
                 
                 show_path board,DL,CL,turn,path1,path2,source_pawn,makla,makla2,isDirect,multiple_jumps
+                
+               drawBorderCell source_pawn, 0Ah, 0, 0, 34 ; green 
 
             CMP path1,-1
             JE label1
@@ -105,12 +80,19 @@
 
             CMP AL,1    
             JE next
+                drawBorderCell source_pawn, 06h, 0, 0, 34 
                 JMP reselect
             next:
 
 
-            drawBorder path1, 0Ah, 0, 0, 34
-            drawBorder path2, 0Ah, 0, 0, 34
+            ; Use BX to pass 8 bit paraemtre, because AX will be cleared inside MACRO call
+            XOR BX, BX
+            MOV BL, path1
+            markCell 04h, offsetX, offsetY, cellSize, BX
+            
+            XOR BX, BX
+            MOV BL, path2
+            markCell 04h, offsetX, offsetY, cellSize, BX
             
             reselect2:
             LEA AX,getCoordsFromMouseClick
@@ -123,106 +105,23 @@
                 JMP reselect2
             label3:
 
-            drawBorder path1, 06h, 0, 0, 34
-            drawBorder path2, 06h, 0, 0, 34
-            
+            XOR BX, BX
+            MOV BL, path1
+            markCell 06h, offsetX, offsetY, cellSize, BX
 
-            ; drawCell 000CH, 2*34, 3*34, 34
-            ; drawCircle 00001H, 2*40, 3*40
-            ; drawCell 000AH, 3*34, 34*4, 34
-            ; drawCell color, x, y, size
+            XOR BX, BX
+            MOV BL, path2
+            markCell 06h, offsetX, offsetY, cellSize, BX
             
             switch_turn turn ; make it here to change the color of the pawns (depends on player's turn)
+
+            drawBorderCell source_pawn, 06h, 0, 0, 34 
             
             Move_GUI source_pawn,isDirect,PColor ; isDirect <- board[x,y] if the move is valid
 
-           
-
-        ; DEC CX
-        ; CMP CX,0
-        ; JNZ next
         JMP play
-        ; next:
 
-
-
-        ; ***************************************** DRAWING MENU *****************************************
-        ; ; SP/MP TOGGLE
-        ; drawRectangle SPMP_X, SPMP_Y, 120, 50, 0006h
-        ; printGraphicalString SP_MSG, 0F1h, 34, 7
-
-        ; ; MAKLA TOGGLE
-        ; drawRectangle MAKLA_X, MAKLA_Y, 120, 50, 0002h
-        ; printGraphicalString MKLASIF_MSG, 0F2h, 35, 12
-
-        ; ; START BUTTON
-        ; drawRectangle START_X, START_Y, 120, 50, 0001h
-        ; printGraphicalString START_MSG, 0F6h, 37, 17
-
-        ; ; EXIT BUTTON
-        ; drawRectangle EXIT_X, EXIT_Y, 70, 30, 0004h
-        ; printGraphicalString EXIT_MSG, 0F4h, 3, 23
-
-        ; MAIN_L1:
-        ;     LEA AX, getMenuOptionClicked
-        ;     awaitMouseClick AX, 0, 0, 0
-
-        ;     CMP AX, 0001h
-        ;     JZ SPMP_clicked
-
-        ;     CMP AX, 0002h
-        ;     JNZ MAKLA_notClicked
-        ;     JMP MAKLA_clicked
-        ;     MAKLA_notClicked:
-
-        ;     CMP AX, 0003h
-        ;     JNZ START_notClicked
-        ;     JMP START_clicked
-        ;     START_notClicked:
-
-        ;     CMP AX, 000Fh
-        ;     JNZ MAIN_L1
-        ;     JMP EXIT_clicked
-
-        ;     SPMP_clicked:
-        ;         CMP isSP, 1
-        ;         JZ SP_TOGGLE
-        ;             printGraphicalString MP_MSG, 0F1h, 34, 7
-        ;             printGraphicalString SP_MSG, 0F1h, 34, 7
-        ;             MOV isSP, 1
-        ;             JMP SPMP_end
-
-        ;         SP_TOGGLE:
-        ;             printGraphicalString SP_MSG, 0F1h, 34, 7
-        ;             printGraphicalString MP_MSG, 0F1h, 34, 7
-        ;             MOV isSP, 0
-
-        ;         SPMP_end:
-        ;         JMP MAIN_L1
-
-        ;     MAKLA_clicked:
-        ;         CMP isMaklaSif, 1
-        ;         JZ MAKLA_TOGGLE
-        ;             printGraphicalString MKLASIF_MSG , 0F2h, 35, 12
-        ;             printGraphicalString MKLANSIF_MSG, 0F2h, 35, 12
-        ;             MOV isMaklaSif, 1
-        ;             JMP MAKLA_end
-
-        ;         MAKLA_TOGGLE:
-        ;             printGraphicalString MKLANSIF_MSG, 0F2h, 35, 12
-        ;             printGraphicalString MKLASIF_MSG , 0F2h, 35, 12
-        ;             MOV isMaklaSif, 0
-
-        ;         MAKLA_end:
-        ;         JMP MAIN_L1
-
-        ;     START_clicked:
-        ;         ; START_GAME
-        ;         JMP EXIT_clicked
-        ;         JMP MAIN_L1
-
-        ;     EXIT_clicked:
-        ; ***************************************** END OF DRAWING MENU *****************************************
+        main_endLabel:
        
         POP BP
         MOV AX, 4C00h
