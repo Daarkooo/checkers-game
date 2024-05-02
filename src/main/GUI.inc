@@ -4,12 +4,10 @@
     xArray11        DW      1, 2, 1, 0, 1
     cellSize        EQU     34
     cellSize2       EQU     17
-    offsetX         EQU     295
-    offsetY         EQU     5
+    offsetX         EQU     0
+    offsetY         EQU     0
 
 .CODE
-
-    ; *************************************************************************************************************
     PushReg MACRO
         PUSH AX
         PUSH BX
@@ -28,65 +26,98 @@
         POP AX
     ENDM
 
-    get_column MACRO n,result
-        LOCAL not_eqaul_zero, not_less_than_6, end
+    ; *************************************************************************************************************
+        get_column MACRO n,result
+            LOCAL not_eqaul_zero, not_less_than_6, end
 
-        MOV AL, n
-        XOR AH, AH
-        MOV BL, 10
-        DIV BL    ; divide AL by BL, q -> AL, r -> AH
+            MOV AL, n
+            XOR AH, AH
+            MOV BL, 10
+            DIV BL    ; divide AL by BL, q -> AL, r -> AH
 
-        ; check if x == 0
-        CMP AH, 0
-        JNE not_eqaul_zero
-        MOV AL, 8 ; return 8
-        JMP end
-        not_eqaul_zero:
-
-            ; check if x < 6
-            CMP AH, 6
-            JGE not_less_than_6
-            MOV AL, AH
-            SHL AL, 1
-            DEC AL ; retrun ah * 2 -1
+            ; check if x == 0
+            CMP AH, 0
+            JNE not_eqaul_zero
+            MOV AL, 8 ; return 8
             JMP end
-        not_less_than_6:
+            not_eqaul_zero:
 
-            ; x >= 6
-            MOV AL, AH
-            SUB AL, 5
-            SHL AL, 1
+                ; check if x < 6
+                CMP AH, 6
+                JGE not_less_than_6
+                MOV AL, AH
+                SHL AL, 1
+                DEC AL ; retrun ah * 2 -1
+                JMP end
+            not_less_than_6:
+
+                ; x >= 6
+                MOV AL, AH
+                SUB AL, 5
+                SHL AL, 1
+                DEC AL
+                DEC AL  ; return (ah-5)*2-1
+
+            end:
+                MOV result,AL
+
+        ENDM
+
+        getRow MACRO Num, result
+            LOCAL errorLabel, endLabel
+            XOR AX, AX
+
+            MOV AL, Num
+
+            TEST AL, AL
+            JZ errorLabel
+
+            CMP AL, 50
+            JA errorLabel
+
             DEC AL
-            DEC AL  ; return (ah-5)*2-1
+            MOV BL, 5
+            DIV BL
+            JMP endLabel
 
-        end:
-            MOV result,AL
+            errorLabel:
+                MOV AL, -1
 
-    ENDM
+            endLabel:
+                MOV result, AL
+        ENDM
 
-    getRow MACRO Num, result
-        LOCAL errorLabel, endLabel
-        XOR AX, AX
+        getNumber MACRO row, column, Num
+            LOCAL calculate_number, fin
 
-        MOV AL, Num
-
-        TEST AL, AL
-        JZ errorLabel
-
-        CMP AL, 50
-        JA errorLabel
-
-        DEC AL
-        MOV BL, 5
-        DIV BL
-        JMP endLabel
-
-        errorLabel:
-            MOV AL, -1
-
-        endLabel:
-            MOV result, AL
-    ENDM
+                ; (row % 2 === column % 2)
+                MOV AL, column
+                AND AL, 01h
+                MOV AH, row
+                AND AH, 01h
+                CMP AL, AH
+                jnz calculate_number  ; not a White Square
+            
+                ; White square
+                mov Num, 0
+                jmp fin
+            
+            calculate_number:
+            
+                ; Calculate the number
+                XOR AX, AX
+                mov al, row
+                mov bl, 5
+                mul bl  ; AL = row * 5
+                mov bl, column
+                shr bl, 1  ; Divide column by 2 
+                add al, bl  ; AL = AL + (column / 2)
+                inc al  ;the index starts from 0
+            
+                ; Store the number
+                mov Num, al
+            fin: 
+        ENDM
     ; *************************************************************************************************************
 
     __drawHorizontalLine PROC ; color, startingX, Y, distance
@@ -822,11 +853,20 @@
         popReg
     ENDM
 
+    markCellsByArray MACRO array, color, 
+        pushReg
+
+
+        CALL __ markCellsByArray
+
+        popREg
+    ENDM
+
 ;! ********************************* ABDOU'S WORK *********************************
     Board_init_GUI Macro Board, blackCellColor, whiteCellColor, blackPieceColor, whitePieceColor
         drawBoard Offsetx, Offsety, whiteCellColor, blackCellColor, 34
         MOV CX,offsety
-        ADD CX, 18
+        ADD CX, 17
 
         Black:
 
@@ -842,7 +882,7 @@
                 CMP BX,0
                 JNZ Line0
             ADD CX, 34
-            MOV DX, 16
+            MOV DX, 17
             ADD DX,Offsetx
             MOV BX, 5
             Line1:
@@ -854,7 +894,7 @@
                 CMP BX,0
                 JNZ Line1
             ADD CX, 34
-            MOV DX, 52
+            MOV DX, 51
             ADD DX,Offsetx
             MOV BX, 5
             Line2:
@@ -881,7 +921,7 @@
             ADD CX, 102 ; JUMP TO WHITE PART
          White:
 
-            MOV DX,52
+            MOV DX,51
             ADD DX,Offsetx
             MOV BX,5
             Line6:
@@ -893,7 +933,7 @@
                 CMP BX,0
                 JNZ Line6
             ADD CX, 34
-            MOV DX, 16
+            MOV DX, 17
             ADD DX,Offsetx
             MOV BX, 5
             Line7:
@@ -905,7 +945,7 @@
                 CMP BX,0
                 JNZ Line7
             ADD CX, 34
-            MOV DX, 52
+            MOV DX, 51
             ADD DX,Offsetx
             MOV BX, 5
             Line8:
@@ -917,7 +957,7 @@
                 CMP BX,0
                 JNZ Line8
             ADD CX, 34
-            MOV DX, 16
+            MOV DX, 17
             ADD DX,Offsetx
             MOV BX, 5
             Line9:
@@ -1121,7 +1161,7 @@
                     JMP MoveTopG
             JMP MoveGui
         FinMove:
-            GetCenter Dh,Ch,DX,CX
+            GetCenter DL,CL,DX,CX
 
             setMousePosition 0, 0
 
@@ -1131,110 +1171,7 @@
             POP DX
             POP CX
 
-            setMousePosition CX, DX
-    ENDM
-
-    Move_GUI Macro n1,n2,PColor
-            LOCAL MoveGui,MoveG,MoveD,MoveDownD,MoveTopD,MoveDownG,MoveTopG,FinMove,      notMove1, notMove2, notMove3
-            MoveGui:
-                MOV AL,n1
-                CMP AL,n2
-
-                JNZ notMove1
-                JMP FinMove
-                notMove1:
-
-                get_column n1,DL
-                get_column n2,DH
-
-                CMP DL,DH
-
-                JL MoveD
-                JMP MoveG
-
-                MoveD:
-                   getRow n1,CL
-                   getRow n2,CH
-
-                   CMP CL,CH
-                   JAE MoveTopD
-
-                   MoveDownD:
-                      CMP DL,DH
-                      JNZ notMove2
-                      JMP FinMove
-                      notMove2:
-                      PUSH DX
-                      PUSH CX
-
-                         GetCase DL,CL,DX, CX
-                         drawCell 0006h, DX, CX, 34
-
-                      POP CX
-                      POP DX
-                      ADD DL,1
-                      ADD CL,1
-                      JMP MoveDownD
-
-
-                   MoveTopD:
-                      CMP DL,DH
-                      JNZ notMove3
-                      JMP FinMove
-                      notMove3:
-                      PUSH DX
-                      PUSH CX
-
-                         GetCase DL,CL,DX, CX
-                         drawCell 0006h, DX, CX, 34
-
-                      POP CX
-                      POP DX
-                      ADD DL,1
-                      SUB CL,1
-                      JMP MoveTopD
-
-                MoveG:
-                   getRow n1,CL
-                   getRow n2,CH
-
-                   CMP CL,CH
-                   JAE MoveTopG
-
-                   MoveDownG:
-                      CMP DL,DH
-                      JE FinMove
-                      PUSH DX
-                      PUSH CX
-
-                         GetCase DL,CL,DX, CX
-                         drawCell 0006h, DX, CX, 34
-
-                      POP CX
-                      POP DX
-                      SUB DL,1
-                      ADD CL,1
-                      JMP MoveDownG
-
-                   MoveTopG:
-                      CMP DL,DH
-                      JE FinMove
-                      PUSH DX
-                      PUSH CX
-
-                        GetCase DL,CL,DX, CX
-                        drawCell 0006h, DX, CX, 34
-
-                      POP CX
-                      POP DX
-                      SUB DL,1
-                      SUB CL,1
-                      JMP MoveTopG
-                JMP MoveGui
-            FinMove:
-                GetCenter Dh,Ch,DX,CX
-                drawCircle PColor, DX,CX
-
+            setMousePosition DX, CX
     ENDM
 
     Time Macro
