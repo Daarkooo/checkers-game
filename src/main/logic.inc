@@ -1,3 +1,5 @@
+.model small
+
 .DATA
     n1 db ?
     n2 db ?
@@ -8,29 +10,21 @@
     x DB ?
     y DB ?
     pawn_position DB ?
-    ; isDirect DB ?
-    ; makla DB ?
-    ; path1 DB ?
-    ; path2 DB ?
     state DB ?
-
     switcher DB 1
-    ; turn DB 'b'
     checked DB ?
 
     val1 DB ?
     val2 DB ?
     menu DB ?
-    ; multiple_jumps DB ?
     verified DB ?
     moves DB 50 dup(?)
-    ; Board DB 50 dup(?)
     bool DB 0 ; need it in showpaths
-    ; num DB ?
     num1 DB ?
     msg_result DB "result: $"
 
-.CODE
+.code
+    ;------------get_clumn----------------
     get_column MACRO n,result
         LOCAL not_eqaul_zero, less_than_6, less1_than_6, end
 
@@ -63,6 +57,7 @@
         MOV result,AL
     ENDM
 
+    ;--------get_row----------
     get_row MACRO Num, result
         LOCAL errorLabel, endLabel
         XOR AX, AX
@@ -87,54 +82,51 @@
             MOV result, AL
     ENDM
 
+    ;------get_number----------------
     get_number MACRO row, column, menu, Num
-        LOCAL invalid, end, next,invalid_1,invalid_2,invalid1,invalid2,nextt
-            ; (row % 2 === column % 2)
-            MOV AL,column
-            CMP AL,9
-            JA invalid
+            LOCAL invalid, end, next
+                ; (row % 2 === column % 2)
+                MOV AL,column
+                CMP AL,9
+                JA invalid
 
-            MOV AL,row ;[0002h]
-            CMP AL,9
-            JA invalid
+                MOV AL,row ;[0002h]
+                CMP AL,9
+                JA invalid
 
-            MOV AH,'y'
-            CMP AH,menu
-                JE nextt
-                    JMP next
-                nextt:
-                MOV NUM, 'v'; valid
-                JMP end
-            next:
+                MOV AH,'y'
+                CMP AH,menu
+                    JNE next
+                    MOV NUM, 'v'; valid
+                    JMP end
+                next:
 
-            ; MOV AL,row ;[0002h]
-            xor ah, ah
-            mov cl, 2
-            div cl
-            mov bl, ah  ; Store (column % 2) in bl
-            mov al, column
-            xor ah, ah
-            div cl
-            cmp ah, bl  ; Compare (row % 2) with (column % 2)
-            jnz invalid2  ; not a White Square
-                JMP invalid
-            invalid2:
-                ; Calculate the number
-                mov al, row
-                mov bl, 5
-                mul bl  ; AL = row * 5
-                mov bl, column
-                shr bl, 1  ; Divide column by 2
-                add al, bl  ; AL = AL + (column / 2)
-                inc al  ;the index starts from 0
+                ; MOV AL,row ;[0002h]
+                xor ah, ah
+                mov cl, 2
+                div cl
+                mov bl, ah  ; Store (column % 2) in bl
+                mov al, column
+                xor ah, ah
+                div cl
+                cmp ah, bl  ; Compare (row % 2) with (column % 2)
+                jz invalid  ; not a White Square
+                    ; Calculate the number
+                    mov al, row
+                    mov bl, 5
+                    mul bl  ; AL = row * 5
+                    mov bl, column
+                    shr bl, 1  ; Divide column by 2
+                    add al, bl  ; AL = AL + (column / 2)
+                    inc al  ;the index starts from 0
 
-                ; Store the number
-                mov Num, al
-                jmp end
-        invalid:
-            ; White square || invalid row/column
-            mov Num, 0
-        end:
+                    ; Store the number
+                    mov Num, al
+                    jmp end
+            invalid:
+                ; White square || invalid row/column
+                mov Num, 0
+            end:
     ENDM
 
     ;-----board_init_board----------
@@ -167,7 +159,6 @@
         MOV DL, asciiCode
         INT 21h
     ENDM
-
 
     ;----print_string-------
     print_string MACRO reference
@@ -220,6 +211,7 @@
             POP CX
         LOOP outer_loop
     ENDM
+
     ;-----get_cell_color-------------
     get_cell_color MACRO row, column
         LOCAL BlackCase, fin
@@ -277,7 +269,7 @@
 
     ;----------verify_move----------------
     verify_move MACRO board, i, j, x, y, turn, verified, isDirect, val1, val2
-        LOCAL impossible_move, done, other_way, down, end, next,impossible_move1,impossible_move2,continue,continue1,label1,label2,label3,label4
+        LOCAL impossible_move, done, other_way, down, end, next,impossible_move1,impossible_move2,continue,continue1,label1
         ;DL=i DH=j BH=x CH=y | i and j must be between 1-10 -> (0-9) 'we do the check in get_number & 'DEC 1' in the main'
 
         get_number i, j, menu, n1
@@ -320,17 +312,13 @@
 
         MOV CL,n1
         CMP CL,BH ; CMP n1,n2
-        JNB label2
-            JMP down
-        label2:
+        JB down
             MOV DL,x ; n1>n2 =>------going up-------- to avoid the check of both cases(up &down) in different blocks
             MOV DH,y
             MOV AH,j
         down:
         CMP DH,AH ; cmp j,y | if we going up we swap 'cmp y,j'
-        JA label3
-            JMP other_way
-        label3:
+        JB other_way
             DEC DH ; dec n1[,j]
             JMP next
         other_way:
@@ -341,9 +329,7 @@
         get_number DL,DH , menu, isDirect ; isDirect return makla number (for optimization) 'indirect move'
         get_cell_state board, DL, DH, state ; depends on the colors (white -> black/ black ->white)
         CMP state,'0' ; one step (not for dames)
-        JNE label4
-            JMP impossible_move
-        label4:
+        JE impossible_move
         MOV AL,turn
         CMP AL,state ; to make the move -> state needs to be the color of the opposing player (enemy)
         JNE done ; make the move
@@ -356,10 +342,8 @@
         end:
     ENDM
 
-
     ;------move_pawn----------
-
-    move_pawn MACRO board,x,y,path1,path2,pawn_position,makla,isDirect
+    move_pawn MACRO board,x,y,path1,path2,pawn_position,makla,makla2,isDirect
         LOCAL end, indirect, move, move1, no_move, next
         MOV BH,x ; cant use the other registers cuz are used in get_number
         MOV CH,y
@@ -374,7 +358,7 @@
         next:
         CMP BH,path2 ; BH <- board[x,y]
         JNE no_move
-        MOV AH,isDirect
+        MOV AH,makla2
         MOV makla,AH ; isDirect return maklaNum for path2
 
         move1:
@@ -412,9 +396,10 @@
         end:
     ENDM
 
+
     ;------show_path----------
     show_path MACRO board,i1,j1,turn1,path1,path2,pawn_position,makla,isDirect,multiple_jumps
-        LOCAL end, next, next1, not_verified, not_verified1, not_verified2, not_verified3, down, down1, label1, label2
+        LOCAL end, next, next1, not_verified, not_verified1, not_verified2,  down, down1, label1, label2
 
         MOV DL,i1
         MOV DH,j1
@@ -434,9 +419,7 @@
 
         ;---------INDIRECT---------------- we prioritize the indirect move
         CMP turn,'b'
-        JNE downn
-            JMP down
-        downn:
+        JE down
             SUB BH,2  ;------WHITE's TURN------- x<-(i-2)
             JMP next
         down: ;------BLACK's TURN-------
@@ -451,9 +434,7 @@
         verify_move board,i,j,x,y,turn,verified,isDirect,pawn_position,n2 ; n1[i,j] n2[x,y]
 
         CMP verified,0
-        JNE not_verifiedd
-            JMP not_verified
-        not_verifiedd:
+        JE not_verified
             MOV bool,1
             MOV AH,n2
             MOV path1,AH
@@ -469,9 +450,7 @@
         verify_move board,i,j,x,y,turn,verified,isDirect,pawn_position,n2 ; n1[i,j] n2[x,y]
 
         CMP verified,0
-        JNE not_verified11
-            JMP not_verified1
-        not_verified11:
+        JE not_verified1
             MOV bool,1 ; isDirect'll return maklaNum for path2
             MOV AH,n2
             MOV path2,AH
@@ -479,6 +458,7 @@
 
         CMP bool,1
         JNE label1 ; if there's a move in indirect, isDirect'll return maklaNum -> isDirect != 'n'
+            MOV bool,0
             JMP end
         label1:
 
@@ -492,9 +472,7 @@
         MOV CH,j
 
         CMP turn,'b'
-        JNE down11
-            JMP down1
-        down11:
+        JE down1
             DEC BH ;------WHITE's TURN------- x<-(i-1)
             JMP next1
         down1: ;------BLACK's TURN-------
@@ -509,9 +487,7 @@
         verify_move board,i,j,x,y,turn,verified,isDirect,pawn_position,n2 ; n1[i,j] n2[x,y]
 
         CMP verified,0
-        JNE not_verified22
-            JMP not_verified2
-        not_verified22:
+        JE not_verified2
             MOV AH,n2
             MOV path1,AH
         not_verified2:
@@ -523,12 +499,9 @@
         verify_move board,i,j,x,y,turn,verified,isDirect,pawn_position,n2 ; n1[i,j] n2[x,y]
 
         CMP verified,0
-        JNE not_verified33
-            JMP not_verified3
-        not_verified33:
+        JE end
             MOV AH,n2
             MOV path2,AH
-        not_verified3:
 
         end:
     ENDM
@@ -691,7 +664,7 @@
         JE switch
             mov AL,'b'
             mov turn,AL
-            mov AX, whitePiece  ; the white side color
+            mov AX, whitePiece ; the white side color
             MOV PColor,AX
             JMP next_move
         switch:
