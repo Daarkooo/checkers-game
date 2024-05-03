@@ -1,6 +1,6 @@
 .model small
 
-.DATA
+.data
     n1 db ?
     n2 db ?
     i DB ?
@@ -13,6 +13,8 @@
     state DB ?
     switcher DB 1
     checked DB ?
+
+    count DB 0
 
     val1 DB ?
     val2 DB ?
@@ -266,7 +268,6 @@
         end_label:
     ENDM
 
-
     ;----------verify_move----------------
     verify_move MACRO board, i, j, x, y, turn, verified, isDirect, val1, val2
         LOCAL impossible_move, done, other_way, down, end, next,impossible_move1,impossible_move2,continue,continue1,label1
@@ -396,10 +397,12 @@
         end:
     ENDM
 
-
     ;------show_path----------
-    show_path MACRO board,i1,j1,turn1,path1,path2,pawn_position,makla,isDirect,multiple_jumps
-        LOCAL end, next, next1, not_verified, not_verified1, not_verified2,  down, down1, label1, label2
+    show_path MACRO board,i1,j1,turn1,path1,path2,pawn_position,makla,makla2,isDirect_arg,multiple_jumps
+        LOCAL end, next, next1, not_verified, not_verified1, not_verified2,  down, down1, label1, label2, label3
+
+        MOV AL,isDirect_arg
+        MOV isDirect,AL
 
         MOV DL,i1
         MOV DH,j1
@@ -454,6 +457,8 @@
             MOV bool,1 ; isDirect'll return maklaNum for path2
             MOV AH,n2
             MOV path2,AH
+            MOV AH,isDirect
+            MOV makla2,AH
         not_verified1:
 
         CMP bool,1
@@ -461,11 +466,6 @@
             MOV bool,0
             JMP end
         label1:
-
-        ;CMP multiple_jumps,1 ; need this after making the first move -> to avoid showing direct moves
-        ;JNE label2
-        ;    JMP end
-        ;label2:
 
         ;---------DIRECT----------------
         MOV BH,i
@@ -499,10 +499,12 @@
         verify_move board,i,j,x,y,turn,verified,isDirect,pawn_position,n2 ; n1[i,j] n2[x,y]
 
         CMP verified,0
-        JE end
+        JE label3
             MOV AH,n2
             MOV path2,AH
-
+        label3:
+            MOV AL,'y' ; not direct
+            MOV isDirect,AL
         end:
     ENDM
 
@@ -664,13 +666,13 @@
         JE switch
             mov AL,'b'
             mov turn,AL
-            mov AX, whitePiece ; the white side color
+            mov AX,0000h  ; the white side color
             MOV PColor,AX
             JMP next_move
         switch:
             mov AL,'w'
             mov turn,AL
-            mov AX, blackPiece ; the black side color
+            mov AX,0001h ; the black side color
             MOV PColor,AX
         next_move:
 
@@ -678,4 +680,108 @@
         MOV BL,-1
         MUL BL
         MOV switcher,AL
+    ENDM
+
+    ;--------draw_borders---------------------
+    draw_borders MACRO IndMoves, directMove, color
+        LOCAL direct, show_M, show_Mm, end_moves, end_moves, end_moves1
+
+        MOV AL,0
+        MOV count,AL
+        LEA SI, IndMoves
+        show_M:
+            CMP BYTE PTR [SI], 0
+            JE end_moves1
+            MOV AL,BYTE PTR [SI]
+            MOV pawn_position,AL
+            drawBorderCell pawn_position, color, offsetX, offsetY, cellSize
+            INC SI
+            INC count
+            JMP show_M
+        end_moves1:
+
+        CMP count,0
+        JE direct
+            CMP maklaSif, 1
+            JE end_moves
+        direct:
+        LEA SI, directMoves
+        show_Mm:
+            CMP BYTE PTR [SI], 0
+            JE end_moves
+            MOV AL,BYTE PTR [SI]
+            MOV pawn_position,AL
+            drawBorderCell pawn_position, color, offsetX, offsetY, cellSize
+            INC SI
+            JMP show_Mm
+        end_moves:
+
+    ENDM
+
+    ;------set_array_null-----------
+    set_array_null MACRO array
+        LOCAL lab
+
+        LEA SI, array
+        lab:
+            MOV BYTE PTR [SI], 0
+            INC SI
+            CMP BYTE PTR [SI], 0
+            JNE lab
+
+    ENDM
+
+    ;---------show_moves-------------
+    show_moves MACRO turn, board, IndMoves, directMoves
+        LOCAL lab1, lab2, lab3, directMove,continue, endL
+
+        set_array_null IndMoves
+        set_array_null directMoves
+
+        LEA SI, board
+        LEA DI, IndMoves
+        LEA BX, directMoves
+
+        MOV CX, 50
+        lab3:
+            MOV AL,turn
+
+                MOV DL,count
+                PUSH CX
+                PUSH BX
+
+                get_row DL,i
+                get_column DL,j
+
+                PUSH SI
+                PUSH DI
+                show_path board,i,j,turn,path1,path2,source_pawn,makla,makla2,isDirect,multiple_jumps
+                POP DI
+                POP SI
+                POP BX
+                POP CX
+
+                CMP path1, -1
+                JNE lab2
+                    CMP path2, -1
+                    JE lab1
+                        lab2:
+                        MOV AL,source_pawn
+                        ; DEC AL
+                        CMP isDirect,'y'
+                        JE directMove
+                            MOV BYTE PTR [DI], AL
+                            INC DI
+                            JMP lab1
+                        directMove:
+                            MOV BYTE PTR [BX], AL
+                            INC BX
+            lab1:
+                INC SI
+                INC count
+        CMP CX,0
+        JE endL
+            DEC CX
+            JMP lab3
+        endL:
     ENDM
