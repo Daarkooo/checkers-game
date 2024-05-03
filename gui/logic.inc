@@ -687,6 +687,53 @@ switch_turn MACRO turn
 ENDM
 
 
+show_moves MACRO turn, board, IndMoves, directMoves
+
+    LOCAL label1, label2, label3, directMove
+    LEA SI, board
+    LEA DI, IndMoves
+    LEA BX, directMoves
+    
+    MOV CX, 50
+    label3:
+        CMP BYTE PTR [SI], turn
+        JNE label1               
+            MOV DL,count
+            PUSH CX
+            PUSH BX
+            
+            get_row DL,i
+            get_column DL,j 
+            
+            PUSH SI
+            PUSH DI
+            show_path board,i,j,'b',path1,path2,source_pawn,makla,makla2,isDirect,multiple_jumps 
+            POP DI
+            POP SI
+            POP BX
+            POP CX
+
+            CMP path1, -1
+            JNE label2
+                CMP path2, -1
+                JE label1 
+                    label2:  
+                    MOV AL,source_pawn
+                    CMP isDirect,'y'
+                    JE directMove
+                        MOV BYTE PTR [DI], AL
+                        INC DI
+                        JMP label1
+                    directMove:
+                        MOV BYTE PTR [BX], AL
+                        INC BX
+
+        label1:
+            INC SI  
+            INC count
+    LOOP label3
+
+ENDM
 
 
 ; START:
