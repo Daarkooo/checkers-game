@@ -1,8 +1,8 @@
 .DATA
     SPMP_X          EQU     164
     SPMP_Y          EQU     66
-    MP_MSG          DB      "Multi player$"
-    SP_MSG          DB      "Single player$"
+    MP_MSG          DB      "1 vs 1$"
+    SP_MSG          DB      "1 vs COM$"
     isSP            DB      1
 
     MAKLA_X         EQU     164
@@ -129,7 +129,7 @@
 
         ; SP/MP TOGGLE
         drawRectangle SPMP_X, SPMP_Y, 120, 50, 0006h
-        printGraphicalString SP_MSG, 0F1h, 22, 6
+        printGraphicalString SP_MSG, 0F1h, 24, 6
 
         ; MAKLA TOGGLE
         drawRectangle MAKLA_X, MAKLA_Y, 120, 50, 0002h
@@ -148,7 +148,7 @@
 
         ; THEMES LIST
         drawThemeTemplate THEME0_X, THEME0_Y, 0006h, 000Fh, 0000h, 000Fh, 17 ; THEME 1
-        drawBorder 0008h, THEME0_X, THEME0_Y, 34, 3
+        drawBorder 0002h, THEME0_X, THEME0_Y, 34, 3
 
         drawThemeTemplate THEME1_X, THEME1_Y, 0000h, 000Fh, 0007h, 000Fh, 17 ; THEME 2
         drawBorder 0008h, THEME1_X, THEME1_Y, 34, 3
@@ -207,14 +207,14 @@
             SPMP_clicked:
                 CMP isSP, 1
                 JZ SP_TOGGLE
-                    printGraphicalString MP_MSG, 0F1h, 22, 6
-                    printGraphicalString SP_MSG, 0F1h, 22, 6
+                    printGraphicalString MP_MSG, 0F1h, 25, 6
+                    printGraphicalString SP_MSG, 0F1h, 24, 6
                     MOV isSP, 1
                     JMP SPMP_end
 
                 SP_TOGGLE:
-                    printGraphicalString SP_MSG, 0F1h, 22, 6
-                    printGraphicalString MP_MSG, 0F1h, 22, 6
+                    printGraphicalString SP_MSG, 0F1h, 24, 6
+                    printGraphicalString MP_MSG, 0F1h, 25, 6
                     MOV isSP, 0
 
                 SPMP_end:
@@ -242,6 +242,13 @@
                 MOV blackPiece, 0000h
                 MOV whitePiece, 000Fh
 
+                setMousePosition 0, 0
+                drawBorder 0002h, THEME0_X, THEME0_Y, 34, 3
+                setMousePosition THEME0_X, THEME0_Y
+                drawBorder 0008h, THEME1_X, THEME1_Y, 34, 3
+                drawBorder 0008h, THEME2_X, THEME2_Y, 34, 3
+                drawBorder 0008h, THEME3_X, THEME3_Y, 34, 3
+
                 JMP MAIN_L1
 
             THEME1_clicked:
@@ -249,6 +256,13 @@
                 MOV whiteCell , 000Fh
                 MOV blackPiece, 0007h
                 MOV whitePiece, 000Fh
+
+                drawBorder 0008h, THEME0_X, THEME0_Y, 34, 3
+                setMousePosition 0, 0
+                drawBorder 0002h, THEME1_X, THEME1_Y, 34, 3
+                setMousePosition THEME1_X, THEME1_Y
+                drawBorder 0008h, THEME2_X, THEME2_Y, 34, 3
+                drawBorder 0008h, THEME3_X, THEME3_Y, 34, 3
 
                 JMP MAIN_L1
 
@@ -258,6 +272,13 @@
                 MOV blackPiece, 0004h
                 MOV whitePiece, 0008h
 
+                drawBorder 0008h, THEME0_X, THEME0_Y, 34, 3
+                drawBorder 0008h, THEME1_X, THEME1_Y, 34, 3
+                setMousePosition 0, 0
+                drawBorder 0002h, THEME2_X, THEME2_Y, 34, 3
+                setMousePosition THEME2_X, THEME2_Y
+                drawBorder 0008h, THEME3_X, THEME3_Y, 34, 3
+
                 JMP MAIN_L1
 
             THEME3_clicked:
@@ -265,6 +286,13 @@
                 MOV whiteCell , 000Fh
                 MOV blackPiece, 0004h
                 MOV whitePiece, 0001h
+
+                drawBorder 0008h, THEME0_X, THEME0_Y, 34, 3
+                drawBorder 0008h, THEME1_X, THEME1_Y, 34, 3
+                drawBorder 0008h, THEME2_X, THEME2_Y, 34, 3
+                setMousePosition 0, 0
+                drawBorder 0002h, THEME3_X, THEME3_Y, 34, 3
+                setMousePosition THEME3_X, THEME3_Y
 
                 JMP MAIN_L1
 
