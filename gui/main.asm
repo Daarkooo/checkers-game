@@ -4,7 +4,9 @@
 
 .DATA
     board           DB  20 DUP('b'), 10 DUP('0'), 20 DUP('w')
-    ; board           DB  20 DUP('b'), 25 DUP('w')
+    directMoves     DB  20 dup(?)
+    IndMoves        DB  20 dup(?)
+
 
     blackCell       DW      0006h ; brown
     whiteCell       DW      000Fh ; white
@@ -21,7 +23,7 @@
     makla2          DB      ?
     isDirect        DB      ?
     multiple_jumps  DB      ?
-
+    maklaSif        DB      1
 
     INCLUDE menu.inc
     INCLUDE print.inc
@@ -58,33 +60,37 @@
 
         setupMouse 500, 270, 0, 0, 637, 347
 
-        ; MOV CX,6
         play:
+
+            show_moves turn, board, IndMoves, directMoves
+            draw_borders IndMoves, directMoves, 0Ah 
+            
             reselect:
-                LEA AX,getCoordsFromMouseClick
-                awaitMouseClick AX,0,0,34 ; CX <- y DX <- x
                 
+                LEA AX, getCoordsFromMouseClick
+                awaitMouseClick AX,0,0,34 ; CX <- y DX <- x                
                 show_path board,DL,CL,turn,path1,path2,source_pawn,makla,makla2,isDirect,multiple_jumps
-                
-               drawBorderCell source_pawn, 0Ah, 0, 0, 34 ; green 
 
-            CMP path1,-1
-            JE label1
-                MOV AL,1
-            label1:
+                CMP path1,-1
+                JE label1
+                    MOV AL,1
+                label1:
 
-            CMP path2,-1
-            JE label2
-                MOV AL,1
-            label2:
+                CMP path2,-1
+                JE label2
+                    MOV AL,1
+                label2:
 
-            CMP AL,1    
-            JE next
-                drawBorderCell source_pawn, 06h, 0, 0, 34 
-                JMP reselect
+
+                CMP AL,1    
+                JE next
+                    JMP reselect
             next:
 
+            draw_borders IndMoves, directMoves, 06h
+            drawBorderCell source_pawn, 0Ah, 0, 0, 34 ; green 
 
+            
             ; Use BX to pass 8 bit paraemtre, because AX will be cleared inside MACRO call
             XOR BX, BX
             MOV BL, path1
@@ -94,15 +100,16 @@
             MOV BL, path2
             markCell 04h, offsetX, offsetY, cellSize, BX
             
+
             reselect2:
-            LEA AX,getCoordsFromMouseClick
-            awaitMouseClick AX,0,0,34 ; CX <- x DX <- y
+                LEA AX,getCoordsFromMouseClick
+                awaitMouseClick AX,0,0,34 ; CX <- x DX <- y
 
-            move_pawn board,DL,CL,path1,path2,source_pawn,makla,makla2,isDirect
+                move_pawn board,DL,CL,path1,path2,source_pawn,makla,makla2,isDirect
 
-            CMP isDirect,-1
-            JNE label3
-                JMP reselect2
+                CMP isDirect,-1
+                JNE label3
+                    JMP reselect2
             label3:
 
             XOR BX, BX
@@ -113,11 +120,13 @@
             MOV BL, path2
             markCell 06h, offsetX, offsetY, cellSize, BX
             
+
             switch_turn turn ; make it here to change the color of the pawns (depends on player's turn)
 
             drawBorderCell source_pawn, 06h, 0, 0, 34 
             
             Move_GUI source_pawn,isDirect,PColor ; isDirect <- board[x,y] if the move is valid
+            ; show_moves turn, board, IndMoves, directMoves
 
         JMP play
 

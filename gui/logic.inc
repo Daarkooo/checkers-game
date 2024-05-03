@@ -14,6 +14,8 @@
     switcher DB 1
     checked DB ?
     
+    count DB 0  
+    
     val1 DB ?
     val2 DB ? 
     menu DB ? 
@@ -22,6 +24,22 @@
     bool DB 0 ; need it in showpaths 
     num1 DB ? 
     msg_result DB "result: $"
+
+    ; source_pawn     DB      ?
+    ; turn            DB      ?
+    ; path1           DB      ?
+    ; path2           DB      ?
+    ; num             DB      ?
+    ; makla           DB      ?
+    ; makla2          DB      ?
+    ; isDirect        DB      '2'
+    ; multiple_jumps  DB      ?  
+    
+    ; board DB  5 DUP('b'), 5 DUP('0'), 5 DUP('w')  
+    
+    ;  directMoves     DB  20 dup(?)
+    ; IndMoves        DB  20 dup(?) 
+
 
 .code  
 
@@ -404,9 +422,12 @@ ENDM
 
 
 ;------show_path----------
-show_path MACRO board,i1,j1,turn1,path1,path2,pawn_position,makla,isDirect,multiple_jumps
-    LOCAL end, next, next1, not_verified, not_verified1, not_verified2,  down, down1, label1, label2
-   
+show_path MACRO board,i1,j1,turn1,path1,path2,pawn_position,makla,makla2,isDirect_arg,multiple_jumps
+    LOCAL end, next, next1, not_verified, not_verified1, not_verified2,  down, down1, label1, label2, label3
+    
+    MOV AL,isDirect_arg
+    MOV isDirect,AL
+                    
     MOV DL,i1
     MOV DH,j1
     mov i,DL  ;i<-dl
@@ -460,6 +481,8 @@ show_path MACRO board,i1,j1,turn1,path1,path2,pawn_position,makla,isDirect,multi
         MOV bool,1 ; isDirect'll return maklaNum for path2
         MOV AH,n2
         MOV path2,AH
+        MOV AH,isDirect
+        MOV makla2,AH
     not_verified1:
 
     CMP bool,1
@@ -505,10 +528,12 @@ show_path MACRO board,i1,j1,turn1,path1,path2,pawn_position,makla,isDirect,multi
     verify_move board,i,j,x,y,turn,verified,isDirect,pawn_position,n2 ; n1[i,j] n2[x,y] 
 
     CMP verified,0
-    JE end
+    JE label3
         MOV AH,n2 
         MOV path2,AH
-
+    label3:
+        MOV AL,'y' ; not direct 
+        MOV isDirect,AL
     end:
 ENDM
 
@@ -686,18 +711,76 @@ switch_turn MACRO turn
     MOV switcher,AL
 ENDM
 
+;--------draw_borders---------------------
+draw_borders MACRO IndMoves, directMove, color 
+    LOCAL direct, show_M, show_Mm, end_moves, end_moves, end_moves1
+    
+    MOV AL,0
+    MOV count,AL
+    LEA SI, IndMoves 
+    show_M:
+        CMP BYTE PTR [SI], 0
+        JE end_moves1
+        MOV AL,BYTE PTR [SI]
+        MOV pawn_position,AL
+        drawBorderCell pawn_position, color, 0, 0, 34 ; GREEN
+        INC SI 
+        INC count
+        JMP show_M
+    end_moves1:
+    
+    CMP count,0
+    JE direct
+        CMP maklaSif, 1
+        JE end_moves   
+    direct:
+    LEA SI, directMoves 
+    show_Mm:
+        CMP BYTE PTR [SI], 0
+        JE end_moves
+        MOV AL,BYTE PTR [SI]
+        MOV pawn_position,AL
+        drawBorderCell pawn_position, color, 0, 0, 34 ; GREEN
+        INC SI 
+        JMP show_Mm
+    end_moves:
 
+ENDM 
+
+;------set_array_null-----------
+set_array_null MACRO array
+    LOCAL lab
+
+    LEA SI, array
+    lab:
+        MOV BYTE PTR [SI], 0
+        INC SI 
+        CMP BYTE PTR [SI], 0
+        JNE lab
+
+ENDM
+
+
+;---------show_moves------------- 
 show_moves MACRO turn, board, IndMoves, directMoves
+    LOCAL lab1, lab2, lab3, directMove,continue, endL
+    
+    set_array_null IndMoves
+    set_array_null directMoves
 
-    LOCAL label1, label2, label3, directMove
     LEA SI, board
     LEA DI, IndMoves
-    LEA BX, directMoves
+    LEA BX, directMoves  
     
     MOV CX, 50
-    label3:
-        CMP BYTE PTR [SI], turn
-        JNE label1               
+    lab3:     
+        MOV AL,turn
+        
+        ;CMP BYTE PTR [SI], AL
+        ;JE continue
+       ;     JMP lab1  
+        ;continue:
+
             MOV DL,count
             PUSH CX
             PUSH BX
@@ -707,38 +790,47 @@ show_moves MACRO turn, board, IndMoves, directMoves
             
             PUSH SI
             PUSH DI
-            show_path board,i,j,'b',path1,path2,source_pawn,makla,makla2,isDirect,multiple_jumps 
+            show_path board,i,j,turn,path1,path2,source_pawn,makla,makla2,isDirect,multiple_jumps 
             POP DI
             POP SI
             POP BX
             POP CX
-
+                                       
             CMP path1, -1
-            JNE label2
+            JNE lab2
                 CMP path2, -1
-                JE label1 
-                    label2:  
+                JE lab1 
+                    lab2:  
                     MOV AL,source_pawn
+                    ; DEC AL
                     CMP isDirect,'y'
                     JE directMove
                         MOV BYTE PTR [DI], AL
                         INC DI
-                        JMP label1
+                        JMP lab1
                     directMove:
                         MOV BYTE PTR [BX], AL
                         INC BX
-
-        label1:
+        lab1:
             INC SI  
             INC count
-    LOOP label3
+    CMP CX,0
+    JE endL
+        DEC CX
+        JMP lab3
+    endL:
 
 ENDM
 
 
 ; START:
 ;     MOV AX, @DATA
-;     MOV DS, AX 
+;       MOV DS, AX        
+    
+;        MOV board[27],'b'    
+        ; show_moves 'b', board, IndMoves, directMoves 
+    
+    
 ;     board_init board 
                      
 ;     ;----BLACK TEST-------------------                    
@@ -795,7 +887,7 @@ ENDM
 ;     ;MOV al,1
 ;     ;mov path1,1
     
-;     show_path board,6,7,'w',path1,path2,pawn_position,makla,isDirect
+
                                                                
 ;     move_pawn board,5,8,path1,path2,pawn_position,makla,isDirect
 ;    ; show_path board,3,2,'b',path1,path2,pawn_position,makla,isDirect  
@@ -803,4 +895,4 @@ ENDM
 ;     ;get_number 9,8,'y',n1
 
 ; ;CODE ENDS
-; END START
+;  END START
