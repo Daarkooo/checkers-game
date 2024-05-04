@@ -14,10 +14,11 @@ DATA SEGMENT PARA 'DATA'
     ;?menu vars:start
         whitePlayer db 'White$'
         blackPlayer db 'Black$'
-        isWhitePlayer db 1
-        whitePlayer_score db 0
-        blackPlayer_score db 0
+        isWhitePlayer db 0
+        whitePlayer_score db '0','$'
+        blackPlayer_score db '0','$'
         resign db 'Resign','$'
+        quit db 'Quit$'
         restart db 'restart','$'
         scoreWord db 'Score:$'
         whitePlayer_score_text db 'White player score: ','$';!<this will be deleted>
@@ -357,69 +358,83 @@ __drawBoard ENDP
     ENDM
 ;!rahim function string:end
 duringGameMenu PROC
-    mov backGround_x,40
+    ;!score text:start
+    mov backGround_x,18
     mov backGround_y,10
-    mov backGround_width,113
+    mov backGround_width,60
     mov backGround_height,50
-    cmp isWhitePlayer,1
-    je whitePlayerPlaying
-    mov backGround_color,06h;! black color 
+    mov backGround_color,0Fh
     call draw_backGround
-    printGraphicalString blackPlayer,0FFh,6,2;?<-----------------change the color of the text to blue
-    jmp aa
-    whitePlayerPlaying:
-    mov backGround_color,0Fh;! white color
+    printGraphicalString scoreWord,0FFh,3,2;!the color of the string will be :Black
+    ;!score text:end
+
+    ;!score first player:start
+    mov backGround_x,218
+    mov backGround_y,10
+    mov backGround_width,30
+    mov backGround_height,50
+    mov backGround_color,0Fh
     call draw_backGround
-    printGraphicalString whitePlayer,0FBh,6,2;?<-----------------change the color of the text to red
-    aa:
-    
-    mov ah,02h;! set cursor position
-    mov bh,0;! page 0
-    mov dh,10;! row
-    mov dl,6;! column
-    int 10h;! call BIOS
+    printGraphicalString whitePlayer_score,0FFh,28,2;!the color of the string will be :Black
+    ;!score first player:end
 
-    mov bl,whitePlayer_score
-    add bl,30h
-    mov whitePlayer_score_text[19],bl
+    ;!score second player:start
+    mov backGround_x,260
+    mov backGround_y,10
+    mov backGround_width,30
+    mov backGround_height,50
+    mov backGround_color,0Fh
+    call draw_backGround
+    printGraphicalString blackPlayer_score,0FFh,33,2;!the color of the string will be :Black
+    ;!score second player:end
 
-    mov ah,09h;! print string
-    lea dx,whitePlayer_score_text
-    int 21h;! call DOS
 
-    mov ah,02h;! set cursor position
-    mov bh,0;! page 0
-    mov dh,12;! row
-    mov dl,6;! column
-    int 10h;! call BIOS
-
-    mov bl ,blackPlayer_score
-    add bl,30h
-    mov blackPlayer_score_text[19],bl
-
-    mov ah,09h;! print string
-    lea dx,blackPlayer_score_text
-    int 21h;! call DOS
-    
-    mov backGround_x,40
+    ;!quit button:start
+    mov backGround_x,18
     mov backGround_y,250
-    mov backGround_width,113
+    mov backGround_width,60
     mov backGround_height,50
-
     mov backGround_color,04h;! red color
+    call draw_backGround
+    printGraphicalString quit,0FFh,4,19;
+    ;!quit button:end
 
+    ;!resign button:start
+    mov backGround_x,232
+    mov backGround_y,250
+    mov backGround_width,60
+    mov backGround_height,50
+    mov backGround_color,09h;
+    call draw_backGround
+    printGraphicalString resign,0FFh,30,19;
+    ;!resign button:end
+
+    ;!turn :start
+
+    mov backGround_x,110
+    mov backGround_y,110
+    mov backGround_width,96
+    mov backGround_height,70
+    mov backGround_color,0Fh
     call draw_backGround
 
-    ; mov ah,02h;! set cursor position
-    ; mov bh,0;! page 0
-    ; mov dh,19;! row
-    ; mov dl,9;! column
-    ; int 10h;! call BIOS
+    mov backGround_x,120
+    mov backGround_y,120
+    mov backGround_width,76
+    mov backGround_height,50
 
-    ; mov ah,09h;! print string
-    ; lea dx,resign
-    ; int 21h;! call DOS
-    printGraphicalString resign,0FFh,6,26;?<-----------------change the color of the text to blue
+    cmp isWhitePlayer,0
+    je handleBlackTurn
+    mov backGround_color,0Fh
+    call draw_backGround
+    printGraphicalString whitePlayer,0FFh,17,10;
+    jmp everyThingIsHandeled
+    handleBlackTurn:
+    mov backGround_color,00h
+    call draw_backGround
+    printGraphicalString blackPlayer,0FFh,17,10;
+    everyThingIsHandeled:
+    ;!turn :end
 
     RET
 duringGameMenu ENDP
