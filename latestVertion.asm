@@ -12,14 +12,16 @@ DATA SEGMENT PARA 'DATA'
     ;?board vars:end
 
     ;?menu vars:start
-        whitePlayer db 'White player','$'
-        blackPlayer db 'Black player','$'
+        whitePlayer db 'White$'
+        blackPlayer db 'Black$'
         isWhitePlayer db 1
         whitePlayer_score db 0
         blackPlayer_score db 0
-        whitePlayer_score_text db 'White player score: ','$'
-        blackPlayer_score_text db 'Black player score: ','$'
         resign db 'Resign','$'
+        restart db 'restart','$'
+        scoreWord db 'Score:$'
+        whitePlayer_score_text db 'White player score: ','$';!<this will be deleted>
+        blackPlayer_score_text db 'Black player score: ','$';!<this will be deleted>
     ;?menu vars:end
     ;?border vars:start
         ;?menu border top:start
@@ -128,7 +130,6 @@ MAIN PROC FAR
 
     ;?board:start the hex of white color is:
         setGraphics 10h;! set graphics mode 10h (640x350, 16 colors)
-
         drawBoard 300, 0Ah, 0Fh, 06h, 33;! draw the board with white and black cells and size 35 for each cell=>the width of the board is 35*10=350 and the height is 35*10=350
     ;?board:start    
         call duringGameMenu
@@ -152,8 +153,6 @@ clear_screen PROC NEAR
 
     RET
 clear_screen ENDP
-
-
 ;?menu procedures:end
 
 ;todo draw text backGround :start
@@ -184,101 +183,6 @@ draw_backGround ENDP
 ;todo draw text backGround :end
 
 ;todo during game menu:start
-duringGameMenu PROC NEAR
-    ;todo which player is playing:start
-    mov backGround_x,40
-    mov backGround_y,10
-    mov backGround_width,113
-    mov backGround_height,50
-    cmp isWhitePlayer,1
-    je whitePlayerPlaying
-    mov backGround_color,06h;! black color 
-    call draw_backGround
-    jmp aa
-    whitePlayerPlaying:
-    mov backGround_color,0Fh;! white color
-    call draw_backGround
-    aa:
-
-    ;todo test in side the backGround:start
-    mov ah,02h;! set cursor position
-    mov bh,0;! page 0
-    mov dh,2;! row
-    mov dl,6;! column
-    int 10h;! call BIOS
-
-    mov ah,09h;! print string
-    cmp isWhitePlayer,1
-    je displayWhitePlayer
-    lea dx,blackPlayer
-    jmp tt
-    displayWhitePlayer:
-    lea dx,whitePlayer
-    tt:
-    int 21h;! call DOS
-    ;todo test in side the backGround:end
-    ;todo which player is playing:end
-
-
-    ;todo set palyers scores:start
-    mov ah,02h;! set cursor position
-    mov bh,0;! page 0
-    mov dh,10;! row
-    mov dl,6;! column
-    int 10h;! call BIOS
-
-    mov bl,whitePlayer_score
-    add bl,30h
-    mov whitePlayer_score_text[19],bl
-
-    mov ah,09h;! print string
-    lea dx,whitePlayer_score_text
-    int 21h;! call DOS
-
-    mov ah,02h;! set cursor position
-    mov bh,0;! page 0
-    mov dh,12;! row
-    mov dl,6;! column
-    int 10h;! call BIOS
-
-    mov bl ,blackPlayer_score
-    add bl,30h
-    mov blackPlayer_score_text[19],bl
-
-    mov ah,09h;! print string
-    lea dx,blackPlayer_score_text
-    int 21h;! call DOS
-    ;todo set palyers scores:end
-    
-;todo during game menu:end
-
-;todo resign button:start
-;todo which player is playing:start
-    mov backGround_x,40
-    mov backGround_y,250
-    mov backGround_width,113
-    mov backGround_height,50
-
-    mov backGround_color,04h;! red color
-
-    call draw_backGround
-
-     mov ah,02h;! set cursor position
-    mov bh,0;! page 0
-    mov dh,19;! row
-    mov dl,9
-    int 10h;! call BIOS
-
-    mov ah,09h;! print string
-    lea dx,resign
-    int 21h;! call DOS
-
-    ;todo test in side the backGround:start
-;todo resign button:end
-    RET
-duringGameMenu ENDP
-
-
 
 __drawCell PROC ; color, x, y, size  (last parameteres are top of stack)
 	PUSH BP
@@ -391,6 +295,15 @@ __drawBoard PROC ; initialX, initialY, whiteCell, blackCell, size (last paramete
 	POP BP
 	RET 10
 __drawBoard ENDP
+    setCursorPosition MACRO row, column, page
+        MOV AX, 0200h
+        MOV BH, page
+        MOV DL, column
+        MOV DH, row
+        INT 10H
+    ENDM
+
+
 ;!rahim function string:start
    __printGraphicalString PROC ; ref, color, initialX, initialY ; page implicitely set to 0
         PUSH BP
@@ -443,6 +356,73 @@ __drawBoard ENDP
         CALL __printGraphicalString
     ENDM
 ;!rahim function string:end
+duringGameMenu PROC
+    mov backGround_x,40
+    mov backGround_y,10
+    mov backGround_width,113
+    mov backGround_height,50
+    cmp isWhitePlayer,1
+    je whitePlayerPlaying
+    mov backGround_color,06h;! black color 
+    call draw_backGround
+    printGraphicalString blackPlayer,0FFh,6,2;?<-----------------change the color of the text to blue
+    jmp aa
+    whitePlayerPlaying:
+    mov backGround_color,0Fh;! white color
+    call draw_backGround
+    printGraphicalString whitePlayer,0FBh,6,2;?<-----------------change the color of the text to red
+    aa:
+    
+    mov ah,02h;! set cursor position
+    mov bh,0;! page 0
+    mov dh,10;! row
+    mov dl,6;! column
+    int 10h;! call BIOS
+
+    mov bl,whitePlayer_score
+    add bl,30h
+    mov whitePlayer_score_text[19],bl
+
+    mov ah,09h;! print string
+    lea dx,whitePlayer_score_text
+    int 21h;! call DOS
+
+    mov ah,02h;! set cursor position
+    mov bh,0;! page 0
+    mov dh,12;! row
+    mov dl,6;! column
+    int 10h;! call BIOS
+
+    mov bl ,blackPlayer_score
+    add bl,30h
+    mov blackPlayer_score_text[19],bl
+
+    mov ah,09h;! print string
+    lea dx,blackPlayer_score_text
+    int 21h;! call DOS
+    
+    mov backGround_x,40
+    mov backGround_y,250
+    mov backGround_width,113
+    mov backGround_height,50
+
+    mov backGround_color,04h;! red color
+
+    call draw_backGround
+
+    ; mov ah,02h;! set cursor position
+    ; mov bh,0;! page 0
+    ; mov dh,19;! row
+    ; mov dl,9;! column
+    ; int 10h;! call BIOS
+
+    ; mov ah,09h;! print string
+    ; lea dx,resign
+    ; int 21h;! call DOS
+    printGraphicalString resign,0FFh,6,26;?<-----------------change the color of the text to blue
+
+    RET
+duringGameMenu ENDP
 
 CODE ENDS
 END
