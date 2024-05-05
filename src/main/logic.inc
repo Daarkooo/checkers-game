@@ -666,13 +666,13 @@
         JE switch
             mov AL,'b'
             mov turn,AL
-            mov AX,0000h  ; the white side color
+            mov AX, whitePiece  ; the white side color
             MOV PColor,AX
             JMP next_move
         switch:
             mov AL,'w'
             mov turn,AL
-            mov AX,0001h ; the black side color
+            mov AX, blackPiece ; the black side color
             MOV PColor,AX
         next_move:
 
