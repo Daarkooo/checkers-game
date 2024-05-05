@@ -237,22 +237,27 @@ print_board MACRO board
 ENDM
 
 
-pre_deplacement macro i,j,x,y,dep_possible,turn   ;j)macro qui verifie si le deplacement est possible de i,j a x,y    ;indice 0..9;possible 1 oui 0 non;direct 1 indirect 2 ;droite 1 gauche 0
+pre_deplacement macro i,j,x,y,dep_possible,turn,dame   ;j)macro qui verifie si le deplacement est possible de i,j a x,y    ;indice 0..9;possible 1 oui 0 non;direct 1 indirect 2 ;droite 1 gauche 0
     
-LOCAL pion_blanc,deplacement_impossible,deplacement_possible,fin,deplacement_indirect,cologne_gauche2,cologne_droite2,deplacement_direct,blancc,noiree,commun           
+LOCAL verification_dame,pion_blanc,deplacement_impossible,deplacement_possible,fin,deplacement_indirect,cologne_gauche2,cologne_droite2,deplacement_direct,blancc,noiree,commun,possibilite_garder_n1,fin2,possible_white_dame_pion,           
 pusha
 cmp x,0                     ;verifier si la destination est coerente ou non 
-jl deplacement_impossible
+jl fin2
 cmp x,9                
-jg deplacement_impossible                                           ;)by rayanch
+jg fin2                                           ;)by rayanch
 cmp y,0
-jl deplacement_impossible
+jl fin2
 cmp y,9
-jg deplacement_impossible
+jg fin2
 
-getCellState board,x,y,result,number1
+mov al,x
+mov bl,y
+
+getCellState board,al,bl,result,number1
 cmp result,'0'                           ;verifier si la case d'arriver est vide et existe bien
 jne deplacement_impossible 
+cmp dame,1
+je deplacement_direct
           
 mov al,i
 mov bl,j    
@@ -269,7 +274,7 @@ jmp deplacement_possible
 
 deplacement_indirect:                ;deplacement indirect
 mov ch,'w'             ;pour verifier en cas de deplacement indirect pour les pion noires
-
+mov cl,'d'
 commun:           ;code en commun pour les pion noire et blanc                                       ;sauvegarde du choix indirect        
 cmp bl,y
 jg cologne_gauche2             ;selection de cologne
@@ -281,6 +286,10 @@ cologne_droite2:
 
 getCellState board,al,bl,result,number2
 cmp result,ch                        ;verifier si la case d'avant est occuper par un pion approprie pour le deplacement
+jne verification_dame
+jmp deplacement_possible
+verification_dame:
+cmp result,cl
 jne deplacement_impossible                                                                     
 jmp deplacement_possible
 
@@ -289,26 +298,45 @@ dec al                              ;prochaine ligne
 cmp x,al
 je deplacement_direct          ;selection de deplacement direct ou indirect
 mov ch,'b'
+mov cl,'D'
 jmp commun:
  
 deplacement_possible:
-print_string possible
-print_string newLine db 13,10,'$'
 mov dep_possible,1               ;affichage et affectation des resultat
 jmp fin
 deplacement_impossible:   
-print_string impossible 
-print_string newLine db 13,10,'$'
 mov dep_possible,0
+cmp dame,1
+je possibilite_garder_n1
+
+fin2:
 mov number1,0
-mov number2,0         
+mov number2,0
+mov dep_possible,0
+jmp fin: 
+ 
+possibilite_garder_n1:
+cmp turn,'w'
+je possible_white_dame_pion
+cmp result,'D'
+je fin2
+cmp result,'b'
+je fin2
+jmp fin
+possible_white_dame_pion: 
+mov al,result            ;si ca marche on garde number1  sinon on sort avec un number1=0 number2=0
+cmp result,'d'
+je fin2
+cmp result,'w'
+je fin2
+         
 fin:
 popa    
 endm    
 
 
 
-deplacement macro x,y,turn,tableau,board              ;k)macro qui effectue le deplacement
+deplacement_pion macro x,y,turn,tableau,board              ;k)macro qui effectue le deplacement
 pusha    
 LOCAL etiquette,droite,gauche,impossible,blacke,whitee,fin,finn,continue,deplacement_gauche,not_long,blackee,whiteee,debut                   ;)by rayanch
 
@@ -345,22 +373,6 @@ show_path_pion macro i,j,tableau,turn
  pusha
  
 Local deplacement_impossible1,direct,white,black,loopp,suite1
-cmp j,0
-jl deplacement_impossible1
-cmp j,9
-jg deplacement_impossible1
-cmp i,0                          ;verifier si la case de depart est coerente ou non 
-jl deplacement_impossible1
-cmp i,9                
-jg deplacement_impossible1
-
-getCellState board,i,j,result,number1
-mov al,turn                        ;verifier si la case de depart est bien un pion du joueur en jeux 
-cmp al,result                                         
-jne deplacement_impossible1
-
-mov al,number1 
-mov sauvegarde[0],al
 
 mov dh,3
 direct:
@@ -387,7 +399,7 @@ mov tmp1,al
 
 loopp:
 mov tmp2,bl
-pre_deplacement i,j,tmp1,tmp2,dep_possible,turn
+pre_deplacement i,j,tmp1,tmp2,dep_possible,turn,dame
 cmp dep_possible,0
 je suite1
  inc dl
@@ -418,12 +430,220 @@ mov ah, sauvegarde[4]
 popa
 endm 
 
+ 
+show_path_dame macro i,j,tableau,turn 
+ pusha
+  
+ Local suitee,suite,arret_diagonal,deplacement_impossible1,direct,white,black,loopp,suite1,pion_juste,possible_white_dame_pawn,diagonal_svt,diagonal_gauche_bas,diagonal_droite_haut,diagonal_gauche_haut,fin3,obstacle_blanc_noir
+  
+mov si,1
+mov dh,1
+
+diagonal_svt:
+mov cx,9
+mov al,i
+mov bl,j 
+mov dl,0
+
+cmp dh,1
+jne diagonal_gauche_bas
+mov ah,1
+mov bh,1
+jmp loopp
+diagonal_gauche_bas:
+
+cmp dh,2
+jne diagonal_droite_haut
+mov ah,1
+mov bh,-1
+jmp loopp
+diagonal_droite_haut:
+
+cmp dh,3
+jne diagonal_gauche_haut
+mov ah,-1
+mov bh,1
+jmp loopp
+diagonal_gauche_haut:
+
+cmp dh,4
+jne fin3
+mov ah,-1
+mov bh,-1
+
+loopp:
+add al,ah
+add bl,bh
+mov tmp1,al
+mov tmp2,bl
+
+ pre_deplacement i,j,tmp1,tmp2,dep_possible,turn,dame             ;diagonal droite en bas
+ cmp dep_possible,1
+ jne obstacle_blanc_noir
+ mov ch,number1
+ mov tableau[si],ch
+ xor ch,ch
+ jmp suite
+ 
+ obstacle_blanc_noir:
+ cmp number1,0 
+ je arret_diagonal
+ cmp dl,0
+ jne arret_diagonal
+ inc dl 
+ mov tableau[si],'o'
+ inc si
+ mov ch,number1
+ mov tableau[si],ch
+ xor ch,ch 
+  suite:
+ inc si
+    
+loop loopp
+
+arret_diagonal:
+cmp dl,0
+jne suitee
+inc si
+suitee:     
+inc dh
+add si,cx
+jmp diagonal_svt     
+
+fin3:
+popa
+endm 
+ 
+deplacement_dame macro x,y,tableau
+ Local suite1,loopp,suite,position_trouver,same_diagonal,deplacement_impossible 
+  
+  pusha
+
+  getNumber x,y,number1
+  mov al,number1
+  mov cx,40
+  mov si,1
+  mov dh,1
+  mov dl,1
+  mov bx,0
+  
+  loopp:
+  cmp sauvegarde[si],'o'
+  jne suite
+  mov bx,si
+    
+  suite:
+  
+  cmp sauvegarde[si],al
+  je position_trouver
+  inc si
+  inc dh
+  cmp dh,11
+  jne same_diagonal
+  mov dh,1
+  add dl,10
+  same_diagonal: 
+  loop loopp
+  
+  jmp deplacement_impossible:
+  
+  position_trouver:
+  cmp bx,0
+  je suite1
+  cmp bl,dl
+  jl suite1
+
+  cmp sauvegarde[bx+1],al
+  je deplacement_impossible
+   
+  mov dl,sauvegarde[bx+1]
+  mov bl,dl
+  mov board[bx-1],'0'
+  suite1:
+  
+  mov dl,sauvegarde[0]
+  xor dh,dh
+  mov si,dx
+  xor ah,ah
+  
+  mov bx,ax
+  mov ch,board[si-1]
+  mov board[bx-1],ch
+  
+  mov board[si-1],'0'
+   
+  deplacement_impossible:
+ popa
+endm 
+ 
+ show_path_global macro i,j,sauvegarde,turn
+ pusha 
+ Local deplacement_impossible1,loopp,suite1,possible_white_dame_pawn
+ Local possible_black_pawn_deplacement,suite,possible_white_pawn_deplacement,possibilities_deplacement_for_dame
+  
+cmp j,0
+jl deplacement_impossible1
+cmp j,9
+jg deplacement_impossible1
+cmp i,0                         
+jl deplacement_impossible1
+cmp i,9                
+jg deplacement_impossible1
+
+getCellState board,i,j,result,number1
+cmp turn,'w'
+je possible_white_dame_pawn
+
+cmp result,'D'
+jne possible_black_pawn_deplacement
+ mov dame,1              
+ jmp suite
+ 
+possible_black_pawn_deplacement:
+cmp result,'b'
+jne deplacement_impossible1
+mov dame,0
+jmp suite
+
+possible_white_dame_pawn:
+cmp result,'d'
+jne possible_white_pawn_deplacement
+
+mov dame,1
+jmp suite
+possible_white_pawn_deplacement:
+cmp result,'w'
+jne deplacement_impossible1
+mov dame,0    
+
+suite:
+mov al,number1 
+mov sauvegarde[0],al
+cmp dame,1
+je possibilities_deplacement_for_dame
+ show_path_pion i,j,sauvegarde,turn
+ jmp deplacement_impossible1
+possibilities_deplacement_for_dame:
+ show_path_dame i,j,sauvegarde,turn
+
+deplacement_impossible1:
+
+popa    
+endm
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
 .model small
 .data
 
  result db ?
  n db ?
- board db 50 dup(?)
+ board db 50 dup('0')
   
  black db " black$"
  
@@ -433,10 +653,10 @@ endm
  impossible db " deplacement impossible$"
  
  newLine db 13,10,'$'
- i db 6
- j db 1
- x db 4
- y db 3 
+ i db 3
+ j db 4
+ x db 7
+ y db 0 
  tmp1 db ?
  tmp2 db ?
  dep_possible db ?
@@ -450,26 +670,34 @@ endm
  chaine db "choisie entre la gauche et la droite d pour droite g pour gauche$"
  number1 db 0 ;cas indirect c'est la case destination
  number2 db 0 ; cas indirect c'est la case intermediaire
- sauvegarde db 5 dup(0)
+ sauvegarde db 41 dup(0)
+ dame db ?
 .code
 
  mov ax,@data
  mov ds,ax
  mov ax,0
         
-  board_init board
-  mov board[26],'b'
-  mov board[10],'0'
-  mov board[12],'0'
+  ;board_init board
+  mov board[17],'D'
+  ;mov board[21],'d'
+  ;mov board[22],'w'
+  ;mov board[26],'0'
+  ;mov board[28],'0'
+  ;mov board[30],'d'
   print_board board
-  mov turn,'w'
+  mov turn,'b'
+  ;mov dame,1
+  ;show_path_dame i,j,sauvegarde,turn
   ;deplacement i,j,x,y,turn,droite,direct
-  show_path_pion i,j,sauvegarde,turn
-  deplacement x,y,turn,sauvegarde,board 
+  ;show_path_pion i,j,sauvegarde,turn
+  ;deplacement_dame x,y,sauvegarde,board
+  
+  
+  show_path_global i,j,sauvegarde,turn
+  deplacement_dame x,y,turn,sauvegarde
+  print_string newLine 
   print_board board
- 
- 
-
-
-
-    
+  
+  
+  
