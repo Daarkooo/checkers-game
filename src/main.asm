@@ -307,17 +307,17 @@ verify_move MACRO board, i, j, x, y, turn, verified, isDirect, val1, val2
     LOCAL impossible_move, done, other_way, down, end, next
     ;DL=i DH=j BH=x CH=y | i and j must be between 1-10 -> (0-9) 'we do the check in get_number & 'DEC 1' in the main'  
 
-    get_number i, j, main, n1 
-        CMP n1,0 ; 0 -> white cell 'invalid' (check get_number)
-        JE impossible_move  ; checking if it's a valid input 
-    get_cell_state board,i,j,state  
-        MOV AL, state
-        CMP AL, turn ; to make the move -> 'w'='w' / 'b'='b' else impossible_move
-        JNE impossible_move  
+    ; get_number i, j, main, n1 
+    ;     CMP n1,0 ; 0 -> white cell 'invalid' (check get_number)
+    ;     JE impossible_move  ; checking if it's a valid input 
+    ; get_cell_state board,i,j,state  
+    ;     MOV AL, state
+    ;     CMP AL, turn ; to make the move -> 'w'='w' / 'b'='b' else impossible_move
+    ;     JNE impossible_move  
     
-    get_number x, y, main, n2 ; main <- null doesnt effect  
-        CMP n2,0
-        JE impossible_move ; checking if it's a valid input
+    ; get_number x, y, main, n2 ; main <- null doesnt effect  
+    ;     CMP n2,0
+    ;     JE impossible_move ; checking if it's a valid input
     get_cell_state board, x, y, state        
         CMP state,'0' ; to make the move -> board[x,y] needs to be empty '0'
         JNE impossible_move 
@@ -730,7 +730,7 @@ ENDM
 START:
     MOV AX, @DATA
     MOV DS, AX 
-    ;board_init board 
+    board_init board 
                      
     ;----BLACK TEST-------------------                    
     ;MOV board[20],'b'   
@@ -786,9 +786,9 @@ START:
     ;MOV al,1
     ;mov path1,1
       
-    move_pawn board,3,2,4,3,'b',turn,verified,isDirect,n1,n2 
+    ;move_pawn board,3,2,4,3,'b',turn,verified,isDirect,n1,n2 
       
-    ;print_board board 
+    print_board board 
     ;get_number 9,8,'y',n1
 
 ;CODE ENDS

@@ -488,6 +488,8 @@ show_path MACRO board,i1,j1,turn1,path1,path2,pawn_position,makla,makla2,isDirec
     CMP bool,1
     JNE label1 ; if there's a move in indirect, isDirect'll return maklaNum -> isDirect != 'n'
         MOV bool,0
+        MOV AL,'n' ; not direct 
+        MOV isDirect,AL
         JMP end
     label1:
 
@@ -695,13 +697,13 @@ switch_turn MACRO turn
     JE switch
         mov AL,'b'
         mov turn,AL
-        mov AX,0000h  ; the white side color
+        mov AX,0001h  ; the black side color
         MOV PColor,AX
         JMP next_move
     switch:
         mov AL,'w'
         mov turn,AL
-        mov AX,0001h ; the black side color
+        mov AX,0000h ; the white side color
         MOV PColor,AX
     next_move:
 
@@ -746,6 +748,39 @@ draw_borders MACRO IndMoves, directMove, color
     end_moves:
 
 ENDM 
+
+;-----is_value_in_array-----
+is_value_in_array MACRO x, y, array, bool
+    LOCAL lab1, exist, not_exist, end
+
+    MOV DL, x
+    MOV DH, y
+    get_number DL, DH, menu, num
+    MOV AL, num
+    DEC AL
+
+    CMP AL, 0
+    JE not_exist
+
+    LEA SI, array
+    lab1:
+        CMP BYTE PTR [SI], 0
+        JE not_exist
+
+        ; DEC AL
+        CMP BYTE PTR [SI], AL
+        JE exist
+        INC SI
+        JMP lab1
+
+    exist:
+        MOV bool, 1
+        JMP end
+    not_exist:
+        MOV bool, 0
+    end:
+
+ENDM
 
 ;------set_array_null-----------
 set_array_null MACRO array
