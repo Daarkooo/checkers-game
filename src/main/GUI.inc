@@ -149,6 +149,24 @@
         PopReg
     ENDM
 
+    pushMousePosition MACRO
+        PUSH AX
+        PUSH BX
+        MOV AX, 0003h
+        INT 33h
+        POP BX
+        POP AX
+        PUSH CX
+        PUSH DX
+    ENDM
+
+    popMousePosition MACRO
+        POP DX
+        POP CX
+
+        setMousePosition CX, DX
+    ENDM
+
     setCursorPosition MACRO row, column, page
         MOV AX, 0200h
         MOV BH, page
@@ -1162,9 +1180,9 @@
         RET 10
     __drawBorderCell ENDP
 
-    drawBorderCell MACRO N, color, xOffset, yOffset, cellSize 
+    drawBorderCell MACRO N, color, xOffset, yOffset, cellSize
         PushReg
-        
+
         xor ah,ah
         xor bh,bh
 
@@ -1500,16 +1518,16 @@
             FinMove:
                 GetCenter Dh,Ch,DX,CX
 
-                setMousePosition 0, 0
-
                 ADD CX, offsetY
                 ADD DX, offsetX
 
-                PUSH CX
-                PUSH DX
-                drawCircle PColor, DX,CX
-                POP DX
-                POP CX
+                MOV SI, CX
+                MOV DI, DX
 
-                setMousePosition DX, CX
+                pushMousePosition
+                setMousePosition 0, 0
+
+                drawCircle PColor, DI, SI
+
+                popMousePosition
     ENDM

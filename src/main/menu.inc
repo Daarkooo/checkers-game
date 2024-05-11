@@ -150,7 +150,7 @@
         drawThemeTemplate THEME0_X, THEME0_Y, 0006h, 000Fh, 0000h, 000Fh, 17 ; THEME 1
         drawBorder 0002h, THEME0_X, THEME0_Y, 34, 3
 
-        drawThemeTemplate THEME1_X, THEME1_Y, 0000h, 000Fh, 0007h, 000Fh, 17 ; THEME 2
+        drawThemeTemplate THEME1_X, THEME1_Y, 0000h, 0007h, 0004h, 000Fh, 17 ; THEME 2
         drawBorder 0008h, THEME1_X, THEME1_Y, 34, 3
 
         drawThemeTemplate THEME2_X, THEME2_Y, 0000h, 0004h, 0004h, 0008h, 17 ; THEME 3
@@ -206,6 +206,8 @@
 
             SPMP_clicked:
                 CMP isSP, 1
+                pushMousePosition
+                setMousePosition 0, 0
                 JZ SP_TOGGLE
                     printGraphicalString MP_MSG, 0F1h, 25, 6
                     printGraphicalString SP_MSG, 0F1h, 24, 6
@@ -218,10 +220,13 @@
                     MOV isSP, 0
 
                 SPMP_end:
+                popMousePosition
                 JMP MAIN_L1
 
             MAKLA_clicked:
                 CMP isMaklaSif, 1
+                pushMousePosition
+                setMousePosition 0, 0
                 JZ MAKLA_TOGGLE
                     printGraphicalString MKLASIF_MSG , 0F2h, 23, 11
                     printGraphicalString MKLANSIF_MSG, 0F2h, 23, 11
@@ -234,6 +239,7 @@
                     MOV isMaklaSif, 0
 
                 MAKLA_end:
+                popMousePosition
                 JMP MAIN_L1
 
             THEME0_clicked:
@@ -242,9 +248,10 @@
                 MOV blackPiece, 0000h
                 MOV whitePiece, 000Fh
 
+                pushMousePosition
                 setMousePosition 0, 0
                 drawBorder 0002h, THEME0_X, THEME0_Y, 34, 3
-                setMousePosition THEME0_X, THEME0_Y
+                popMousePosition
                 drawBorder 0008h, THEME1_X, THEME1_Y, 34, 3
                 drawBorder 0008h, THEME2_X, THEME2_Y, 34, 3
                 drawBorder 0008h, THEME3_X, THEME3_Y, 34, 3
@@ -253,14 +260,15 @@
 
             THEME1_clicked:
                 MOV blackCell , 0000h
-                MOV whiteCell , 000Fh
-                MOV blackPiece, 0007h
+                MOV whiteCell , 0007h
+                MOV blackPiece, 0004h
                 MOV whitePiece, 000Fh
 
                 drawBorder 0008h, THEME0_X, THEME0_Y, 34, 3
+                pushMousePosition
                 setMousePosition 0, 0
                 drawBorder 0002h, THEME1_X, THEME1_Y, 34, 3
-                setMousePosition THEME1_X, THEME1_Y
+                popMousePosition
                 drawBorder 0008h, THEME2_X, THEME2_Y, 34, 3
                 drawBorder 0008h, THEME3_X, THEME3_Y, 34, 3
 
@@ -274,9 +282,10 @@
 
                 drawBorder 0008h, THEME0_X, THEME0_Y, 34, 3
                 drawBorder 0008h, THEME1_X, THEME1_Y, 34, 3
+                pushMousePosition
                 setMousePosition 0, 0
                 drawBorder 0002h, THEME2_X, THEME2_Y, 34, 3
-                setMousePosition THEME2_X, THEME2_Y
+                popMousePosition
                 drawBorder 0008h, THEME3_X, THEME3_Y, 34, 3
 
                 JMP MAIN_L1
@@ -290,9 +299,10 @@
                 drawBorder 0008h, THEME0_X, THEME0_Y, 34, 3
                 drawBorder 0008h, THEME1_X, THEME1_Y, 34, 3
                 drawBorder 0008h, THEME2_X, THEME2_Y, 34, 3
+                pushMousePosition
                 setMousePosition 0, 0
                 drawBorder 0002h, THEME3_X, THEME3_Y, 34, 3
-                setMousePosition THEME3_X, THEME3_Y
+                popMousePosition
 
                 JMP MAIN_L1
 
