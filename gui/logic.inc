@@ -697,13 +697,13 @@ switch_turn MACRO turn
     JE switch
         mov AL,'b'
         mov turn,AL
-        mov AX,0001h  ; the black side color
+        mov AX, blackPiece ; the black side color
         MOV PColor,AX
         JMP next_move
     switch:
         mov AL,'w'
         mov turn,AL
-        mov AX,0000h ; the white side color
+        mov AX,whitePiece ; the white side color
         MOV PColor,AX
     next_move:
 
@@ -757,7 +757,6 @@ is_value_in_array MACRO x, y, array, bool
     MOV DH, y
     get_number DL, DH, menu, num
     MOV AL, num
-    DEC AL
 
     CMP AL, 0
     JE not_exist
@@ -767,7 +766,6 @@ is_value_in_array MACRO x, y, array, bool
         CMP BYTE PTR [SI], 0
         JE not_exist
 
-        ; DEC AL
         CMP BYTE PTR [SI], AL
         JE exist
         INC SI

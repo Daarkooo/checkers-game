@@ -18,7 +18,6 @@
     turn            DB      'b'
     path1           DB      ?
     path2           DB      ?
-    tmp             DB      ?
     num             DB      ?
     makla           DB      ?
     makla2          DB      ?
@@ -74,15 +73,26 @@
                 LEA AX, getCoordsFromMouseClick
                 awaitMouseClick AX,0,0,34 ; CX <- y DX <- x   
                 
-            ;     CMP IndMoves[0], 0
-            ;     JE labelM
+                CMP maklaSif, 1
+                JE maklaBlock
+                    JMP next
+                maklaBlock:
 
-            ;         ;is_value_in_array DL, CL, IndMoves, tmp
-            ;         CMP tmp, 1
-            ;         JE labelM
-            ;             ; JMP reselect
 
-            ;    labelM:
+                CMP IndMoves[0], 0
+                JE no_IndMove
+                    
+                    PUSH CX
+                    PUSH DX
+                   is_value_in_array DL, CL, IndMoves, bool
+                    POP DX
+                    POP CX
+
+                    CMP bool, 1
+                    JE no_IndMove
+                        JMP reselect
+
+                no_IndMove:
 
                 show_path board,DL,CL,turn,path1,path2,source_pawn,makla,makla2,isDirect,multiple_jumps
 
