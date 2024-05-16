@@ -52,7 +52,7 @@
 
         CMP AX, 1
         JZ startClicked
-        JMP main_endLabel
+            JMP main_endLabel
         startClicked:
 
         ; Clear screen by re-setting video mode
@@ -179,11 +179,22 @@
                     JMP multi_jumps
             next1:
 
+            check_state_game IndMoves, directMoves, winner
+            CMP winner, 1
+            JNE continue1
+                switch_turn turn
+                MOV AL, turn
+                MOV winner, AL
+                JMP main_endLabel
+            continue1:
+
             switch_turn turn 
             
         JMP play
 
         main_endLabel:
+
+        ; we have a winner 
        
         POP BP
         MOV AX, 4C00h
