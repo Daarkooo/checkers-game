@@ -179,16 +179,15 @@
                     JMP multi_jumps
             next1:
 
+            switch_turn turn 
+
             check_state_game IndMoves, directMoves, winner
             CMP winner, 1
             JNE continue1
-                switch_turn turn
                 MOV AL, turn
                 MOV winner, AL
                 JMP main_endLabel
             continue1:
-
-            switch_turn turn 
             
         JMP play
 
