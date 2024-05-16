@@ -422,7 +422,7 @@ ENDM
 
 
 ;------show_path----------
-show_path MACRO board,i1,j1,turn1,path1,path2,pawn_position,makla,makla2,isDirect_arg,multiple_jumps
+show_path MACRO board,i1,j1,turn1,path1,path2,pawn_position,makla,makla2,isDirect_arg
     LOCAL end, next, next1, not_verified, not_verified1, not_verified2,  down, down1, label1, label2, label3
     
     MOV AL,isDirect_arg
@@ -823,7 +823,7 @@ show_moves MACRO turn, board, IndMoves, directMoves
             
             PUSH SI
             PUSH DI
-            show_path board,i,j,turn,path1,path2,source_pawn,makla,makla2,isDirect,multiple_jumps 
+            show_path board,i,j,turn,path1,path2,source_pawn,makla,makla2,isDirect
             POP DI
             POP SI
             POP BX

@@ -13,11 +13,12 @@
     blackPiece      DW      0001h ; blue
     whitePiece      DW      0000h ; black
 
-    PColor          DW      0001H
+    PColor          DW      0001H ; initial it with black Piece Color
     source_pawn     DB      ?
     turn            DB      'b'
     path1           DB      ?
     path2           DB      ?
+    tmp             DB      ?
     num             DB      ?
     makla           DB      ?
     makla2          DB      ?
@@ -25,12 +26,12 @@
     y1              DB      ?
     check_direct    DB      ?
     isDirect        DB      ?
-    multiple_jumps  DB      ?
     maklaSif        DB      1
 
     INCLUDE menu.inc
     INCLUDE print.inc
     INCLUDE logic.inc
+    INCLUDE methods.inc
 
 .CODE
 
@@ -78,23 +79,14 @@
                     JMP next
                 maklaBlock:
 
+                makla_sif_check IndMoves, bool, isValid
+                
+                CMP isValid, 1
+                JE continue
+                    JMP reselect
+                continue:
 
-                CMP IndMoves[0], 0
-                JE no_IndMove
-                    
-                    PUSH CX
-                    PUSH DX
-                   is_value_in_array DL, CL, IndMoves, bool
-                    POP DX
-                    POP CX
-
-                    CMP bool, 1
-                    JE no_IndMove
-                        JMP reselect
-
-                no_IndMove:
-
-                show_path board,DL,CL,turn,path1,path2,source_pawn,makla,makla2,isDirect,multiple_jumps
+                show_path board,DL,CL,turn,path1,path2,source_pawn,makla,makla2,isDirect
 
                 MOV AL, isDirect
                 MOV check_direct , AL ; need it in multiple_jumps to check if the previous move was a direct/indirect move 
@@ -167,7 +159,7 @@
                 JMP next1
             next_move:
 
-            show_path board,x1,y1,turn,path1,path2,source_pawn,makla,makla2,isDirect,multiple_jumps
+            show_path board,x1,y1,turn,path1,path2,source_pawn,makla,makla2,isDirect
 
             CMP isDirect, 'n'
             JNE next1
