@@ -69,7 +69,7 @@
 
         play:
 
-            show_moves turn, board, IndMoves, directMoves
+            show_moves board, IndMoves, directMoves
             draw_borders IndMoves, directMoves, 0Ah 
             
             reselect:
@@ -82,31 +82,31 @@
                     JMP next
                 maklaBlock:
 
-                ; makla_sif_check IndMoves, bool, isValid
+                makla_sif_check IndMoves, bool, isValid
                 
-                ; CMP isValid, 1
-                ; JE continue
-                ;     JMP reselect
-                ; continue:
+                CMP isValid, 1
+                JE continue
+                    JMP reselect
+                continue:
 
-                ; show_path board,DL,CL,turn,path1,path2,source_pawn,makla1,makla2,isDirect
+                show_path board,DL,CL,turn,path1,path2,source_pawn,makla1,makla2
 
-                ; MOV AL, isDirect
-                ; MOV check_direct , AL ; need it in multiple_jumps to check if the previous move was a direct/indirect move 
+                MOV AL, isDirect
+                MOV check_direct , AL ; need it in multiple_jumps to check if the previous move was a direct/indirect move 
 
-                ; CMP path1,-1
-                ; JE label1
-                ;     MOV AL,1
-                ; label1:
+                CMP path1,-1
+                JE label1
+                    MOV AL,1
+                label1:
 
-                ; CMP path2,-1
-                ; JE label2
-                ;     MOV AL,1
-                ; label2:
+                CMP path2,-1
+                JE label2
+                    MOV AL,1
+                label2:
 
-                ; CMP AL,1    
-                ; JE next
-                ;     JMP reselect
+                CMP AL,1    
+                JE next
+                    JMP reselect
 
 
 
@@ -164,7 +164,7 @@
                 JMP next1
             next_move:
 
-            show_path board,x1,y1,turn,path1,path2,source_pawn,makla1,makla2,isDirect
+            show_path board,x1,y1,turn,path1,path2,source_pawn,makla1,makla2
 
             CMP isDirect, 'n'
             JNE next1

@@ -68,7 +68,7 @@ draw_borders MACRO IndMoves, directMove, color
 ENDM 
 
 ;---------show_moves------------- 
-show_moves MACRO turn, board, IndMoves, directMoves
+show_moves MACRO board, IndMoves, directMoves
     LOCAL lab1, lab2, lab3, directMove,continue, endL
     
     set_array_null IndMoves
@@ -80,7 +80,6 @@ show_moves MACRO turn, board, IndMoves, directMoves
     
     MOV CX, 50
     lab3:     
-        MOV AL,turn
         
         ;CMP BYTE PTR [SI], AL
         ;JE continue

@@ -424,7 +424,7 @@ ENDM
 
 
 ;------show_path----------
-show_path MACRO board,i1,j1,turn1,path1,path2,pawn_position,makla1,makla2,isDirect_arg
+show_path MACRO board,i1,j1,turn1,path1,path2,pawn_position,makla1,makla2
     LOCAL end, next, next1, not_verified, not_verified1, not_verified2,  down, down1, label1, label2, label3
            
     MOV DL,i1
@@ -533,7 +533,7 @@ show_path MACRO board,i1,j1,turn1,path1,path2,pawn_position,makla1,makla2,isDire
     end:
 ENDM
 
-show_path_dame MACRO board,i1,j1,turn1,path1,path2,pawn_position,makla1,isDirect
+show_path_dame MACRO board,i1,j1,turn1,path1,path2,pawn_position,makla1
     LOCAL next_direction, long_move, long_move1, next, continue, end
    
     set_array_null dameMoves
