@@ -31,6 +31,8 @@
     isDirect        DB      ?
     maklaSif        DB      1
     typePawn        DB      ?  ; 0 -> pawn / 1-> dame
+    color           DB      ?
+    
 
     INCLUDE menu.inc
     INCLUDE print.inc

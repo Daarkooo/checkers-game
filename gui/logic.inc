@@ -14,8 +14,6 @@
     switcher DB 1
     checked DB ?
     
-    color DB ?
-
     val1 DB ?
     val2 DB ? 
     menu DB ? 
@@ -313,8 +311,7 @@ get_cell_state MACRO board,i,j,color, typePawn
         JMP end_label
 
     white_cell:
-        MOV color, -1
-        MOV typePawn, -1
+        MOV typePawn, 0
     
     end_label: 
 ENDM
@@ -343,7 +340,7 @@ verify_move MACRO board, i, j, x, y, turn, verified, isDirect, val1, val2
             JMP impossible_move
         impossible_move2:
     get_cell_state board, x, y, color, typePawn        
-        CMP color, '0' ; to make the move -> board[x,y] needs to be empty '0' (type 0)
+        CMP color, '0' ; to make the move -> board[x,y] needs to be empty '0' 
         JE continue1        
             JMP impossible_move
         continue1:

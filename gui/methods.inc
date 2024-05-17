@@ -128,7 +128,7 @@ show_moves MACRO board, IndMoves, directMoves
 
 ENDM
 
-;-------mark_cell_method------------
+
 mark_cell_method MACRO color
     LOCAL pawn, makla, lab1, next, end
 
