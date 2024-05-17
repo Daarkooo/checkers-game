@@ -4,6 +4,7 @@
 
 .DATA
     board           DB  20 DUP('b'), 10 DUP('0'), 20 DUP('w')
+    ; board           DB  20 DUP('b'), 10 DUP('0'), 20 DUP('w')
     directMoves     DB  20 dup(?)
     IndMoves        DB  20 dup(?)
 
@@ -20,8 +21,10 @@
     path2           DB      ?
     tmp             DB      ?
     num             DB      ?
-    makla           DB      ?
+    makla1          DB      ?
     makla2          DB      ?
+    makla3          DB      ?
+    makla4          DB      ?
     x1              DB      ?
     y1              DB      ?
     check_direct    DB      ?
@@ -79,37 +82,39 @@
                     JMP next
                 maklaBlock:
 
-                makla_sif_check IndMoves, bool, isValid
+                ; makla_sif_check IndMoves, bool, isValid
                 
-                CMP isValid, 1
-                JE continue
-                    JMP reselect
-                continue:
+                ; CMP isValid, 1
+                ; JE continue
+                ;     JMP reselect
+                ; continue:
 
-                show_path board,DL,CL,turn,path1,path2,source_pawn,makla,makla2,isDirect
+                ; show_path board,DL,CL,turn,path1,path2,source_pawn,makla1,makla2,isDirect
 
-                MOV AL, isDirect
-                MOV check_direct , AL ; need it in multiple_jumps to check if the previous move was a direct/indirect move 
+                ; MOV AL, isDirect
+                ; MOV check_direct , AL ; need it in multiple_jumps to check if the previous move was a direct/indirect move 
 
-                CMP path1,-1
-                JE label1
-                    MOV AL,1
-                label1:
+                ; CMP path1,-1
+                ; JE label1
+                ;     MOV AL,1
+                ; label1:
 
-                CMP path2,-1
-                JE label2
-                    MOV AL,1
-                label2:
+                ; CMP path2,-1
+                ; JE label2
+                ;     MOV AL,1
+                ; label2:
+
+                ; CMP AL,1    
+                ; JE next
+                ;     JMP reselect
 
 
-                CMP AL,1    
-                JE next
-                    JMP reselect
+
             next:
 
             draw_borders IndMoves, directMoves, 06h
            
-            multi_jumps:
+            multi_jumps_lab:
             drawBorderCell source_pawn, 0Ah, 0, 0, 34 ; green 
 
             
@@ -130,7 +135,7 @@
                 MOV x1, DL
                 MOV y1, CL
 
-                move_pawn board,DL,CL,path1,path2,source_pawn,makla,makla2,isDirect
+                move_pawn board,DL,CL,path1,path2,source_pawn,makla1,makla2,isDirect
 
                 CMP isDirect,-1
                 JNE label3
@@ -159,7 +164,7 @@
                 JMP next1
             next_move:
 
-            show_path board,x1,y1,turn,path1,path2,source_pawn,makla,makla2,isDirect
+            show_path board,x1,y1,turn,path1,path2,source_pawn,makla1,makla2,isDirect
 
             CMP isDirect, 'n'
             JNE next1
@@ -176,7 +181,7 @@
 
                 CMP AL,1    
                 JNE next1
-                    JMP multi_jumps
+                    JMP multi_jumps_lab
             next1:
 
             switch_turn turn 

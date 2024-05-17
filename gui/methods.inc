@@ -67,6 +67,79 @@ draw_borders MACRO IndMoves, directMove, color
 
 ENDM 
 
+;---------show_moves------------- 
+show_moves MACRO turn, board, IndMoves, directMoves
+    LOCAL lab1, lab2, lab3, directMove,continue, endL
+    
+    set_array_null IndMoves
+    set_array_null directMoves
+
+    LEA SI, board
+    LEA DI, IndMoves
+    LEA BX, directMoves  
+    
+    MOV CX, 50
+    lab3:     
+        MOV AL,turn
+        
+        ;CMP BYTE PTR [SI], AL
+        ;JE continue
+       ;     JMP lab1  
+        ;continue:
+
+            MOV DL,count
+            PUSH CX
+            PUSH BX
+            
+            get_row DL,i
+            get_column DL,j 
+            
+            PUSH SI
+            PUSH DI
+            show_path board,i,j,turn,path1,path2,source_pawn,makla1,makla2,isDirect
+            POP DI
+            POP SI
+            POP BX
+            POP CX
+                                       
+            CMP path1, -1
+            JNE lab2
+                CMP path2, -1
+                JE lab1 
+                    lab2:  
+                    MOV AL,source_pawn
+                    ; DEC AL
+                    CMP isDirect,'y'
+                    JE directMove
+                        MOV BYTE PTR [DI], AL
+                        INC DI
+                        JMP lab1
+                    directMove:
+                        MOV BYTE PTR [BX], AL
+                        INC BX
+        lab1:
+            INC SI  
+            INC count
+    CMP CX,0
+    JE endL
+        DEC CX
+        JMP lab3
+    endL:
+
+ENDM
+
+
+
+
+
+
+; mark_cell_method MACRO turn
+
+
+
+
+
+
 ;-----is_value_in_array-----
 is_value_in_array MACRO x, y, array, bool
     LOCAL lab1, exist, not_exist, end
@@ -111,63 +184,40 @@ set_array_null MACRO array
 
 ENDM
 
-;---------show_moves------------- 
-show_moves MACRO turn, board, IndMoves, directMoves
-    LOCAL lab1, lab2, lab3, directMove,continue, endL
-    
-    set_array_null IndMoves
-    set_array_null directMoves
 
-    LEA SI, board
-    LEA DI, IndMoves
-    LEA BX, directMoves  
-    
-    MOV CX, 50
-    lab3:     
-        MOV AL,turn
-        
-        ;CMP BYTE PTR [SI], AL
-        ;JE continue
-       ;     JMP lab1  
-        ;continue:
 
-            MOV DL,count
-            PUSH CX
-            PUSH BX
+
+
+
+; multiple_jumps MACRO check_direct, x1, x2, turn
+;     LOCAL 
+
+;     MOV AL,check_direct
+;             CMP AL, 'n'
+;             JE next_move
+;                 JMP next1
+;             next_move:
+
+;             show_path board,x1,y1,turn,path1,path2,source_pawn,makla,makla2,isDirect
+
+;             CMP isDirect, 'n'
+;             JNE next1
             
-            get_row DL,i
-            get_column DL,j 
-            
-            PUSH SI
-            PUSH DI
-            show_path board,i,j,turn,path1,path2,source_pawn,makla,makla2,isDirect
-            POP DI
-            POP SI
-            POP BX
-            POP CX
-                                       
-            CMP path1, -1
-            JNE lab2
-                CMP path2, -1
-                JE lab1 
-                    lab2:  
-                    MOV AL,source_pawn
-                    ; DEC AL
-                    CMP isDirect,'y'
-                    JE directMove
-                        MOV BYTE PTR [DI], AL
-                        INC DI
-                        JMP lab1
-                    directMove:
-                        MOV BYTE PTR [BX], AL
-                        INC BX
-        lab1:
-            INC SI  
-            INC count
-    CMP CX,0
-    JE endL
-        DEC CX
-        JMP lab3
-    endL:
+;                 CMP path1,-1
+;                 JE lab1
+;                     MOV AL,1
+;                 lab1:
 
-ENDM
+;                 CMP path2,-1
+;                 JE lab2
+;                     MOV AL,1
+;                 lab2:
+
+;                 CMP AL,1    
+;                 JNE next1
+;                     JMP multi_jumps_lab
+;             next1:
+
+
+
+; ENDM
