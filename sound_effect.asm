@@ -1,9 +1,3 @@
-.model small
-.stack 100h
-
-.data
-
-.code
 sound_effect PROC
     ; Set up the tone parameters
     mov al, 0B6h    ; Set timer 2 mode (square wave generator)
@@ -28,21 +22,5 @@ delay_loop:
     and al, 0FCh    ; Clear bits 0 and 1 to disable speaker (bits 0 and 1)
     out 61h, al     ; Send the new value to port 61h
 
-    ; Return from procedure
     RET
 sound_effect ENDP
-
-main PROC
-    mov ax, @data
-    mov ds, ax
-
-    ; Call the sound effect procedure
-    call sound_effect
-
-    ; Exit program
-    mov ax, 4C00h
-    int 21h
-
-main ENDP
-
-end main
