@@ -14,8 +14,8 @@
     switcher DB 1
     checked DB ?
     
-    count DB ? 
-    
+    color DB ?
+
     val1 DB ?
     val2 DB ? 
     menu DB ? 
@@ -37,7 +37,7 @@
     ; isDirect        DB      '2'
     ; multiple_jumps  DB      ?  
     
-    ; board DB  5 DUP('b'), 5 DUP('0'), 5 DUP('w')  
+    ; board           DB  20 DUP('b'), 10 DUP('0'), 20 DUP('w') 
     
     ;  directMoves     DB  20 dup(?)
     ; IndMoves        DB  20 dup(?) 
@@ -237,7 +237,7 @@ print_board MACRO board
     LOOP outer_loop
 ENDM
 ;-----get_cell_color-------------
- get_cell_color MACRO row, column
+get_cell_color MACRO row, column
     LOCAL BlackCase, fin
 
         ; (row % 2 === column % 2)
@@ -267,25 +267,54 @@ ENDM
 ENDM  
    
 ;----CellState----------
-get_cell_state MACRO board,i,j,result
-    LOCAL white_cell, end_label, white_celll     ; LOCAL LABELS
+get_cell_state MACRO board,i,j,color, typePawn
+    LOCAL white_cell, end_label, endColor_label, white_piece, pawn, empty_cell    ; LOCAL LABELS
         MOV DL, i
         MOV DH, j
         get_number DL, DH, menu, AL        ; Le macro de la question C (Fait par Abdou & Omar)
         
         TEST AL, AL
-        JNZ white_celll
-            JMP white_cell
-        white_celll:
+        JZ white_cell
         
         XOR AH, AH
         MOV SI, AX
-        MOV AL, board[SI - 1]        
-        MOV result, AL
+        MOV AL, board[SI - 1]
+
+        CMP board[SI - 1], '0'
+        JE empty_cell
+        
+        CMP board[SI - 1], 'w'
+        JZ white_piece
+        CMP board[SI - 1], 'W'
+        JZ white_piece
+
+        MOV color, 'b'
+        JMP endColor_label
+
+        white_piece:
+        mov color, 'w'
+
+        endColor_label:
+
+        CMP board[SI - 1], 'w'
+        JZ pawn
+        CMP board[SI - 1], 'b'
+        JZ pawn
+
+        MOV typePawn, 1
         JMP end_label
-            
+
+        pawn:
+        MOV typePawn, 0
+        JMP end_label
+
+        empty_cell:
+        MOV color, '0'
+        JMP end_label
+
     white_cell:
-        MOV result, 0
+        MOV color, -1
+        MOV typePawn, -1
     
     end_label: 
 ENDM
@@ -301,8 +330,8 @@ verify_move MACRO board, i, j, x, y, turn, verified, isDirect, val1, val2
         JNE impossible_move1  ; checking if it's a valid input 
             JMP impossible_move
         impossible_move1:
-    get_cell_state board,i,j,state  
-        MOV AL, state
+    get_cell_state board, i, j, color, typePawn
+        MOV AL, color
         CMP AL, turn ; to make the move -> 'w'='w' / 'b'='b' else impossible_move
         JE continue
             JMP impossible_move
@@ -313,8 +342,8 @@ verify_move MACRO board, i, j, x, y, turn, verified, isDirect, val1, val2
         JNE impossible_move2 ; checking if it's a valid input
             JMP impossible_move
         impossible_move2:
-    get_cell_state board, x, y, state        
-        CMP state,'0' ; to make the move -> board[x,y] needs to be empty '0'
+    get_cell_state board, x, y, color, typePawn        
+        CMP color, '0' ; to make the move -> board[x,y] needs to be empty '0' (type 0)
         JE continue1        
             JMP impossible_move
         continue1:
@@ -351,11 +380,11 @@ verify_move MACRO board, i, j, x, y, turn, verified, isDirect, val1, val2
     INC DL
 
     get_number DL,DH , menu, isDirect ; isDirect return makla number (for optimization) 'indirect move'
-    get_cell_state board, DL, DH, state ; depends on the colors (white -> black/ black ->white)
-    CMP state,'0' ; one step (not for dames)
+    get_cell_state board, DL, DH, color, typePawn  ; depends on the colors (white -> black/ black ->white)
+    CMP color,'0' ; one step (not for dames)
     JE impossible_move 
     MOV AL,turn 
-    CMP AL,state ; to make the move -> state needs to be the color of the opposing player (enemy) 
+    CMP AL,color ; to make the move -> state needs to be the color of the opposing player (enemy) 
     JNE done ; make the move
         
     impossible_move:
@@ -442,6 +471,8 @@ show_path MACRO board,i1,j1,turn1,path1,path2,pawn_position,makla1,makla2
     MOV AL,-1 ;
     MOV path1,AL
     MOV path2,AL ; in case there's no move
+    MOV makla1,AL
+    MOV makla2,AL
     
     ;---------INDIRECT---------------- we prioritize the indirect move  
     CMP turn,'b'

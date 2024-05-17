@@ -1,5 +1,6 @@
 .data
     isValid     DB      ?
+    count       DB      0
 
 .code  
 
@@ -95,7 +96,7 @@ show_moves MACRO board, IndMoves, directMoves
             
             PUSH SI
             PUSH DI
-            show_path board,i,j,turn,path1,path2,source_pawn,makla1,makla2,isDirect
+            show_path board,i,j,turn,path1,path2,source_pawn,makla1,makla2
             POP DI
             POP SI
             POP BX
@@ -127,16 +128,40 @@ show_moves MACRO board, IndMoves, directMoves
 
 ENDM
 
+;-------mark_cell_method------------
+mark_cell_method MACRO color
+    LOCAL pawn, makla, lab1, next, end
+
+    CMP typePawn, 0
+    JE pawn
+        CMP maklaSIf, 1
+        JE makla
+            LEA SI,dameMoves 
+            JMP next
+        makla:
+            LEA SI, dameIndMoves
+        next:
+        
+        lab1:
+            CMP BYTE PTR [SI], 0
+            JE end
+                XOR BX, BX
+                MOV BL, BYTE PTR [SI]
+                markCell color, offsetX, offsetY, cellSize, BX
+        JMP lab1
+    pawn:
+        XOR BX, BX
+        MOV BL, path1
+        markCell color, offsetX, offsetY, cellSize, BX
+            
+        XOR BX, BX
+        MOV BL, path2
+        markCell color, offsetX, offsetY, cellSize, BX
 
 
+    end:
 
-
-
-; mark_cell_method MACRO turn
-
-
-
-
+ENDM
 
 
 ;-----is_value_in_array-----

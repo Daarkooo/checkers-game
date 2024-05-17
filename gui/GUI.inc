@@ -447,6 +447,90 @@
 		RET 6
 	__drawCircle28 ENDP
 
+
+    ; ;! ALL PARAMETRES EXCEPT 'cellNumber' ARE 16-BITS
+    ; __drawQueen PROC ; cellNumber, xOffset, yOffset, cellSize, outerColor, innerColor
+    ;     PUSH BP
+    ;     MOV BP, SP
+    ;     SUB SP, 4
+
+    ;     ; * [BP +  4]: innerColor
+    ;     ; * [BP +  6]: outerColor
+    ;     ; * [BP +  8]: cellSize
+    ;     ; * [BP + 10]: yOffset
+    ;     ; * [BP + 12]: xOffset
+    ;     ; * [BP + 14]: cellNumber
+
+    ;     ; * [BP -  2]: real X (columns in px)
+    ;     ; * [BP -  4]: real Y (row in px)
+
+    ;     MOV AX, [BP + 14]
+    ;     get_column AL, AL       ; send N in AL and get the column in AL
+    ;     XOR AH, AH
+    ;     XOR DX, DX
+    ;     MOV BX, [BP + 8]
+    ;     MUL BX
+    ;     ADD AX, [BP + 12]
+    ;     MOV [BP - 2], AX
+
+    ;     MOV BX, [BP + 14]
+    ;     getRow BL, AL       ; send N in AL and get the column in AL
+    ;     XOR AH, AH
+    ;     XOR DX, DX
+    ;     MOV BX, [BP + 8]
+    ;     MUL BX
+    ;     ADD AX, [BP + 10]
+    ;     MOV [BP - 4], AX
+
+    ;     ; Get the center
+    ;     MOV CX, [BP + 8]
+    ;     SHR CX, 1
+    ;     ADD [BP - 4], CX
+    ;     ADD [BP - 2], CX
+
+    ;     MOV AX, [BP + 6]
+    ;     MOV CX, [BP - 2]
+    ;     MOV DX, [BP - 4]
+    ;     drawCircle AX, CX, DX
+
+    ;     MOV AX, [BP + 4]
+    ;     MOV CX, [BP - 2]
+    ;     MOV DX, [BP - 4]
+    ;     drawCircle14 AX, CX, DX
+
+    ;     MOV SP, BP
+    ;     POP BP
+    ;     RET 12
+    ; __drawQueen ENDP
+
+    ; drawQueen MACRO cellNumber, xOffset, yOffset, cellSize, outerColor, innerColor
+    ;     pushReg
+
+    ;     XOR AX, AX
+    ;     MOV AL, cellNumber
+    ;     PUSH AX
+
+    ;     MOV AX, xOffset
+    ;     PUSH AX
+
+    ;     MOV AX, yOffset
+    ;     PUSH AX
+
+    ;     MOV AX, cellSize
+    ;     PUSH AX
+
+    ;     MOV AX, outerColor
+    ;     PUSH AX
+
+    ;     MOV AX, innerColor
+    ;     PUSH AX
+
+    ;     CALL __drawQueen
+
+    ;     popReg
+    ; ENDM
+
+
 	drawCircle MACRO color, initialX, initialY
 		PushReg
 

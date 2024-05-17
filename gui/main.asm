@@ -30,6 +30,7 @@
     check_direct    DB      ?
     isDirect        DB      ?
     maklaSif        DB      1
+    typePawn        DB      ?  ; 0 -> pawn / 1-> dame
 
     INCLUDE menu.inc
     INCLUDE print.inc
@@ -109,7 +110,6 @@
                     JMP reselect
 
 
-
             next:
 
             draw_borders IndMoves, directMoves, 06h
@@ -119,13 +119,7 @@
 
             
             ; Use BX to pass 8 bit paraemtre, because AX will be cleared inside MACRO call
-            XOR BX, BX
-            MOV BL, path1
-            markCell 04h, offsetX, offsetY, cellSize, BX
-            
-            XOR BX, BX
-            MOV BL, path2
-            markCell 04h, offsetX, offsetY, cellSize, BX
+            mark_cell_method 04h
             
 
             reselect2:
@@ -145,13 +139,7 @@
 
             ; liveUsage
 
-            XOR BX, BX
-            MOV BL, path1
-            markCell 06h, offsetX, offsetY, cellSize, BX
-
-            XOR BX, BX
-            MOV BL, path2
-            markCell 06h, offsetX, offsetY, cellSize, BX
+            mark_cell_method 06h
             
 
             drawBorderCell source_pawn, 06h, 0, 0, 34 
