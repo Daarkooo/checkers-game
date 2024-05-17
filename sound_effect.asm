@@ -22,7 +22,7 @@ main:
     out 61h, al     ; Send the new value to port 61h
 
     ; Wait a bit for the sound to play
-    mov cx, 1000h   ; Adjust this delay for longer or shorter beeps
+    mov cx, 0FFFFh   ; Adjust this delay for longer or shorter beeps
 delay_loop:
     loop delay_loop
 
