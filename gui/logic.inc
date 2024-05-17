@@ -271,9 +271,6 @@ get_cell_state MACRO board,i,j,color, typePawn
         MOV DH, j
         get_number DL, DH, menu, AL        ; Le macro de la question C (Fait par Abdou & Omar)
         
-        TEST AL, AL
-        JZ white_cell
-        
         XOR AH, AH
         MOV SI, AX
         MOV AL, board[SI - 1]
@@ -308,10 +305,6 @@ get_cell_state MACRO board,i,j,color, typePawn
 
         empty_cell:
         MOV color, '0'
-        JMP end_label
-
-    white_cell:
-        MOV typePawn, 0
     
     end_label: 
 ENDM
