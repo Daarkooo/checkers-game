@@ -134,9 +134,43 @@ MAIN PROC FAR
         drawBoard 300, 0Ah, 0Fh, 06h, 33;! draw the board with white and black cells and size 35 for each cell=>the width of the board is 35*10=350 and the height is 35*10=350
     ;?board:start    
         call duringGameMenu
+        call sound_effect
+        call sound_effect
     RET
 MAIN ENDP
+;?sound effect:start
+sound_effect PROC
+    ; Set up the tone parameters
+    mov al, 0B6h    ; Set timer 2 mode (square wave generator)
+    out 43h, al     ; Send mode command to timer 2
 
+    ; Set frequency for the sound (adjust for desired tone)
+    mov ax, 0C1Eh   ; Set a frequency (e.g., around 523 Hz for a middle C)
+    out 42h, al     ; Send low byte of frequency
+    mov al, ah
+    out 42h, al     ; Send high byte of frequency
+
+    ; Enable speaker output
+    in al, 61h      ; Read current value from port 61h
+    or al, 3        ; Set bits 0 and 1 to enable speaker (bits 0 and 1)
+    out 61h, al     ; Send the new value to port 61h
+
+    ; Wait for a short time (adjust delay for desired sound length)
+    mov cx, 0FFFFh   ; Adjust this delay for the length of the sound effect
+delay_loop:
+    loop delay_loop
+
+    ; Disable speaker output
+    in al, 61h      ; Read current value from port 61h
+    and al, 0FCh    ; Clear bits 0 and 1 to disable speaker (bits 0 and 1)
+    out 61h, al     ; Send the new value to port 61h
+
+    ; Return from procedure
+    RET
+sound_effect ENDP
+
+
+;?sound effect:end
 ;?menu procedures:start
 clear_screen PROC NEAR
     ; Set video mode for 640x350
