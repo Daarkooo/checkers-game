@@ -14,7 +14,7 @@ sound_effect PROC
 
     ; Wait a bit for the sound to play
     mov cx, 0FFFFh   ; Adjust this delay for longer or shorter beeps
-delay_loop:
+    delay_loop:
     loop delay_loop
 
     ; Disable speaker output

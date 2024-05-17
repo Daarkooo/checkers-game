@@ -136,6 +136,7 @@ MAIN PROC FAR
         call duringGameMenu
         call sound_effect
         call sound_effect
+        call sound_effect
     RET
 MAIN ENDP
 ;?sound effect:start
@@ -143,9 +144,7 @@ sound_effect PROC
     ; Set up the tone parameters
     mov al, 0B6h    ; Set timer 2 mode (square wave generator)
     out 43h, al     ; Send mode command to timer 2
-    
-    ; Set frequency (around 1000 Hz)
-    mov ax, 0E9C4h  ; Adjust this value for different tones
+    mov ax, 0E9C4h  ; Set the frequency (adjust this for different tones)
     out 42h, al     ; Send low byte of frequency
     mov al, ah
     out 42h, al     ; Send high byte of frequency
@@ -155,14 +154,10 @@ sound_effect PROC
     or al, 3        ; Set bits 0 and 1 to enable speaker (bits 0 and 1)
     out 61h, al     ; Send the new value to port 61h
 
-    ; Delay for approximately 1 second
-    mov cx, 0FFFFh   ; Set a longer delay for one second
-    mov dx, 0FFFFh   ; Additional delay to extend the sound duration
-delay_loop1:
-    loop delay_loop1
-    mov cx, 0FFFFh
-delay_loop2:
-    loop delay_loop2
+    ; Wait a bit for the sound to play
+    mov cx, 0FFFFh   ; Adjust this delay for longer or shorter beeps
+    delay_loop:
+    loop delay_loop
 
     ; Disable speaker output
     in al, 61h      ; Read current value from port 61h
@@ -171,7 +166,6 @@ delay_loop2:
 
     RET
 sound_effect ENDP
-
 ;?sound effect:end
 ;?menu procedures:start
 clear_screen PROC NEAR
