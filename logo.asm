@@ -234,76 +234,76 @@ ENDM
 ;!logo:start
 drawLogo PROC NEAR
     ;!the letter c:start
-    drawBackGround 90,30,40,20,0Fh
-    drawBackGround 80,50,20,20,0Fh
-    drawBackGround 70,70,20,20,0Fh
-    drawBackGround 70,90,20,20,0Fh
-    drawBackGround 80,110,20,20,0Fh
-    drawBackGround 90,130,40,20,0Fh
+    drawBackGround 50,30,40,20,0Fh
+    drawBackGround 40,50,20,20,0Fh
+    drawBackGround 30,70,20,20,0Fh
+    drawBackGround 30,90,20,20,0Fh
+    drawBackGround 40,110,20,20,0Fh
+    drawBackGround 50,130,40,20,0Fh
     ;!the letter c:end
     ;!the letter H:start
-    drawBackGround 140,30,20,120,0Fh
-    drawBackGround 140,60,60,20,0Fh
-    drawBackGround 200,30,20,120,0Fh
+    drawBackGround 100,30,20,120,0Fh
+    drawBackGround 100,60,60,20,0Fh
+    drawBackGround 160,30,20,120,0Fh
     ;!the letter H:end
 
     ;!the letter E:start
-    drawBackGround 250,30,40,20,0Fh
-    drawBackGround 240,50,20,20,0Fh
-    drawBackGround 230,70,20,20,0Fh
-    drawBackGround 230,80,60,20,0Fh
-    drawBackGround 230,90,20,20,0Fh
-    drawBackGround 240,110,20,20,0Fh
-    drawBackGround 250,130,40,20,0Fh
+    drawBackGround 210,30,40,20,0Fh
+    drawBackGround 200,50,20,20,0Fh
+    drawBackGround 190,70,20,20,0Fh
+    drawBackGround 190,80,60,20,0Fh
+    drawBackGround 190,90,20,20,0Fh
+    drawBackGround 200,110,20,20,0Fh
+    drawBackGround 210,130,40,20,0Fh
     ;!the letter E:end
 
     ;!the letter c:start
-    drawBackGround 320,30,40,20,0Fh
-    drawBackGround 310,50,20,20,0Fh
-    drawBackGround 300,70,20,20,0Fh
-    drawBackGround 300,90,20,20,0Fh
-    drawBackGround 310,110,20,20,0Fh
-    drawBackGround 320,130,40,20,0Fh
+    drawBackGround 280,30,40,20,0Fh
+    drawBackGround 270,50,20,20,0Fh
+    drawBackGround 260,70,20,20,0Fh
+    drawBackGround 260,90,20,20,0Fh
+    drawBackGround 270,110,20,20,0Fh
+    drawBackGround 280,130,40,20,0Fh
     ;!the letter c:end
 
     ;!the letter K:start
-    drawBackGround 370,30,20,120,0Fh
-    drawBackGround 410,50,20,20,0Fh
-    drawBackGround 400,70,20,20,0Fh
-    drawBackGround 390,90,20,20,0Fh
-    drawBackGround 390,90,20,20,0Fh
-    drawBackGround 400,110,20,20,0Fh
-    drawBackGround 410,130,20,20,0Fh
+    drawBackGround 330,30,20,120,0Fh
+    drawBackGround 370,50,20,20,0Fh
+    drawBackGround 360,70,20,20,0Fh
+    drawBackGround 350,90,20,20,0Fh
+    drawBackGround 350,90,20,20,0Fh
+    drawBackGround 360,110,20,20,0Fh
+    drawBackGround 370,130,20,20,0Fh
     ;!the letter K:end
 
     ;!the letter E:start
-    drawBackGround 460,30,40,20,0Fh
-    drawBackGround 450,50,20,20,0Fh
-    drawBackGround 440,70,20,20,0Fh
-    drawBackGround 440,80,60,20,0Fh
-    drawBackGround 440,90,20,20,0Fh
-    drawBackGround 450,110,20,20,0Fh
-    drawBackGround 460,130,40,20,0Fh
+    drawBackGround 420,30,40,20,0Fh
+    drawBackGround 410,50,20,20,0Fh
+    drawBackGround 400,70,20,20,0Fh
+    drawBackGround 400,80,60,20,0Fh
+    drawBackGround 400,90,20,20,0Fh
+    drawBackGround 410,110,20,20,0Fh
+    drawBackGround 420,130,40,20,0Fh
     ;!the letter E:end
 
     ;!the letter R:start
-    drawBackGround 510,30,20,120,0Fh
+    drawBackGround 470,30,20,120,0Fh
 
-    drawBackGround 530,30,20,20,0Fh
-    drawBackGround 540,40,20,20,0Fh
-    drawBackGround 550,50,20,20,0Fh
-    drawBackGround 560,60,20,20,0Fh
-    drawBackGround 550,70,20,20,0Fh
-    drawBackGround 540,80,20,20,0Fh
-    drawBackGround 530,90,20,20,0Fh
-    drawBackGround 530,90,20,20,0Fh
-    drawBackGround 540,110,20,20,0Fh
-    drawBackGround 550,130,20,20,0Fh
+    drawBackGround 490,30,20,20,0Fh
+    drawBackGround 500,40,20,20,0Fh
+    drawBackGround 510,50,20,20,0Fh
+    drawBackGround 520,60,20,20,0Fh
+    drawBackGround 510,70,20,20,0Fh
+    drawBackGround 500,80,20,20,0Fh
+    drawBackGround 490,90,20,20,0Fh
+    drawBackGround 490,90,20,20,0Fh
+    drawBackGround 500,110,20,20,0Fh
+    drawBackGround 510,130,20,20,0Fh
     ;!the letter R:end
-
 
     RET
 drawLogo ENDP
+
 ;!logo:end
 ;todo during game menu:start
 
