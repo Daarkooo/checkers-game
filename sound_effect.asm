@@ -1,4 +1,5 @@
-sound_effect PROC
+;?sound effect:start
+sound_effect PROC NEAR
     ; Set up the tone parameters
     mov al, 0B6h    ; Set timer 2 mode (square wave generator)
     out 43h, al     ; Send mode command to timer 2
@@ -25,10 +26,10 @@ sound_effect PROC
     RET
 sound_effect ENDP
 
-soundEffect MACRO callTimes
-    mov cx , callTimes
-    doSound:
+soundEffect PROC NEAR
     call sound_effect
-    loop doSound
-ENDM
-
+    call sound_effect
+    ; call sound_effect
+RET
+soundEffect ENDP
+;?sound effect:end

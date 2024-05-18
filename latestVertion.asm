@@ -134,7 +134,7 @@ MAIN PROC FAR
         drawBoard 300, 0Ah, 0Fh, 06h, 33;! draw the board with white and black cells and size 35 for each cell=>the width of the board is 35*10=350 and the height is 35*10=350
     ;?board:start    
         call duringGameMenu
-        call soundEffect
+        ;call soundEffect
     RET
 MAIN ENDP
 ;?sound effect:start
@@ -406,57 +406,49 @@ __drawBoard ENDP
 ;!rahim function string:end
 duringGameMenu PROC
     ;!score text:start 
-    ;the hex code of the green color is:  
-    drawBackGround 13,31,70,36,04h
-    drawBackGround 18,36,60,26,00h
-    printGraphicalString scoreWord,0FFh,3,3;!the color of the string will be :Black
+    drawBackGround 29,31,70,36,04h
+    drawBackGround 34,36,60,26,00h
+    printGraphicalString scoreWord,0FFh,5,3;!the color of the string will be :Black
     ;!score text:end
 
     ;!score first player:start
-    drawBackGround 213,31,40,36,04h
-    drawBackGround 218,36,30,26,00h
-    printGraphicalString whitePlayer_score,0FFh,28,3;!the color of the string will be :Black
+    drawBackGround 181,31,40,36,04h
+    drawBackGround 186,36,30,26,00h
+    printGraphicalString whitePlayer_score,0FFh,24,3;!the color of the string will be :Black
     ;!score first player:end
 
     ;!score second player:start
-    
-    drawBackGround 255,31,40,36,04h
-    drawBackGround 260,36,30,26,00h
-    printGraphicalString blackPlayer_score,0FFh,33,3;!the color of the string will be :Black
+    drawBackGround 231,31,40,36,04h
+    drawBackGround 236,36,30,26,00h
+    printGraphicalString blackPlayer_score,0FFh,30,3;!the color of the string will be :Black
     ;!score second player:end
 
 
     ;!quit button:start
-    
-    drawBackGround 13,240,70,36,04h
-    drawBackGround 18,245,60,26,00h
-    printGraphicalString quit,0FFh,4,18;
+    drawBackGround 29,283,70,36,04h
+    drawBackGround 34,288,60,26,00h
+    printGraphicalString quit,0FFh,6,21;
     ;!quit button:end
 
     ;!resign button:start
-    
-    drawBackGround 213,240,84,36,04h
-    drawBackGround 218,245,74,26,00h
-    printGraphicalString resign,0FFh,29,18;
+    drawBackGround 189,283,84,36,04h
+    drawBackGround 194,288,74,26,00h
+    printGraphicalString resign,0FFh,26,21;
     ;!resign button:end
 
     ;!turn :start
-
-    
-    drawBackGround 115,128,86,36,04h
-
-    
+    drawBackGround 115,154,86,36,04h
 
     cmp isWhitePlayer,0
     je handleBlackTurn
     
-    drawBackGround 120,133,76,26,0Fh
-    printGraphicalString whitePlayer,0FFh,17,9;
+    drawBackGround 120,159,76,26,0Fh
+    printGraphicalString whitePlayer,0FFh,17,12;
     jmp everyThingIsHandeled
     handleBlackTurn:
     
-    drawBackGround 120,133,76,26,00h
-    printGraphicalString blackPlayer,0FFh,17,10;
+    drawBackGround 120,159,76,26,00h
+    printGraphicalString blackPlayer,0FFh,17,12;
     everyThingIsHandeled:
     ;!turn :end
 
