@@ -24,3 +24,11 @@ sound_effect PROC
 
     RET
 sound_effect ENDP
+
+soundEffect MACRO callTimes
+    mov cx , callTimes
+    doSound:
+    call sound_effect
+    loop doSound
+ENDM
+

@@ -134,13 +134,11 @@ MAIN PROC FAR
         drawBoard 300, 0Ah, 0Fh, 06h, 33;! draw the board with white and black cells and size 35 for each cell=>the width of the board is 35*10=350 and the height is 35*10=350
     ;?board:start    
         call duringGameMenu
-        ; call sound_effect
-        ; call sound_effect
-        ; call sound_effect
+        soundEffect 2
     RET
 MAIN ENDP
 ;?sound effect:start
-sound_effect PROC
+sound_effect PROC NEAR
     ; Set up the tone parameters
     mov al, 0B6h    ; Set timer 2 mode (square wave generator)
     out 43h, al     ; Send mode command to timer 2
@@ -166,6 +164,13 @@ sound_effect PROC
 
     RET
 sound_effect ENDP
+
+soundEffect MACRO callTimes
+    mov cx , callTimes
+    doSound:
+    call sound_effect
+    loop doSound
+ENDM
 ;?sound effect:end
 ;?menu procedures:start
 clear_screen PROC NEAR
@@ -185,7 +190,6 @@ clear_screen PROC NEAR
     RET
 clear_screen ENDP
 ;?menu procedures:end
-
 ;todo draw text backGround :start
 draw_backGround PROC NEAR
    MOV cx,backGround_x;!position x column
@@ -211,6 +215,19 @@ draw_backGround PROC NEAR
         JNG draw_backGround_horizontal;
  RET
 draw_backGround ENDP
+drawBackGround MACRO backGround_column , backGround_row , width , height , color
+    mov ax,backGround_column
+    mov backGround_x,ax
+    mov ax,backGround_row
+    mov backGround_y,ax
+    mov ax,width
+    mov backGround_width,ax
+    mov ax,height
+    mov backGround_height,ax
+    mov AL,color
+    mov backGround_color,AL
+    call draw_backGround
+ENDM
 ;todo draw text backGround :end
 
 ;todo during game menu:start
@@ -388,80 +405,57 @@ __drawBoard ENDP
     ENDM
 ;!rahim function string:end
 duringGameMenu PROC
-    ;!score text:start
-    mov backGround_x,18
-    mov backGround_y,10
-    mov backGround_width,60
-    mov backGround_height,50
-    mov backGround_color,0Fh
-    call draw_backGround
-    printGraphicalString scoreWord,0FFh,3,2;!the color of the string will be :Black
+    ;!score text:start 
+    ;the hex code of the green color is:  
+    drawBackGround 13,31,70,36,04h
+    drawBackGround 18,36,60,26,00h
+    printGraphicalString scoreWord,0FFh,3,3;!the color of the string will be :Black
     ;!score text:end
 
     ;!score first player:start
-    mov backGround_x,218
-    mov backGround_y,10
-    mov backGround_width,30
-    mov backGround_height,50
-    mov backGround_color,0Fh
-    call draw_backGround
-    printGraphicalString whitePlayer_score,0FFh,28,2;!the color of the string will be :Black
+    drawBackGround 213,31,40,36,04h
+    drawBackGround 218,36,30,26,00h
+    printGraphicalString whitePlayer_score,0FFh,28,3;!the color of the string will be :Black
     ;!score first player:end
 
     ;!score second player:start
-    mov backGround_x,260
-    mov backGround_y,10
-    mov backGround_width,30
-    mov backGround_height,50
-    mov backGround_color,0Fh
-    call draw_backGround
-    printGraphicalString blackPlayer_score,0FFh,33,2;!the color of the string will be :Black
+    
+    drawBackGround 255,31,40,36,04h
+    drawBackGround 260,36,30,26,00h
+    printGraphicalString blackPlayer_score,0FFh,33,3;!the color of the string will be :Black
     ;!score second player:end
 
 
     ;!quit button:start
-    mov backGround_x,18
-    mov backGround_y,250
-    mov backGround_width,60
-    mov backGround_height,50
-    mov backGround_color,04h;! red color
-    call draw_backGround
-    printGraphicalString quit,0FFh,4,19;
+    
+    drawBackGround 13,240,70,36,04h
+    drawBackGround 18,245,60,26,00h
+    printGraphicalString quit,0FFh,4,18;
     ;!quit button:end
 
     ;!resign button:start
-    mov backGround_x,232
-    mov backGround_y,250
-    mov backGround_width,60
-    mov backGround_height,50
-    mov backGround_color,09h;
-    call draw_backGround
-    printGraphicalString resign,0FFh,30,19;
+    
+    drawBackGround 213,240,84,36,04h
+    drawBackGround 218,245,74,26,00h
+    printGraphicalString resign,0FFh,29,18;
     ;!resign button:end
 
     ;!turn :start
 
-    mov backGround_x,110
-    mov backGround_y,110
-    mov backGround_width,96
-    mov backGround_height,70
-    mov backGround_color,0Fh
-    call draw_backGround
+    
+    drawBackGround 115,128,86,36,04h
 
-    mov backGround_x,120
-    mov backGround_y,120
-    mov backGround_width,76
-    mov backGround_height,50
+    
 
     cmp isWhitePlayer,0
     je handleBlackTurn
-    mov backGround_color,0Fh
-    call draw_backGround
-    printGraphicalString whitePlayer,0FFh,17,10;
+    
+    drawBackGround 120,133,76,26,0Fh
+    printGraphicalString whitePlayer,0FFh,17,9;
     jmp everyThingIsHandeled
     handleBlackTurn:
-    mov backGround_color,00h
-    call draw_backGround
+    
+    drawBackGround 120,133,76,26,00h
     printGraphicalString blackPlayer,0FFh,17,10;
     everyThingIsHandeled:
     ;!turn :end
