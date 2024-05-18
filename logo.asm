@@ -243,7 +243,7 @@ drawLogo PROC NEAR
     ;!the letter c:end
     ;!the letter H:start
     drawBackGround 100,30,20,120,0Fh
-    drawBackGround 100,60,60,20,0Fh
+    drawBackGround 100,80,60,20,0Fh
     drawBackGround 160,30,20,120,0Fh
     ;!the letter H:end
 
@@ -268,6 +268,7 @@ drawLogo PROC NEAR
 
     ;!the letter K:start
     drawBackGround 330,30,20,120,0Fh
+    drawBackGround 380,30,20,20,0Fh
     drawBackGround 370,50,20,20,0Fh
     drawBackGround 360,70,20,20,0Fh
     drawBackGround 350,90,20,20,0Fh
@@ -301,14 +302,13 @@ drawLogo PROC NEAR
     ;!the letter R:end
 
     ;!the letter S:start
-    drawBackGround 560,90,20,20,0Fh
-    drawBackGround 550,70,20,20,0Fh
-    drawBackGround 560,50,20,20,0Fh
     drawBackGround 570,30,40,20,0Fh
-    drawBackGround 570,100,20,20,0Fh
-    drawBackGround 580,110,20,20,0Fh
-    ;drawBackGround 600,120,20,30,0Fh
-    drawBackGround 550,130,50,20,0Fh
+    drawBackGround 560,50,20,20,0Fh
+    drawBackGround 550,70,20,20,0Fh
+    drawBackGround 560,90,50,20,0Fh
+    drawBackGround 590,100,20,20,0Fh
+    drawBackGround 580,120,20,20,0Fh
+    drawBackGround 550,130,40,20,0Fh
     
     ;!the letter S:end
 
