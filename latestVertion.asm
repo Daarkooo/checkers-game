@@ -134,7 +134,7 @@ MAIN PROC FAR
         drawBoard 300, 0Ah, 0Fh, 06h, 33;! draw the board with white and black cells and size 35 for each cell=>the width of the board is 35*10=350 and the height is 35*10=350
     ;?board:start    
         call duringGameMenu
-        soundEffect 2
+        call soundEffect
     RET
 MAIN ENDP
 ;?sound effect:start
@@ -165,12 +165,12 @@ sound_effect PROC NEAR
     RET
 sound_effect ENDP
 
-soundEffect MACRO callTimes
-    mov cx , callTimes
-    doSound:
+soundEffect PROC NEAR
     call sound_effect
-    loop doSound
-ENDM
+    call sound_effect
+    call sound_effect
+RET
+soundEffect ENDP
 ;?sound effect:end
 ;?menu procedures:start
 clear_screen PROC NEAR
