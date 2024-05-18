@@ -288,7 +288,6 @@ drawLogo PROC NEAR
 
     ;!the letter R:start
     drawBackGround 470,30,20,120,0Fh
-
     drawBackGround 490,30,20,20,0Fh
     drawBackGround 500,40,20,20,0Fh
     drawBackGround 510,50,20,20,0Fh
@@ -301,8 +300,21 @@ drawLogo PROC NEAR
     drawBackGround 510,130,20,20,0Fh
     ;!the letter R:end
 
+    ;!the letter S:start
+    drawBackGround 560,90,20,20,0Fh
+    drawBackGround 550,70,20,20,0Fh
+    drawBackGround 560,50,20,20,0Fh
+    drawBackGround 570,30,40,20,0Fh
+    drawBackGround 570,100,20,20,0Fh
+    drawBackGround 580,110,20,20,0Fh
+    ;drawBackGround 600,120,20,30,0Fh
+    drawBackGround 550,130,50,20,0Fh
+    
+    ;!the letter S:end
+
     RET
 drawLogo ENDP
+
 
 ;!logo:end
 ;todo during game menu:start
