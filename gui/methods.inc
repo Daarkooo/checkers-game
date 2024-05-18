@@ -158,10 +158,25 @@ mark_cell_method MACRO color
         MOV BL, path2
         markCell color, offsetX, offsetY, cellSize, BX
 
-
     end:
 
 ENDM
+
+
+;-----check_paths---------------
+check_paths PROC    
+
+    CMP path1,-1
+    JE lab1
+        MOV AL,1
+    lab1:
+
+    CMP path2,-1
+    JE lab2
+        MOV AL,1
+    lab2:
+
+check_paths ENDP
 
 
 ;-----is_value_in_array-----

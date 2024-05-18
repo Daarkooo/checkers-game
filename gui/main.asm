@@ -97,15 +97,7 @@
                 MOV AL, isDirect
                 MOV check_direct , AL ; need it in multiple_jumps to check if the previous move was a direct/indirect move 
 
-                CMP path1,-1
-                JE label1
-                    MOV AL,1
-                label1:
-
-                CMP path2,-1
-                JE label2
-                    MOV AL,1
-                label2:
+                CALL check_paths
 
                 CMP AL,1    
                 JE next
@@ -159,15 +151,7 @@
             CMP isDirect, 'n'
             JNE next1
             
-                CMP path1,-1
-                JE lab1
-                    MOV AL,1
-                lab1:
-
-                CMP path2,-1
-                JE lab2
-                    MOV AL,1
-                lab2:
+                CALL check_paths
 
                 CMP AL,1    
                 JNE next1
