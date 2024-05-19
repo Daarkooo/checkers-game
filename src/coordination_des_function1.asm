@@ -1,4 +1,5 @@
 find_ligne MACRO n, result
+    pusha
     LOCAL errorLabel, endLabel
     XOR AX, AX
     
@@ -16,11 +17,13 @@ find_ligne MACRO n, result
         MOV AL, -1    
     
     endLabel:
-        MOV result, AL        
+        MOV result, AL 
+     popa          
 ENDM 
 
 find_column MACRO n,result
-    LOCAL not_eqaul_zero, not_less_than_6
+     pusha
+    LOCAL not_eqaul_zero, not_less_than_6,fin
 
     MOV AL, n
     XOR AH, AH            ;b) macro qui retourne la cologne 0..9 (hichem)
@@ -51,8 +54,9 @@ not_less_than_6:
     DEC AL  ; return (ah-5)*2-1
 
 fin:
-    MOV result,AL
-
+    MOV result,AL 
+    
+       popa
 ENDM 
 
 
@@ -176,9 +180,11 @@ ENDM
 
 
 print_char MACRO asciiCode
+    pusha
 	MOV AH, 02h
 	MOV DL, asciiCode
 	INT 21h
+	popa
 ENDM
 
     
@@ -193,6 +199,7 @@ scan_char macro
 endm
 
 print_board MACRO board
+    pusha
 	LOCAL outer_loop, inner_loop1, inner_loop2,row_end
 		MOV CX, 10
 		XOR SI, SI
@@ -230,12 +237,40 @@ print_board MACRO board
 		LOOP inner_loop2
 		
 		row_end:
-		print_string newLine        ; new line
+		mov dl,55
+		mov ah,02h
+        inc dh           
+        int 10h
+		;print_string newLine        ; new line
 
 		POP CX
 	LOOP outer_loop
+	popa
 ENDM
 
+effacer macro
+    pusha
+    
+    deplacement_index 7,0  
+    print_string effac 
+    
+    deplacement_index 6,0  
+    print_string effac  
+    
+    deplacement_index 5,0  
+    print_string effac 
+    
+    deplacement_index 4,0  
+    print_string effac 
+    
+    deplacement_index 3,0  
+    print_string effac 
+    
+    deplacement_index 2,0  
+    print_string effac
+     
+    popa
+ endm
 
 pre_deplacement macro i,j,x,y,dep_possible,turn,dame   ;j)macro qui verifie si le deplacement est possible de i,j a x,y    ;indice 0..9;possible 1 oui 0 non;direct 1 indirect 2 ;droite 1 gauche 0
     
@@ -335,17 +370,18 @@ popa
 endm    
 
 
-
 deplacement_pion macro x,y,turn,tableau,board              ;k)macro qui effectue le deplacement
 pusha    
 LOCAL etiquette,droite,gauche,impossible,blacke,whitee,fin,finn,continue,deplacement_gauche,not_long,blackee,whiteee,debut                   ;)by rayanch
+
+mov dep,0
 
 getNumber x,y,number1
 mov al,number1
 cmp al,tableau[1]
 je droite
 cmp al,tableau[3]
-jne impossible
+jne impossible                              
 mov si,3
 jmp gauche
 droite:
@@ -353,17 +389,40 @@ mov si,1
 gauche:
 mov bl,tableau[0] 
 mov board[bx-1],'0'
+
+mov n1,bl
+find_ligne n1,e
+find_column n1,f
+
+coolorie e,f,07h,'0'
+
 mov bl,tableau[si]
 mov cl,turn
 mov board[bx-1],cl
+
+mov n1,bl
+find_ligne n1,e
+find_column n1,f
+  mov ligne,cl
+coolorie e,f,07h,ligne
+
 cmp tableau[si+1],0
 je fin
 mov bl,tableau[si+1]
 mov board[bx-1],'0'
+mov ligne,1
+
+mov n1,bl
+find_ligne n1,e
+find_column n1,f
+
+coolorie  e,f,07h,'0'
+
+fin:
+ mov dep,1
 
 impossible:
-fin:
-
+ 
 popa
 endm
 
@@ -371,8 +430,9 @@ endm
 
 show_path_pion macro i,j,tableau,turn
  pusha
+
  
-Local deplacement_impossible1,direct,white,black,loopp,suite1
+Local deplacement_impossible1,direct,white,black,loopp,suite1,continuee,suuitee
 
 mov dh,3
 direct:
@@ -403,11 +463,27 @@ pre_deplacement i,j,tmp1,tmp2,dep_possible,turn,dame
 cmp dep_possible,0
 je suite1
  inc dl
+ mov pos_dep,1
+ 
  suite1:
 mov bh,number1 
 mov sauvegarde[si],bh
 mov bh,number2
 mov sauvegarde[si+1],bh
+
+cmp number1,0
+je continuee
+coolorie  tmp1,tmp2,valuee1,0     ;2CH
+
+cmp number2,0
+je continuee
+
+find_ligne number2,droite
+find_column number2,long
+coolorie  droite,long,valuee2,0               ;47H
+
+continuee:
+
 add si,2
 sub bl,dh
 sub bl,dh
@@ -415,17 +491,12 @@ loop loopp
 
 cmp dl,0
 je direct
-
+ cmp dh,1
+ je suuitee
+ inc ligne
+ suuitee:
+ 
 deplacement_impossible1:
-mov al,sauvegarde[0]
-
-mov bl, sauvegarde[1]
-
-mov cl, sauvegarde[2]
-
-mov dl, sauvegarde[3]
-
-mov ah, sauvegarde[4]
 
 popa
 endm 
@@ -434,7 +505,8 @@ endm
 show_path_dame macro i,j,tableau,turn 
  pusha
   
- Local suitee,suite,arret_diagonal,deplacement_impossible1,direct,white,black,loopp,suite1,pion_juste,possible_white_dame_pawn,diagonal_svt,diagonal_gauche_bas,diagonal_droite_haut,diagonal_gauche_haut,fin3,obstacle_blanc_noir
+ Local suitee,suite,arret_diagonal,arret_diagonal3,arret_diagonal2,deplacement_impossible1,direct,white,black,loopp,suite1,pion_juste,possible_white_dame_pawn,diagonal_svt,diagonal_gauche_bas,diagonal_droite_haut,diagonal_gauche_haut,fin3,obstacle_blanc_noir
+ 
   
 mov si,1
 mov dh,1
@@ -482,16 +554,19 @@ mov tmp2,bl
  jne obstacle_blanc_noir
  mov ch,number1
  mov tableau[si],ch
+ coolorie  tmp1,tmp2,valuee1,0
+  mov pos_dep,1
  xor ch,ch
  jmp suite
  
  obstacle_blanc_noir:
  cmp number1,0 
- je arret_diagonal
+ je arret_diagonal3
  cmp dl,0
- jne arret_diagonal
+ jne arret_diagonal2
  inc dl 
  mov tableau[si],'o'
+ coolorie  tmp1,tmp2,valuee2,0
  inc si
  mov ch,number1
  mov tableau[si],ch
@@ -500,6 +575,18 @@ mov tmp2,bl
  inc si
     
 loop loopp
+
+jmp arret_diagonal
+
+  arret_diagonal3:
+  cmp cx,9
+  je arret_diagonal
+  
+  arret_diagonal2:
+
+  cmp sauvegarde[si-2],'o'
+  je arret_diagonal
+  mov ligne,1
 
 arret_diagonal:
 cmp dl,0
@@ -515,10 +602,12 @@ popa
 endm 
  
 deplacement_dame macro x,y,tableau
- Local suite1,loopp,suite,position_trouver,same_diagonal,deplacement_impossible 
+ Local cas_spe,suite1,loopp,suite,position_trouver,same_diagonal,deplacement_impossible,cotiinue 
   
   pusha
-
+  mov dep,0
+  
+  mov ligne,0
   getNumber x,y,number1
   mov al,number1
   mov cx,40
@@ -536,6 +625,17 @@ deplacement_dame macro x,y,tableau
   
   cmp sauvegarde[si],al
   je position_trouver
+  cmp sauvegarde[si],0
+  je contiinue
+  cmp sauvegarde[si],'o' 
+  je contiinue
+    
+  find_ligne sauvegarde[si],e
+  find_column  sauvegarde[si],f
+  coolorie  e,f,07h,0
+  
+   contiinue:
+  
   inc si
   inc dh
   cmp dh,11
@@ -547,20 +647,44 @@ deplacement_dame macro x,y,tableau
   
   jmp deplacement_impossible:
   
+  
   position_trouver:
+  
+  find_ligne sauvegarde[si],e
+  find_column  sauvegarde[si],f
+  coolorie  e,f,07h,0
+    
+  push si
+  push cx
+  
   cmp bx,0
   je suite1
+  
   cmp bl,dl
   jl suite1
 
-  cmp sauvegarde[bx+1],al
-  je deplacement_impossible
+   cmp sauvegarde[bx+1],al
+   je cas_spe
+  
+  find_ligne sauvegarde[bx+1],e
+  find_column  sauvegarde[bx+1],f
+  coolorie  e,f,07h,'0'
+  
    
   mov dl,sauvegarde[bx+1]
   mov bl,dl
   mov board[bx-1],'0'
+  mov ligne,1
+  
+ 
   suite1:
   
+   cmp sauvegarde[si-1],'o'
+   je cas_spe
+   
+ 
+   
+   
   mov dl,sauvegarde[0]
   xor dh,dh
   mov si,dx
@@ -570,16 +694,40 @@ deplacement_dame macro x,y,tableau
   mov ch,board[si-1]
   mov board[bx-1],ch
   
+  
+  find_ligne number1,e
+  find_column  number1,f
+  
+  mov dep_possible2,ch
+  
+  coolorie  e,f,07h,dep_possible2
+  
+  coolorie i,j,07h,'0'
+  
   mov board[si-1],'0'
+  mov dep,1
+  
+  cas_spe:
+  pop cx
+  pop si
+  inc si
+  dec cx
    
+  jmp loopp
+  
   deplacement_impossible:
+  
+  
+  
  popa
 endm 
  
- show_path_global macro i,j,sauvegarde,turn
+ show_path_global macro i,j,sauvegarde,turn,value1,value2
  pusha 
  Local deplacement_impossible1,loopp,suite1,possible_white_dame_pawn
  Local possible_black_pawn_deplacement,suite,possible_white_pawn_deplacement,possibilities_deplacement_for_dame
+ mov ligne,0
+ mov pos_dep,0
   
 cmp j,0
 jl deplacement_impossible1
@@ -627,17 +775,257 @@ possibilities_deplacement_for_dame:
  show_path_dame i,j,sauvegarde,turn
 
 deplacement_impossible1:
-
+ 
+ 
+ 
 popa    
+ endm
+ 
+ 
+ 
+ 
+deplacement_index macro ligne,cologne  
+ 
+ mov ah,02h   ;interuption de deplacement d'index
+ mov bh,0     ;page
+ mov dh,ligne     ;ligne
+ mov dl,cologne     ;cologne
+ int 10h 
+ 
 endm
+
+
+coolorie macro vall1,vall2,coul,vall3
+ 
+ pusha
+ Local coloriee,loooppp,suuui,suuuui
+ 
+    mov al,vall1
+    mov bl,vall2 
+    
+    add al,9
+    cmp bl,0
+    
+    je coloriee                                    
+        mov cl,vall2
+        xor ch,ch
+        mov bl,0
+        
+         loooppp:
+        
+          add bl,2 
+        
+         loop loooppp
+        
+    coloriee:
+    
+            add bl,55
+            deplacement_index al,bl
+            push cx
+            mov cl,vall3
+            cmp cl,0
+            jne suuui
+            mov ah,08H      ;lire caractere afficher
+            int 10h       ;caracter dans le al ;attribut dans ah
+            jmp suuuui
+            
+            suuui:
+            mov al,vall3
+            suuuui:
+            pop cx
+            mov ah,coul    ;changer attribut couleur fond bleu text yellow
+            mov bl,ah
+            mov cx,1
+            mov ah,09h
+            int 10h
+ 
+ popa
+endm
+
+init_sauvegarde macro 
+  
+  LOCAL boucle,suite
+ pusha
+  
+  mov cx,41
+  mov si,0  
+  mov dh,10
+  
+  boucle:   
+  mov sauvegarde[si],0         ;manque optimization
+  inc si  
+  loop boucle:
+    
+ popa
+    
+ endm
+
+selectioner_parametre macro  val,tmp3,tmp4
+  Local fin,not_fleche_droite,entre_fleche_input,on_est_a_droite,suite3,suite2,suite1,droitee,not_fleche_gauche,init_j
+  
+ deplacement_index val,0
  
  
+ print_string choix_index         ;affichage de la prise des parametres
+ print_string choix_numero
+ print_string newLine
  
+ deplacement_index val,0
  
+  print_char '>'          ;mettre en evidence le choix courant par default le prmier
+                          ;'>' au debut du  choix courant
  
- 
- 
- 
+ deplacement_index val,39    ;se deplacer vere la zone de saisie du premier choix
+   
+ entre_fleche_input:
+  
+    mov ah,00h         ;attendre une entre 
+    int 16h
+    
+      mov dh,0
+      cmp ah,4Dh             ;voire si l'entre correspond au scaner de la fleche droite
+      jne not_fleche_droite
+  
+      cmp dl,39              ;voire si on est a la zone de saisie du choix de gauche pour faire un deplacement droite
+      jne not_fleche_droite
+           
+           
+           deplacement_index val,0       ;se deplacer vers le debut du choix de gauche donc le choix actuelle
+           
+           print_char ' '          ;effacer le '>' de ce choix 
+          
+           deplacement_index val,43   ;se redeplacer vers le debut du choix de droite
+           
+                          ;et montrer que c'est le nouveau choix courant
+           
+           print_char '>'
+           
+           deplacement_index val,62      ;se deplacer a la zone de saisie du choix de droite
+           
+           jmp entre_fleche_input
+   
+     not_fleche_droite:          ;cas de choix de fleche gauche ou une entre de chifre
+   
+       cmp ah,4Bh
+        jne not_fleche_gauche     ;cas de scane d'entree de fleche gauche
+       cmp dl,39
+        je not_fleche_gauche      ;verifier qu'on est bien sur le choix de droite pour pouvoire aller a droite
+           
+           
+           deplacement_index val,43     ; se placer au debut du choix courant donc de droite
+                        
+           print_char ' '          ;effaccer le '>' du choix courant donc de droite
+            
+           
+           deplacement_index val,0          ;se replacer au debut du nouveau choix courant donc de gauche
+           
+           print_char '>'          ;montrer que c'est le nouveau choix courant
+           
+           
+           deplacement_index val,39           ;se placer sur la zone de saisie du choix courant gauche                    
+           
+           
+           jmp entre_fleche_input
+           
+           suite2:
+           mov ah,00h        ;attendre l'entre du 2 eme coordone soit le y soit le 2 nombre de n
+           int 16h
+           
+   
+     not_fleche_gauche:
+   
+           cmp al,30h
+           jl suite1           ;verifie que l'entre  correspond bien a un caractere chifre                                   
+           cmp al,39h
+           jg suite1
+           
+               cmp dl,39                 ;voire si on est a la saisie d'un nombre n ou des coordone i,j 
+               jne on_est_a_droite
+           
+                   cmp dh,1
+                   je init_j          ;cas coordone i,j
+                   
+                       mov tmp3,al
+                       print_char tmp3 
+                       sub tmp3,30h        ;coordonne i
+                       inc dh
+                       jmp suite2
+                   
+                       init_j:
+                       mov tmp4,al         ;coordonne j a la 2eme iterations
+                       print_char tmp4
+                       sub tmp4,30h        ;et on saute a la suite
+   
+                       push dx
+                       deplacement_index val,0
+                       
+                       
+                       print_char ' '
+   
+                    jmp fin
+    
+             on_est_a_droite:
+                                 ;cas d'entre de nombre n
+                   mov n,al
+                   print_char n
+                   
+                   mov al,n         ;retouver le nombre entier et non le caractere
+                   sub al,30h
+                   
+                   cmp dh,1
+                   je suite3
+                       mov bx,10
+                       push dx          ;multiplication du 1er nombre par 10
+                       mul bx
+                       pop dx 
+                       mov bl,al
+                       inc dh
+                       jmp suite2
+   
+                   suite3:
+                       add bl,al       ;addition du 2 nombre entre au premier
+                       mov n,bl
+   
+                       push dx
+                       deplacement_index val,43
+                                    ;effecer le '>' de debut car choix fait et valide
+                      
+                       print_char ' '
+                       
+                       find_ligne n, tmp3
+                       find_column n,tmp4
+                       
+                   jmp fin                        ;et on saute a la suite
+   
+           suite1:
+           
+           deplacement_index val,dl    
+                  
+                          ;cas d'entre invalide on se repositionne au debut de la zone de saisie
+           push dx  
+                         ;se repositioner au debut de la zone de saisie selon le dl 
+               
+           print_char ' ' ;effacer le 1er chifre entre si existe
+               
+           pop dx
+           cmp dl,39        ;verifie si l'entre invalide a lieu a la zone de gauche
+           jne droitee
+                               ;on repositione le curseur sur le debut de zone de saisie gauche
+              deplacement_index val,39
+              jmp entre_fleche_input
+   
+           droitee:
+   
+              deplacement_index val,62   ;on se repositionne sur le debut de zone de saisie droite
+              
+       
+ loop entre_fleche_input
+
+
+ fin:
+endm
+
+
 .model small
 .data
 
@@ -645,18 +1033,15 @@ endm
  n db ?
  board db 50 dup('0')
   
- black db " black$"
- 
- white db " white$" 
  
  possible db " deplacement possible$"
  impossible db " deplacement impossible$"
  
  newLine db 13,10,'$'
- i db 3
- j db 4
- x db 7
- y db 0 
+ i db ?
+ j db ?
+ x db ?
+ y db ? 
  tmp1 db ?
  tmp2 db ?
  dep_possible db ?
@@ -664,7 +1049,7 @@ endm
  turn db ?
  direct db ?     ;1 direct 2 indirect
  droite db ?     ;1 droite 0 gauche
- reussie db " deplacement reussie$"
+ reussie db ?
  echouer db " deplacement echouer$"
  long db ?       ;1 long move 0 none
  chaine db "choisie entre la gauche et la droite d pour droite g pour gauche$"
@@ -672,32 +1057,409 @@ endm
  number2 db 0 ; cas indirect c'est la case intermediaire
  sauvegarde db 41 dup(0)
  dame db ?
+ n1 db ?
+ selection db 0
+ e db ?
+ f db ?
+ ligne db ?
+ black db " la case est noire$"
+ white db "la case est blanche$"
+ valuee1 db 2CH
+ valuee2 db 47h
+ dep  db ?
+ pos_dep db ?
+         
+ touver_ligne db "  trouver la ligne $"
+ trouver_cologne db "  trouver la cologne $" 
+ touver_numero db "  trouver le numero $"
+ trouver_couleur_case db "  trouver la couleur de la case $"
+ trouver_etat_case db "  trouver l'etat de la case $"
+ verifier_deplacemnt db "  verifier le depalcement $"
+ retrouver_chemin_possible db "  retrouver les chemins de deplacement possible $"
+ faire_deplacement db "  faire un deplacement $"
+ choix_index db "  parametres ligne cologne de la case :    $"
+ choix_numero db "  numero de la case : $"
+ 
+ ligne_trouver db " la ligne correspondante i =$" 
+ cologne_trouver db " la cologne correspondante j=$"
+ numero_trouver db " le numero de case trouver n=$"
+ couleur_trouver db " la couleur de case trouver :$" 
+ etat_case db " l'etat de la case trouver:$ "
+ effac db "                                                                     $"
+ turn_message db "turn : $"
+ 
 .code
-
+ 
+ main proc
+ 
  mov ax,@data
  mov ds,ax
  mov ax,0
-        
-  ;board_init board
+ 
+ board_init board
   mov board[17],'D'
-  ;mov board[21],'d'
-  ;mov board[22],'w'
-  ;mov board[26],'0'
-  ;mov board[28],'0'
-  ;mov board[30],'d'
-  print_board board
-  mov turn,'b'
-  ;mov dame,1
-  ;show_path_dame i,j,sauvegarde,turn
-  ;deplacement i,j,x,y,turn,droite,direct
-  ;show_path_pion i,j,sauvegarde,turn
-  ;deplacement_dame x,y,sauvegarde,board
+ mov board[21],'w'
+  mov board[37],'0'
+ 
+ mov turn,'b' 
+ deplacement_index 9,55
+ print_board board
+       
+ main_loop:
+ 
+ deplacement_index 2,54
+ print_string turn_message
+ print_char turn
+ 
+ selectioner_parametre 0,i,j
+ 
+ 
+   functions:
+    
+   coolorie i,j,1Eh,0
+            
+            deplacement_index 2,0
+            
+            pop dx                ;verifier si on a entrer le numero ou les coordonne de case
+            cmp dl,39
+    
+            jne afficher_get_row_cologne
+                                               ;afficher les fonction posssible en tant que telle
+               print_string touver_numero
+               print_string newLine  
+               mov bl,0
+               
+             jmp afficher_get_number_only
+               
+            afficher_get_row_cologne:
+ 
+                 print_string touver_ligne
+                 print_string newLine
+                 print_string trouver_cologne             ;affichage des choix possible
+                 print_string newLine 
+                  mov bl,1
+                 afficher_get_number_only:
+   
+                 print_string trouver_couleur_case
+                 print_string newLine
+                 print_string trouver_etat_case
+                 print_string newLine
+                 print_string retrouver_chemin_possible
+                 print_string newLine
+                 print_string faire_deplacement
+  
+                push bx
+  reboucle:
+  
+ pop bx
+ 
+     deplacement_index 2,0
+                             ;se repositionner sur le premier choix de fonctions
+    
+     print_char '>'                    ;montrer la fonctions courante
+
+ functions_choice:
+ 
+      mov ah,00h          ;attendre un input sois il monte en haut sois il descend sois il choisie la fonction
+      int 16h
+      
+      cmp al,0Dh          ;si il tappe sur la touche enter la fonction est faite
+      je choix_fait
+      
+      cmp ah,48h          ;verifier si il a taper sur la fleche de haut ou de bas sinon ou autre chose
+      jne not_en_haut
+                         ;si il tape sur la touche flech haut
+       
+      deplacement_index dh,0                  
+   
+                          ;on efface le '>' du choix actuelle
+       print_char ' '
+   
+  cmp dh,02            ;cas basique on se dplace vers le choix d'en haut
+  jne continue
+  
+      cmp bl,0          ;verifier si on a 6 choix ou 7 choix de functions
+      je max_6
+      
+      mov dh,8
+      jmp continue   ;max_7
+  
+      max_6:                     
+      mov dh,7
+      
+      continue:
+          dec dh          ;deplecement de ligne
+          jmp suite4
+          
+  not_en_haut:
+   
+      cmp ah,50h            ;verifier si il a taper la fleche de bas
+      jne functions_choice
+      
+       deplacement_index dh,0       ;on efface le '>' du choix actuelle
+       
+       print_char ' '
+      
+      cmp bl,0
+      je  maxx_6          
+                        ;verifier si on a 6 choix ou 7 choix de functions
+      cmp dh,7
+      jne continue2    ;choix basics
+      
+           mov dh,2   
+           jmp suite4 ;max_7
+       
+       maxx_6:
+           cmp dh,6
+           jne continue2
+           mov dh,2
+                    
+  jmp suite4
+  
+       continue2:
+       inc dh
+   
+  suite4:
+       
+       deplacement_index dh,0
+                               ;repositioner le curseur sur le choix actuelle
+              print_char '>'
+       
+      xor cx,cx
+      
+ loop functions_choice
+ 
+ choix_fait:         ;choix de fonctions fait
+ 
+   deplacement_index dh,0
+                     ;on efface le '>' du choix selectionne
+  
+   print_char ' '
+  
+ push bx 
+            ;question de reglage de bug
+ 
+ cmp bl,0
+ 
+ je on_a_i_j
+ 
+ cmp dh,2
+ je trouv_ligne                        
+ cmp dh,3                ;fonction a selectione si on a pris le nombre
+ je trouv_cologne
+ cmp dh,4
+ je couleur_case
+ cmp dh,5
+ je etatt_case 
+ cmp dh,6
+ je route_possible
+ cmp dh,7 
+ je deplacem
+ 
+ on_a_i_j:
+ 
+ cmp dh,2
+ je trouv_number   
+ cmp dh,3
+ je couleur_case
+ cmp dh,4              ;fonction a selectione si on a pris les coordone i,j
+ je etatt_case
+  
+ cmp dh,5
+ je route_possible
+ cmp dh,6 
+ je deplacem 
+  
+ trouv_ligne:                ;fonction de retouver la ligne
+ 
+      find_ligne n, result
+      cmp result,0  
+      jl main_loop            ;encore a traiter
+      
+      deplacement_index dh,20
+      print_string ligne_trouver
+       
+      add result,30h
+      print_char result
+      
+ jmp reboucle 
+ 
+ trouv_cologne:                  ;fonction de retouver la cologne
+     
+       find_column n,result
+       deplacement_index dh,25
+    
+       print_string cologne_trouver
+     
+       add result,30h
+       print_char result
+     
+       jmp reboucle 
+ 
+  
+   couleur_case:   
+                            ;fonction de retouver la couleur de la case selon i,j
+     
+             deplacement_index dh,35   
+              CaseColor i,j
+             
+             jmp reboucle
+         
+   
+    
+ 
+ etatt_case:                 ;fonction de retouver l'etat  de la case selon i,j
+      
+      getCellState board, i, j, result,number1
+      
+       deplacement_index dh,35
+     
+     cmp result,0
+     jne okk 
+     
+     print_string white
+     jmp reboucle
+        
+     okk:
+     print_string etat_case
+    
+     print_char result
+    
+     jmp reboucle
+       
+  trouv_number:                 ;fonction de retouver le numero
+     
+      
+        getNumber i,j,n  
+        cmp n,0
+        jne case_black  
+        deplacement_index dh,35
+          
+         print_string white
+         jmp reboucle
+         case_black:
+        
+         deplacement_index dh,35
+          
+         print_string numero_trouver
+         add n,30h
+         print_char n
+         
+  jmp reboucle    
+    
+ 
+ 
+  route_possible:
+  
+   show_path_global i,j,sauvegarde,turn
+    
+   
+   
+   
   
   
-  show_path_global i,j,sauvegarde,turn
-  deplacement_dame x,y,turn,sauvegarde
-  print_string newLine 
-  print_board board
+  jmp reboucle  
   
   
+ deplacem:
+ 
+   inc dh
+   mov selection,dh
+   mov cx,3
+
+   
+   ssssuite:
+   
+   push cx
+   show_path_global i,j,sauvegarde,turn
+   
+   cmp pos_dep,0
+   jne ssssuitee
+   pop cx
+   coolorie i,j,08h,0
+   init_sauvegarde
+    
+   effacer
+   jmp main_loop
+   
+    ssssuitee:
+   
+   selectioner_parametre selection,x,y
+   
+   cmp dame,1
+   je dameeee
+      
+   deplacement_pion x,y,turn,sauvegarde,board
+   
+   cmp dep,0
+   je ssssuitee
+   
   
+   cmp ligne,1
+   jne finnn
+   jmp piion
+   
+   dameeee:
+   
+    deplacement_dame x,y,sauvegarde
+    
+    cmp dep,0
+    je ssssuitee
+   
+    
+    cmp ligne,1
+    jne  finnn
+        
+   piion:
+   
+   mov al,x
+   mov i,al
+   mov al,y
+   mov j,al
+    
+    mov valuee1,08h
+    mov valuee2,08h
+    init_sauvegarde
+    
+    show_path_global i,j,sauvegarde,turn
+    cmp ligne,1
+    jne finnn
+    pop cx
+    mov valuee1,2ch
+    mov valuee2,47h
+    coolorie i,j,1Eh,0
+    
+    loop ssssuite
+    jmp finnn
+    
+    finnnn:
+    pop cx
+    jmp reboucle
+    
+   finnn:
+    coolorie i,j,08h,0
+    mov valuee1,2ch
+    mov valuee2,47h
+    pop cx
+    
+    cmp turn,'b'
+    je turn_white
+    mov turn,'b'
+    effacer
+    jmp main_loop
+    init_sauvegarde
+    
+    turn_white:
+    mov turn,'w'
+    init_sauvegarde
+    effacer
+    
+   jmp main_loop
+    
+    
+    
+    
+    
+    
+    
+    
