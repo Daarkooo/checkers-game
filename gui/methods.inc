@@ -170,68 +170,70 @@ show_moves MACRO board, IndMoves, directMoves
 ENDM
 
 
-; show_moves_dame MACRO board, IndMoves, directMoves
-;     LOCAL lab1, lab2, lab3, directMove,continue, endL
+show_moves_dame MACRO board, IndMoves, directMoves
+    LOCAL lab1, lab2, lab3, directMove,continue, endL
     
-;     set_array_null IndMoves
-;     set_array_null directMoves
+    set_array_null IndMoves
+    set_array_null directMoves
 
-;     LEA SI, board
+    LEA SI, board
     
-;     MOV CX, 50
-;     lab3:    
-;             MOV DL,count
-;             PUSH CX
-;             PUSH BX
+    MOV CX, 50
+    lab3:    
+            MOV DL,count
+            PUSH CX
+            PUSH BX
             
-;             get_row DL,i
-;             get_column DL,j 
+            get_row DL,i
+            get_column DL,j 
            
             
-;             ;show_path_dame board,i1,j1,turn1,path1,path2,pawn_position,makla1
-;             CMP maklaSIf,1 ; ---- DAME CASE----------
-;             JE makla
-;                 POP BX
-;                 CMP dameMoves[0],0
-;                 JNE lab4
-;                     JMP lab1
-;                 lab4:
-;                     MOV BYTE PTR [BX], AL
-;                     INC BX
-;                     JMP lab1
-;             makla:
-;                 CMP dameIndMoves[0],0
-;                 JNE lab5
-;                     JMP lab1
-;                 lab5:
-;                     MOV BYTE PTR [DI], AL
-;                     INC DI
-;                     JMP lab1
+            ;show_path_dame board,i1,j1,turn1,path1,path2,pawn_position,makla1
+            CMP maklaSIf,1 ; ---- DAME CASE----------
+            JE makla
+                POP BX
+                CMP dameMoves[0],0
+                JNE lab4
+                    JMP lab1
+                lab4:
+                    MOV BYTE PTR [BX], AL
+                    INC BX
+                    JMP lab1
+            makla:
+                CMP dameIndMoves[0],0
+                JNE lab5
+                    JMP lab1
+                lab5:
+                    MOV BYTE PTR [DI], AL
+                    INC DI
+                    JMP lab1
 
            
-;         lab1:
-;             INC SI  
-;             INC count
-;     CMP CX,0
-;     JE endL
-;         DEC CX
-;         JMP lab3
-;     endL:
+        lab1:
+            INC SI  
+            INC count
+    CMP CX,0
+    JE endL
+        DEC CX
+        JMP lab3
+    endL:
 
-; ENDM
+ENDM
 
 ;-------mark_cell_method------------
 mark_cell_method MACRO color
-    LOCAL pawn, makla, lab1, next, end
+    LOCAL pawn, no_makla, lab1, next, end
 
     CMP typePawn, 0
     JE pawn
-        CMP maklaSIf, 1
-        JE makla
-            LEA SI,dameMoves 
-            JMP next
-        makla:
+        CMP maklaSIf, 0
+        JE no_makla
             LEA SI, dameIndMoves
+            CMP BYTE PTR [SI+3],0
+            JE no_makla 
+            JMP next
+        no_makla:
+            LEA SI,dameMoves 
         next:
         
         lab1:

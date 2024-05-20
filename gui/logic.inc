@@ -711,7 +711,7 @@ ENDM
 
 ;----------show_path_dame------------------------------
 show_path_dame MACRO board,i1,j1,turn1,dameMoves,dameIndMoves,pawn_position,makla1,makla2,makla3,makla4 
-    LOCAL next_direction, long_move, long_move1, next, next1, continue,continue1, end, lab1, lab2, lab3
+    LOCAL next_direction, long_move, long_move1, next, next1, continue,continue1, end, lab1, lab2, lab3, end1, direct1 
    
     set_array_null dameMoves
     set_array_null dameIndMoves 
@@ -825,6 +825,9 @@ show_path_dame MACRO board,i1,j1,turn1,dameMoves,dameIndMoves,pawn_position,makl
                 POP SI
                 POP DI
 
+                ; MOV AL,'n' ; direct direct
+                ; MOV isDirect,AL
+
                 cmp verified,1
                 JNE continue
                 
@@ -850,9 +853,19 @@ show_path_dame MACRO board,i1,j1,turn1,dameMoves,dameIndMoves,pawn_position,makl
         INC DI
 
         JMP next_direction
-    end:    
+         
+    end: 
 
-
+    LEA SI, dameIndMoves
+    CMP BYTE PTR [SI+3],0
+    JE direct1
+        MOV AL, 'n'
+        MOV isDirect, AL
+        JMP end1   
+    direct1:
+        MOV AL, 'y'
+        MOV isDirect, AL
+    end1:
 ENDM
 
 
