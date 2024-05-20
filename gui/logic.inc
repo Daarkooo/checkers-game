@@ -9,11 +9,13 @@
     j1 DB ?
     x DB ?
     y DB ?
+    xDame DB ?  ; need to save makla
+    yDame DB ?
     pawn_position DB ?
     state DB ?  
     switcher DB 1
     checked DB ?
-    
+    dest DB ?
     val1 DB ?
     val2 DB ? 
     menu DB ? 
@@ -24,17 +26,29 @@
     num1 DB ? 
     msg_result DB "result: $"
     winner DB ?
+    valid DB ?
 
+    ; isValid     DB      ?
+    ; count       DB      0
+    ; saveData    DW      ?
+    
     ; source_pawn     DB      ?
-    ; turn            DB      ?
+    ; turn            DB      'b'
     ; path1           DB      ?
     ; path2           DB      ?
+    ; tmp             DB      ?
     ; num             DB      ?
     ; makla1          DB      ?
     ; makla2          DB      ?
-    ; isDirect        DB      '2'
-    ; multiple_jumps  DB      ?  
-    
+    ; makla3          DB      ?
+    ; makla4          DB      ?
+    ; x1              DB      ?
+    ; y1              DB      ?
+    ; check_direct    DB      ?
+    ; isDirect        DB      ?
+    ; maklaSif        DB      1
+    ; typePawn        DB      ?  ; 0 -> pawn / 1-> dame
+    ; color           DB      ?
     ; board           DB  20 DUP('b'), 10 DUP('0'), 20 DUP('w') 
     
     ;  directMoves     DB  20 dup(?)
@@ -267,6 +281,11 @@ ENDM
 ;----CellState----------
 get_cell_state MACRO board,i,j,color, typePawn
     LOCAL white_cell, end_label, endColor_label, white_piece, pawn, empty_cell    ; LOCAL LABELS
+        
+        ; MOV AL,-1
+        ; MOV typePawn,AL
+        ; MOV color, -1
+        
         MOV DL, i
         MOV DH, j
         get_number DL, DH, menu, AL        ; Le macro de la question C (Fait par Abdou & Omar)
@@ -312,7 +331,7 @@ ENDM
    
 ;----------verify_move----------------   
 verify_move MACRO board, i, j, x, y, turn, verified, isDirect, val1, val2
-    LOCAL impossible_move, done, other_way, down, end, next,impossible_move1,impossible_move2,continue,continue1,label1
+    LOCAL impossible_move, done, other_way, down, end, next,impossible_move1,pawn,dame,impossible_move2,continue,continue1,label1
     ;DL=i DH=j BH=x CH=y | i and j must be between 1-10 -> (0-9) 'we do the check in get_number & 'DEC 1' in the main'  
 
     get_number i, j, menu, n1 
@@ -333,7 +352,7 @@ verify_move MACRO board, i, j, x, y, turn, verified, isDirect, val1, val2
             JMP impossible_move
         impossible_move2:
     get_cell_state board, x, y, color, typePawn        
-        CMP color, '0' ; to make the move -> board[x,y] needs to be empty '0' 
+        CMP color, '0' ; to make the move -> board[x,y] needs to be empty '0'
         JE continue1        
             JMP impossible_move
         continue1:
@@ -349,6 +368,14 @@ verify_move MACRO board, i, j, x, y, turn, verified, isDirect, val1, val2
         JMP done
     label1:
     ;------------INDIRECT_MOVE------------------------------- 
+    
+    CMP typePawn,0
+    JE pawn
+       MOV DL,xDame
+       MOV DH,yDame   
+       JMP dame   
+    pawn:
+    
     MOV DL,i 
     MOV DH,j 
     MOV AH,y 
@@ -368,7 +395,8 @@ verify_move MACRO board, i, j, x, y, turn, verified, isDirect, val1, val2
         INC DH ; inc n1[,j]
     next:
     INC DL
-
+    
+    dame:
     get_number DL,DH , menu, isDirect ; isDirect return makla number (for optimization) 'indirect move'
     get_cell_state board, DL, DH, color, typePawn  ; depends on the colors (white -> black/ black ->white)
     CMP color,'0' ; one step (not for dames)
@@ -384,6 +412,7 @@ verify_move MACRO board, i, j, x, y, turn, verified, isDirect, val1, val2
         MOV verified,1   
     end:
 ENDM 
+
 
 
 ;------move_pawn---------- 
@@ -442,27 +471,152 @@ move_pawn MACRO board,x,y,path1,path2,pawn_position,makla1,makla2,isDirect
 ENDM
 
 
+;---------move_dame-----------------------------
+move_dame MACRO board,x1,y1,dameMoves,dameIndMoves,pawn_position,makla1,makla2, makla3, makla4,dest
+    LOCAL end, direct_move, move, move1, no_move, next , next1
+
+    MOV BH,x1 ; cant use the other registers cuz are used in get_number 
+    MOV CH,y1
+
+    MOV x,BH
+    MOV y,CH 
+
+    get_number x,y,menu,num1
+    MOV BH,num1
+    MOV dest,BH
+    
+    is_value_in_array x, y, dameIndMoves, bool
+    CMP bool, 1
+    JE next1
+        JMP direct_move
+    next1:
+        XOR AX, AX   
+        MOV AL, pawn_position
+        DEC AL   
+        MOV DI, AX  
+          
+        ;MOV AL, BH ; BH <- board[x,y]
+        MOV AL, num ; BH <- board[x,y]
+        DEC AL   
+        MOV SI, AX   
+
+        MOV AL,board[DI] ;---INDIRECT MOVE---------
+        MOV board[DI],'0'
+        MOV board[SI],AL 
+
+        find_makla_dame num,maklaD
+        XOR AH,AH
+        MOV AL, maklaD
+        DEC AL  
+        MOV DI, AX    
+        MOV AL,board[DI]
+        MOV board[DI],'0'
+        JMP end
+
+    direct_move:
+
+    is_value_in_array x, y, dameMoves, bool
+    CMP bool, 1
+    JNE no_move
+        XOR AX, AX   
+        MOV AL, pawn_position
+        DEC AL   
+        MOV DI, AX    
+
+        ;MOV AL, BH ; BH <- board[x,y]
+        MOV AL, num ; BH <- board[x,y]
+        DEC AL   
+        MOV SI, AX  
+
+        MOV AL,board[DI] ;---DIRECT MOVE---------
+        MOV board[DI],'0'
+        MOV board[SI],AL                    
+        JMP move
+
+    move:
+        ; MOV AL,dest
+        ; MOV isDirect, AL
+        JMP end
+    no_move:
+        MOV AL,-1
+        MOV dest,AL
+    end:
+ENDM
+
+;----find_makla_dame-------------
+find_makla_dame MACRO num,maklaD
+    LOCAL up_right, up_left, down_right, down_left, end
+
+    LEA SI, dameIndMoves
+    MOV AH,num
+ 
+    DEC SI   
+    
+    up_right: 
+    INC SI
+        
+    MOV AL, makla1
+    CMP BYTE PTR [SI], 'p'
+    JE up_left
+        CMP BYTE PTR [SI], AH
+        JNE up_right
+        MOV maklaD, AL ; <- makla1
+        JMP end
+    
+    up_left:
+    INC SI
+
+    MOV AL,makla2
+    CMP BYTE PTR [SI], 'p'
+    JE down_right
+        CMP BYTE PTR [SI], AH
+        ; INC SI
+        JNE up_left
+        MOV maklaD, AL ; <- makla2
+        JMP end
+
+    down_right:
+    INC SI
+
+    MOV AL,makla3
+    CMP BYTE PTR [SI], 'p'
+    JE down_left
+        CMP BYTE PTR [SI], AH
+        ; INC SI
+        JNE down_right
+        MOV maklaD, AL ; <- makla3
+        JMP end
+
+    down_left:
+    
+    INC SI
+    MOV AL,makla4
+    CMP BYTE PTR [SI], 0
+    JE end
+        CMP BYTE PTR [SI], AH
+        ; INC SI
+        JNE down_left
+        MOV maklaD, AL ; <- makla4
+
+    end:
+
+ENDM
+
 ;------show_path----------
 show_path MACRO board,i1,j1,turn1,path1,path2,pawn_position,makla1,makla2
-    LOCAL end, next, next1, not_verified, not_verified1, not_verified2,  down, down1, label1, label2, label3
-           
-    MOV DL,i1
-    MOV DH,j1
-    mov i,DL  ;i<-dl
-    mov j,DH  ;j<-dh
-
-    MOV x,DL ; BH<-x
-    MOV y,DH ; CH<-y 
-    MOV BH,x
-    MOV CH,y                
-    MOV AH,turn1 
-    MOV turn,AH   
+    LOCAL end, next, next1, not_verified, not_verified1, not_verified2,  down, down1, label1, label2, label3, continue
     
-    MOV AL,-1 ;
-    MOV path1,AL
-    MOV path2,AL ; in case there's no move
-    MOV makla1,AL
-    MOV makla2,AL
+    set_show_values i1,j1,turn1
+
+    MOV BH,x
+    MOV CH,y                  
+
+    get_cell_state board, i, j, color, typePawn
+    MOV AL, typePawn
+    CMP AL, 0 ; to make the move -> 'w'='w' / 'b'='b' else impossible_move
+    JE continue
+        JMP end
+    continue:
     
     ;---------INDIRECT---------------- we prioritize the indirect move  
     CMP turn,'b'
@@ -554,19 +708,36 @@ show_path MACRO board,i1,j1,turn1,path1,path2,pawn_position,makla1,makla2
     end:
 ENDM
 
-show_path_dame MACRO board,i1,j1,turn1,path1,path2,pawn_position,makla1
-    LOCAL next_direction, long_move, long_move1, next, continue, end
+
+;----------show_path_dame------------------------------
+show_path_dame MACRO board,i1,j1,turn1,dameMoves,dameIndMoves,pawn_position,makla1,makla2,makla3,makla4 
+    LOCAL next_direction, long_move, long_move1, next, next1, continue,continue1, end, lab1, lab2, lab3
    
     set_array_null dameMoves
-    set_array_null dameIndMoves
+    set_array_null dameIndMoves 
+    
+    MOV DL,i1
+    MOV DH,j1
+    mov i,DL  ;i<-dl
+    mov j,DH  ;j<-dh
 
     set_show_values i1, j1, turn1
+   
+    MOV makla3,AL ; <- (-1)
+    MOV makla4,AL ; <- (-1)
+
+    get_cell_state board, i, j, color, typePawn
+     MOV AL, typePawn
+    CMP AL, 1  ; to make the move -> 'w'='w' / 'b'='b' else impossible_move
+    JE continue1
+        JMP end
+    continue1:
 
     ;-------------DIRECT--------------------------
     LEA DI,dameIndMoves
     LEA SI,dameMoves
 
-    MOV CX,4
+    MOV CX,4 
     next_direction:
         PUSH CX
         PUSH DI
@@ -575,53 +746,82 @@ show_path_dame MACRO board,i1,j1,turn1,path1,path2,pawn_position,makla1
         MOV isDirect,AL 
 
         long_move:
+        
+           dame_4_directions x,y, valid
+            CMP n1,1
+            JNE lab1  ; checking 
+                JMP continue
+            lab1:
 
-           dame_4_directions x,y
-                            
             PUSH SI
+            PUSH CX
             verify_move board,i,j,x,y,turn,verified,isDirect,pawn_position,n2 ; n1[i,j] n2[x,y]
+            POP CX
             POP SI
             
             cmp verified,1
             JNE next
-
-            MOV BYTE PTR [SI],n2 ; byte pointer
+            
+            MOV AL,n2
+            MOV BYTE PTR [SI],AL ; byte pointer
             INC SI
             
             JMP long_move 
 
-        next:
+        next: 
+        MOV AL,x 
+        MOV xDame,AL 
+        MOV AL,y
+        MOV yDame,AL
 
-        dame_4_directions x,y
-        dame_4_directions x,y ; +2 (to check if there is an indirect move)
+        ;dame_4_directions x,y
+        dame_4_directions x,y, valid
+        CMP n1,1
+        JNE lab2  ; checking 
+            JMP continue
+        lab2:
 
         MOV AL,'n' ; direct direct
         MOV isDirect,AL 
         
-        verify_move board,i,j,x,y,turn,verified,isDirect,pawn_position,n2 ; n1[i,j] n2[x,y]
-
+        PUSH SI
+        PUSH CX
+        verify_move board,i,j,x,y,turn,verified,isDirect,pawn_position,n2     ; n1[i,j] n2[x,y]
+        POP CX
+        POP SI
+        
         POP DI
         CMP verified,1
-        JNE continue
-
+        JE next1
+            JMP continue
+        next1: 
+           ; get_number xDame,yDame,menu,isDirect       
+            
             save_dame_makla isDirect ; isDirect return the makla num (in verify_move)
 
             ;----------------the long path where we can go after making makla-------------------
             long_move1: ; save the data in direct & indirect move
-
-                MOV BYTE PTR [SI],n2 ; direct move
+                
+                MOV AL,n2
+                MOV BYTE PTR [SI],AL ; direct move
                 INC SI
-                MOV BYTE PTR [DI],n2 ; indirect move
+                MOV BYTE PTR [DI],AL ; indirect move
                 INC DI
 
-                dame_4_directions x,y 
+                dame_4_directions x,y, valid
+                CMP n1,1
+                JNE lab3  ; checking 
+                    JMP continue
+                lab3:
 
                 MOV AL,'y' ; direct 
                 MOV isDirect,AL 
 
                 PUSH DI
                 PUSH SI
+                PUSH CX
                 verify_move board,i,j,x,y,turn,verified,isDirect,pawn_position,n2 ; n1[i,j] n2[x,y]
+                POP CX
                 POP SI
                 POP DI
 
@@ -632,6 +832,7 @@ show_path_dame MACRO board,i1,j1,turn1,path1,path2,pawn_position,makla1
 
         continue:
         
+
         MOV BH,i
         MOV CH,j
 
@@ -639,10 +840,21 @@ show_path_dame MACRO board,i1,j1,turn1,path1,path2,pawn_position,makla1
         MOV y,CH
         
         POP CX
-    LOOP next_direction   
+        DEC CX
+    CMP CX,0
+    JE end
+        MOV AL,'p' ; 'p' mark the end of each direction
+        MOV BYTE PTR [SI],AL ; direct move
+        INC SI
+        MOV BYTE PTR [DI],AL ; indirect move
+        INC DI
 
-    ; end:
+        JMP next_direction
+    end:    
+
+
 ENDM
+
 
 ;------set_show_values ------------------------
 set_show_values MACRO i1,j1,turn1
@@ -661,13 +873,15 @@ set_show_values MACRO i1,j1,turn1
     MOV AL,-1 ;
     MOV path1,AL
     MOV path2,AL ; in case there's no move
-
+    MOV makla1,AL
+    MOV makla2,AL
+    
 ENDM
 
 
 ;-----dame_4_directions------------------------------
-dame_4_directions MACRO x1,y1
-    LOCAL end, up_left, up_right, down_right
+dame_4_directions MACRO x1,y1,valid
+    LOCAL end, up_left, up_right, down_right, check, lab1
     
     MOV AL,x1
     MOV BL,y1
@@ -683,23 +897,33 @@ dame_4_directions MACRO x1,y1
                 ;----down_left------
                     DEC y ; y<-(j-1)  
                     INC x ; x<-(i+1) 
-                    JMP end
+                    JMP check
             down_right:
                 INC y ; y<-(j+1)  
                 INC x ; x<-(x+1) 
-                JMP end
+                JMP check
         up_left:
             DEC y ; y<-(j-1)  
             DEC x ; x<-(i-1) 
-            JMP end
+            JMP check
     up_right:
-        DEC y ; y<-(j-1)  
-        INC x ; x<-(i+1) 
+        INC y ; y<-(j-1)  
+        DEC x ; x<-(i+1) 
 
+    check:
+
+    get_number x, y, 'y', n1 
+    CMP n1,'v'
+    JNE lab1  ; checking 
+        MOV valid,1
+        JMP end
+    lab1:
+        MOV valid,0
     end:
+
 ENDM
 
-;-------save_dama_makla
+;-------save_dama_makla----------------------
 save_dame_makla MACRO n
     LOCAL end, up_left, up_right, down_right
     
@@ -712,16 +936,16 @@ save_dame_makla MACRO n
             CMP CX,2
             JE down_right
                 ;----down_left------
-                    MOV makla3, AL
+                    MOV makla4, AL
                     JMP end
             down_right:
-                MOV makla4, AL
+                MOV makla3, AL
                 JMP end
         up_left:
-            MOV makla1, AL
+            MOV makla2, AL
             JMP end
     up_right:
-        MOV makla2, AL
+        MOV makla1, AL
 
     end:
 
