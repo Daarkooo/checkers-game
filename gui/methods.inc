@@ -1,6 +1,7 @@
 .data
     isValid     DB      ?
     count       DB      0
+    saveData    DW      ?
 
 .code  
 
@@ -70,7 +71,7 @@ ENDM
 
 ;---------show_moves------------- 
 show_moves MACRO board, IndMoves, directMoves
-    LOCAL lab1, lab2, lab3, directMove,continue, endL
+    LOCAL lab1, lab2, lab3, lab4, lab5, directMove,continue, endL, dame, next
     
     set_array_null IndMoves
     set_array_null directMoves
@@ -93,7 +94,10 @@ show_moves MACRO board, IndMoves, directMoves
             
             get_row DL,i
             get_column DL,j 
-            
+
+            ; POP BX
+            ; POP CX
+
             PUSH SI
             PUSH DI
             show_path board,i,j,turn,path1,path2,source_pawn,makla1,makla2
@@ -105,7 +109,7 @@ show_moves MACRO board, IndMoves, directMoves
             CMP path1, -1
             JNE lab2
                 CMP path2, -1
-                JE lab1 
+                JE dame 
                     lab2:  
                     MOV AL,source_pawn
                     ; DEC AL
@@ -117,6 +121,43 @@ show_moves MACRO board, IndMoves, directMoves
                     directMove:
                         MOV BYTE PTR [BX], AL
                         INC BX
+                        JMP lab1
+        
+            dame:
+            ;     PUSH CX
+            ;     PUSH SI
+            ;     PUSH DI
+            ;     ; PUSH BX
+            ;     MOV saveData, BX
+            ;    show_path_dame board,i,j,turn,dameMoves,dameIndMoves,pawn_position,makla1,makla2,makla3,makla4 
+            ;     ; MOV BX,saveData
+            ;     ; POP BX
+                
+                
+            ;     POP DI
+            ;     POP SI
+            ;     POP CX
+                
+            ;     MOV AL,pawn_position
+            ;     ; LEA BX, dameIndMoves
+            ;     ; CMP BYTE PTR[BX],0  
+            ;     ; JNE lab5
+            ;     ;      JMP next
+            ;     ;  lab5:
+            ;              MOV BYTE PTR [DI], AL
+            ;              INC DI
+            ;     ;          JMP lab1
+                
+            ;     ;  next: 
+            ;     ;  LEA BX, dameMoves                      
+            ;     ; ;      CMP BYTE PTR[BX],0
+            ;     ; ;  JNE lab4
+            ;     ; ;      JMP lab1
+            ;     ; ;  lab4: 
+            ;     ;     MOV BX,saveData
+            ;     ;     MOV BYTE PTR [BX], AL
+            ;     ;     INC BX
+            
         lab1:
             INC SI  
             INC count
@@ -129,6 +170,57 @@ show_moves MACRO board, IndMoves, directMoves
 ENDM
 
 
+; show_moves_dame MACRO board, IndMoves, directMoves
+;     LOCAL lab1, lab2, lab3, directMove,continue, endL
+    
+;     set_array_null IndMoves
+;     set_array_null directMoves
+
+;     LEA SI, board
+    
+;     MOV CX, 50
+;     lab3:    
+;             MOV DL,count
+;             PUSH CX
+;             PUSH BX
+            
+;             get_row DL,i
+;             get_column DL,j 
+           
+            
+;             ;show_path_dame board,i1,j1,turn1,path1,path2,pawn_position,makla1
+;             CMP maklaSIf,1 ; ---- DAME CASE----------
+;             JE makla
+;                 POP BX
+;                 CMP dameMoves[0],0
+;                 JNE lab4
+;                     JMP lab1
+;                 lab4:
+;                     MOV BYTE PTR [BX], AL
+;                     INC BX
+;                     JMP lab1
+;             makla:
+;                 CMP dameIndMoves[0],0
+;                 JNE lab5
+;                     JMP lab1
+;                 lab5:
+;                     MOV BYTE PTR [DI], AL
+;                     INC DI
+;                     JMP lab1
+
+           
+;         lab1:
+;             INC SI  
+;             INC count
+;     CMP CX,0
+;     JE endL
+;         DEC CX
+;         JMP lab3
+;     endL:
+
+; ENDM
+
+;-------mark_cell_method------------
 mark_cell_method MACRO color
     LOCAL pawn, makla, lab1, next, end
 
@@ -148,6 +240,7 @@ mark_cell_method MACRO color
                 XOR BX, BX
                 MOV BL, BYTE PTR [SI]
                 markCell color, offsetX, offsetY, cellSize, BX
+                INC SI
         JMP lab1
     pawn:
         XOR BX, BX
@@ -158,29 +251,15 @@ mark_cell_method MACRO color
         MOV BL, path2
         markCell color, offsetX, offsetY, cellSize, BX
 
+
     end:
 
 ENDM
 
 
-;-----check_paths---------------
-check_paths PROC    
-
-    CMP path1,-1
-    JE lab1
-        MOV AL,1
-    lab1:
-
-    CMP path2,-1
-    JE lab2
-        MOV AL,1
-    lab2:
-
-check_paths ENDP
-
 
 ;-----is_value_in_array-----
-is_value_in_array MACRO x, y, array, bool
+is_value_in_array MACRO x1, y1, array, bool
     LOCAL lab1, exist, not_exist, end
 
     MOV DL, x
