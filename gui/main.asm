@@ -5,7 +5,7 @@
 .DATA
     ; board           DB  20 DUP('b'), 10 DUP('0'), 20 DUP('w')
     ; board           DB  20 DUP('b'), 10 DUP('0'), 20 DUP('w')
-    board           DB  5 DUP('B'), 40 DUP('0'), 5 DUP('W') 
+    board           DB  3 DUP('B'),'b','b', 40 DUP('0'), 3 DUP('W'),'w','w'
     directMoves     DB  20 dup(?)
     IndMoves        DB  20 dup(?)
 
@@ -32,6 +32,7 @@
     check_direct    DB      ?
     isDirect        DB      ?
     maklaSif        DB      1
+    ; countMoves      DB      0
     typePawn        DB      ?  ; 0 -> pawn / 1-> dame
     color           DB      ?
 
@@ -75,7 +76,8 @@
 
             ;show_moves board, IndMoves, directMoves
             ;draw_borders IndMoves, directMoves, 0Ah 
-            
+            ; MOV AL, 0
+            ; MOV countMoves, AL
             reselect:
                 
                 LEA AX, getCoordsFromMouseClick
@@ -92,37 +94,53 @@
                 ; JE continue
                 ;     JMP reselect
                 ; continue:
+                ; MOV x1,DL
+                ; MOV y1,CL
+                PUSH DX
+                PUSH CX
 
-                ; show_path board,DL,CL,turn,path1,path2,source_pawn,makla1,makla2
+                show_path board,DL,CL,turn,path1,path2,source_pawn,makla1,makla2
+
+                CMP typePawn,0
+                JE pawn
+                    JMP dame
+                pawn:
+                ; XOR AX,AX
+                ; MOV AL, typePawn
+                ; call liveUsage
 
                 ; MOV AL, isDirect
                 ; MOV check_direct , AL ; need it in multiple_jumps to check if the previous move was a direct/indirect move 
+                MOV AL,0
+                CMP path1,-1
+                JE label1
+                    MOV AL,1
+                label1:
 
-                ; CMP path1,-1
-                ; JE label1
-                ;     MOV AL,1
-                ; label1:
-
-                ; CMP path2,-1
-                ; JE label2
-                ;     MOV AL,1
-                ; label2:
+                CMP path2,-1
+                JE label2
+                    MOV AL,1
+                label2:
 
                 ; CMP AL,1    
                 ; JE next
                 ;     JMP reselect
                 
-                ; JNE labe1
-                ;     JMP next
-                ; labe1:
+                CMP AL,1    
+                JNE labe1
+                    JMP next
+                labe1:
+                JMP reselect
 
-
+                dame:
+                POP CX
+                POP DX
                show_path_dame board,DL,CL,turn,dameMoves,dameIndMoves,source_pawn,makla1,makla2,makla3,makla4 
                 
                 MOV AL, isDirect
                 MOV check_direct, AL
 
-              
+                MOV AL,0
                 LEA BX, dameIndMoves
                 CMP BYTE PTR[BX+3],0  
                 JE lab5
@@ -158,9 +176,33 @@
                 MOV x1, DL
                 MOV y1, CL
 
-                ;move_pawn board,DL,CL,path1,path2,source_pawn,makla1,makla2,isDirect
-
+                CMP typePawn,0
+                JE pawn1
+                    JMP dame1
+                pawn1:
+                
+                move_pawn board,DL,CL,path1,path2,source_pawn,makla1,makla2,dest
+                JMP check
+                dame1:
+                
                 move_dame board,DL,CL,dameMoves,dameIndMoves,source_pawn,makla1,makla2, makla3, makla4,dest
+                
+                ; CMP maklaSif, 1
+                ; JE checkMove
+                ;     JMP continue3
+                ; checkMove:    
+                ;     LEA SI, dameIndMoves
+                ;     CMP BYTE PTR [SI+3],0
+                ;     JNE next_move2
+                ;         JMP continue3
+                ;     next_move2:
+
+                ;     is_value_in_array x1, y1, dameIndMoves, bool
+                ;     CMP bool, 1
+                ;     JE label3
+                ;         JMP reselect2
+                ; continue3:
+                
                 ; XOR AX,AX
                 ; XOR BX,BX
                 ; XOR CX,CX
@@ -171,7 +213,7 @@
                 ; MOV DL,isDirect
 
                 ; CALL liveUsage
-
+                check:
                 CMP dest,-1
                 JNE label3
                     JMP reselect2
@@ -191,24 +233,38 @@
             ; mov AL,check_direct
             ; call liveUsage
 
-            MOV AL,check_direct
-            CMP AL, 'n'
-            JE next_move
-                JMP next1
-            next_move:
+            ; MOV AL,check_direct
+            ; CMP AL, 'n'
+            ; JE next_move
+            ;     JMP next1
+            ; next_move:
 
-            show_path_dame board,x1,y1,turn,dameMoves,dameIndMoves,source_pawn,makla1,makla2,makla3,makla4 
+            ; show_path_dame board,x1,y1,turn,dameMoves,dameIndMoves,source_pawn,makla1,makla2,makla3,makla4 
 
-            ; show_path board,x1,y1,turn,path1,path2,source_pawn,makla1,makla2
+            ; ; show_path board,x1,y1,turn,path1,path2,source_pawn,makla1,makla2
 
-            ; CMP check_direct, 'n'
-            ; JNE next1
+            ; ; CMP check_direct, 'n'
+            ; ; JNE next1
 
 
-            LEA SI, dameIndMoves
-            CMP BYTE PTR [SI+3],0
-            JE next1
-                JMP multi_jumps_lab
+            ; LEA SI, dameIndMoves
+            ; CMP BYTE PTR [SI+3],0
+            ; JNE next_move1
+            ;     JMP next1
+            ; next_move1:
+               
+            ;     ; MOV AL,countMoves
+            ;     ; CMP AL,0
+            ;     ; JE nextMove
+            ;     ;     is_value_in_array x1, y1, dameIndMoves, bool
+            ;     ;     CMP bool, 1
+            ;     ;     JE nextMove
+            ;     ;         JMP next1
+            ;     ; nextMove:
+
+            ;     ; INC countMoves 
+                
+            ;     JMP multi_jumps_lab
             
             ;     CMP path1,-1
             ;     JE lab1

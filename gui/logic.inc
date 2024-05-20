@@ -417,14 +417,14 @@ ENDM
 
 ;------move_pawn---------- 
 
-move_pawn MACRO board,x,y,path1,path2,pawn_position,makla1,makla2,isDirect
+move_pawn MACRO board,x,y,path1,path2,pawn_position,makla1,makla2,dest
     LOCAL end, indirect, move, move1, no_move, next  
     MOV BH,x ; cant use the other registers cuz are used in get_number 
     MOV CH,y 
 
     get_number BH,CH,menu,num1
     MOV BH,num1
-    MOV num,BH
+    MOV dest,BH
     CMP BH,path1
     JNE next
         MOV BH,path1 ; BH <- board[x,y]
@@ -461,12 +461,12 @@ move_pawn MACRO board,x,y,path1,path2,pawn_position,makla1,makla2,isDirect
         MOV AL,board[DI]
         MOV board[DI],'0'
     move:
-        MOV AL,num
-        MOV isDirect, AL
+        ; MOV AL,num
+        ; MOV isDirect, AL
         JMP end
     no_move:
         MOV AL,-1
-        MOV isDirect,AL
+        MOV dest,AL
     end:
 ENDM
 
