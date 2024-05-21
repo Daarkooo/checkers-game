@@ -1,8 +1,8 @@
-STACK SEGMENT PARA STACK
-    DB 64 DUP(' ')
-STACK ENDS
+.MODEL SMALL
 
-DATA SEGMENT PARA 'DATA'
+.STACK 100h
+
+.DATA
     ;?infos about board:start
         ;! the board is a 10x10 board =>350x350 pixels
     ;?infos about board:end
@@ -66,14 +66,15 @@ DATA SEGMENT PARA 'DATA'
     ;?time listener:start
     time_aux db 0;! to check if the time has changed
     ;?time listener:end
-DATA ENDS
 
-CODE SEGMENT PARA 'CODE'
+.CODE
+
 exit MACRO status
     MOV AH, 4Ch
     MOV AL, status
     INT 21h
 ENDM
+
 
 setGraphics MACRO num
     MOV AX, num
@@ -117,26 +118,389 @@ ENDM
 
 ;!________________________________________________________________________________________________________________________
 
-MAIN PROC FAR
-    ;?segments:start
-        assume cs:CODE,ds:DATA,ss:STACK
-        push ds
-        sub ax,ax
-        push ax
-        mov ax,DATA
-        mov ds,ax
-        pop ax
-        pop ax
-    ;?segments:end
+;!click procs and macros:start
+    __sleep PROC; CX, DX
+        PUSH BP
+        MOV BP, SP
 
-    ;?board:start the hex of white color is:
-        setGraphics 10h;! set graphics mode 10h (640x350, 16 colors)
-        drawBoard 300, 0Ah, 0Fh, 06h, 33;! draw the board with white and black cells and size 35 for each cell=>the width of the board is 35*10=350 and the height is 35*10=350
-    ;?board:start    
-        call duringGameMenu
-        ;call soundEffect
-    RET
-MAIN ENDP
+        MOV AX, 8600h
+        MOV DX, [BP + 4]
+        MOV CX, [BP + 6]
+        INT 15h
+
+        MOV SP, BP
+        POP BP
+        RET 4
+    __sleep ENDP
+
+    sleep MACRO highW, lowW
+        PUSH AX
+        PUSH BX
+        PUSH CX
+        PUSH DX
+
+        MOV AX, highW
+        PUSH AX
+
+        MOV AX, lowW
+        PUSH AX
+
+        CALL __sleep
+
+        POP DX
+        POP CX
+        POP BX
+        POP AX
+    ENDM
+
+    __setupMouse PROC ; initialX, initialY, minXRange, minYRange, maxXRange, maxYRange
+        PUSH BP
+        MOV BP, SP
+
+        ; [BP +  4]: maxYRange
+        ; [BP +  6]: maxXRange
+        ; [BP +  8]: minYRange
+        ; [BP + 10]: minXRange
+        ; [BP + 12]: initialY
+        ; [BP + 14]: initialX
+
+        ; set up mouse drivers
+        XOR AX, AX
+        INT 33h
+
+        ; set initial mouse position to (0, 0) to avoid distrubing the menu
+        MOV AX, 0004h
+        MOV CX, [BP + 14]
+        MOV DX, [BP + 12]
+        INT 33h
+
+        ; display mouse
+        MOV AX, 0001h
+        INT 33h
+
+        ; will do (maximum range - 3)
+        ; horizontal range
+        MOV AX, 0007h
+        MOV CX, [BP + 10]
+        MOV DX, [BP + 6]
+        INT 33h
+
+        ; vertical range
+        MOV AX, 0008h
+        MOV CX, [BP + 8]
+        MOV DX, [BP + 4]
+        INT 33h
+
+        MOV SP, BP
+        POP BP
+        RET 12
+    __setupMouse ENDP
+
+    setupMouse MACRO initialX, initialY, minXRange, minYRange, maxXRange, maxYRange
+        PUSH AX
+        PUSH BX
+        PUSH CX
+        PUSH DX
+
+        MOV AX, initialX
+        PUSH AX
+
+        MOV AX, initialY
+        PUSH AX
+
+        MOV AX, minXRange
+        PUSH AX
+
+        MOV AX, minYRange
+        PUSH AX
+
+        MOV AX, maxXRange
+        PUSH AX
+
+        MOV AX, maxYRange
+        PUSH AX
+
+        CALL __setupMouse
+
+        POP DX
+        POP CX
+        POP BX
+        POP AX
+    ENDM
+
+    __awaitMouseClick PROC; callback, arg1, arg2, arg3
+        PUSH BP
+        MOV BP, SP
+
+        MOV AX, [BP + 8]    ; arg1
+        PUSH AX
+
+        MOV AX, [BP + 6]    ; arg2
+        PUSH AX
+
+        MOV AX, [BP + 4]    ; arg3
+        PUSH AX
+
+        __awaitMouseClick_mainLoop:
+            MOV AX, 3h          ; Function 3: Get mouse position and button status
+            INT 33h             ; Call mouse interrupt
+
+            TEST BL, 1          ; Check if left button is pressed
+        JZ __awaitMouseClick_mainLoop
+
+        sleep 0003h, 0D40h
+
+        PUSH CX     ; column (x)
+        PUSH DX     ; row (y)
+
+        CALL [BP + 10]
+
+        MOV SP, BP
+        POP BP
+        RET 8
+    __awaitMouseClick ENDP
+
+    ; arg1 and arg2 arguments to callback; order of PUSH: arg1 --> arg2 --> arg3 --> CX (X position) --> DX (Y position)
+    ; it is Advisable to push 'arg1', 'arg2' & 'arg3'; even if their values is 0
+    awaitMouseClick MACRO callback, arg1, arg2, arg3
+        PUSH callback  ; Push the offset of the callback
+
+        MOV AX, arg1
+        PUSH AX
+
+        MOV AX, arg2
+        PUSH AX
+
+        MOV AX, arg3
+        PUSH AX
+
+        CALL __awaitMouseClick
+    ENDM
+
+    ; For now, this is the event handler to make moves in game
+    ; returns x (column) and y (row) in CX and DX, respectively
+    getCoordsFromMouseClick PROC ; xOffset, yOffset, cellSize, xPosition, yPosition
+        PUSH BP
+        MOV BP, SP
+
+        ; [BP + 12]: xOffset
+        ; [BP + 10]: yOffset
+        ; [BP + 8]: size
+        ; [BP + 6]: xPosition
+        ; [BP + 4]: yPosition
+
+        ; x = column * size + xOffset
+        ; y = row * size + yOffset
+
+        ; x position
+        XOR DX, DX
+        MOV AX, [BP + 6]
+        SUB AX, [BP + 12]
+        DIV WORD PTR [BP + 8]
+        MOV CX, AX
+
+        ; y = line * size + offset
+
+        ; y position
+        XOR DX, DX
+        MOV AX, [BP + 4]
+        SUB AX, [BP + 10]
+        DIV WORD PTR [BP + 8]
+        MOV DX, AX
+
+        MOV SP, BP
+        POP BP
+        RET 10
+    getCoordsFromMouseClick ENDP
+
+    ; For now, this is the event handler that returns which menu button was clicked, returns result in AX
+    ; 0: nothing
+    ; 1: SP/MP
+    ; 2: makla
+    ; 3: start
+    ; 4: theme1
+    ; 5: theme2
+    ; 6: theme3
+    ; 7: theme4
+    ; F: exit
+    getMenuOptionClicked_omar PROC ; fakeArg1, fakeArg2, fakeArg3, xPosition, yPosition
+        PUSH BP
+        MOV BP, SP
+
+        ; [BP + 4]: yPosition
+        ; [BP + 6]: xPosition
+
+        
+            CMP WORD PTR [BP + 4], 283;!quit button Y
+            JL END_LABEL
+
+            MOV AX, 283;!quit button Y
+            ADD AX, 36;!quit button height
+            CMP [BP + 4], AX
+            JG END_LABEL
+
+            CMP WORD PTR [BP + 6], 29;!quit button X
+            JL END_LABEL
+
+            MOV AX, 29;!quit button X
+            ADD AX, 70;!quit button width
+            CMP [BP + 6], AX
+            JG END_LABEL
+
+            MOV AX, 0000h
+        JMP END_LABEL
+
+        ; SPMP_LABEL:
+        ;     CMP WORD PTR [BP + 4], SPMP_Y
+        ;     JL MAKLA_LABEL
+
+        ;     MOV AX, SPMP_Y
+        ;     ADD AX, 50
+        ;     CMP [BP + 4], AX
+        ;     JG MAKLA_LABEL
+
+        ;     CMP WORD PTR [BP + 6], SPMP_X
+        ;     JL MAKLA_LABEL
+
+        ;     MOV AX, SPMP_X
+        ;     ADD AX, 120
+        ;     CMP [BP + 6], AX
+        ;     JG MAKLA_LABEL
+
+        ;     MOV AX, 0001h
+        ; JMP END_LABEL
+
+        ; MAKLA_LABEL:
+        ;     CMP WORD PTR [BP + 4], MAKLA_Y
+        ;     JL START_LABEL
+
+        ;     MOV AX, MAKLA_Y
+        ;     ADD AX, 50
+        ;     CMP [BP + 4], AX
+        ;     JG START_LABEL
+
+        ;     CMP WORD PTR [BP + 6], MAKLA_X
+        ;     JL START_LABEL
+
+        ;     MOV AX, MAKLA_X
+        ;     ADD AX, 120
+        ;     CMP [BP + 6], AX
+        ;     JG START_LABEL
+
+        ;     MOV AX, 0002h
+        ; JMP END_LABEL
+
+        ; START_LABEL:
+        ;     CMP WORD PTR [BP + 4], START_Y
+        ;     JL THEME0_LABEL
+
+        ;     MOV AX, START_Y
+        ;     ADD AX, 50
+        ;     CMP [BP + 4], AX
+        ;     JG THEME0_LABEL
+
+        ;     CMP WORD PTR [BP + 6], START_X
+        ;     JL THEME0_LABEL
+
+        ;     MOV AX, START_X
+        ;     ADD AX, 120
+        ;     CMP [BP + 6], AX
+        ;     JG THEME0_LABEL
+
+        ;     MOV AX, 0003h
+        ; JMP END_LABEL
+
+        ; THEME0_LABEL:
+        ;     CMP WORD PTR [BP + 4], THEME0_Y
+        ;     JL THEME1_LABEL
+
+        ;     MOV AX, THEME0_Y
+        ;     ADD AX, 34
+        ;     CMP [BP + 4], AX
+        ;     JG THEME1_LABEL
+
+        ;     CMP WORD PTR [BP + 6], THEME0_X
+        ;     JL THEME1_LABEL
+
+        ;     MOV AX, THEME0_X
+        ;     ADD AX, 34
+        ;     CMP [BP + 6], AX
+        ;     JG THEME1_LABEL
+
+        ;     MOV AX, 0004h
+        ; JMP END_LABEL
+
+        ; THEME1_LABEL:
+        ;     CMP WORD PTR [BP + 4], THEME1_Y
+        ;     JL THEME2_LABEL
+
+        ;     MOV AX, THEME1_Y
+        ;     ADD AX, 34
+        ;     CMP [BP + 4], AX
+        ;     JG THEME2_LABEL
+
+        ;     CMP WORD PTR [BP + 6], THEME1_X
+        ;     JL THEME2_LABEL
+
+        ;     MOV AX, THEME1_X
+        ;     ADD AX, 34
+        ;     CMP [BP + 6], AX
+        ;     JG THEME2_LABEL
+
+        ;     MOV AX, 0005h
+        ; JMP END_LABEL
+
+        ; THEME2_LABEL:
+        ;     CMP WORD PTR [BP + 4], THEME2_Y
+        ;     JL THEME3_LABEL
+
+        ;     MOV AX, THEME2_Y
+        ;     ADD AX, 34
+        ;     CMP [BP + 4], AX
+        ;     JG THEME3_LABEL
+
+        ;     CMP WORD PTR [BP + 6], THEME2_X
+        ;     JL THEME3_LABEL
+
+        ;     MOV AX, THEME2_X
+        ;     ADD AX, 34
+        ;     CMP [BP + 6], AX
+        ;     JG THEME3_LABEL
+
+        ;     MOV AX, 0006h
+        ; JMP END_LABEL
+
+        ; THEME3_LABEL:
+        ;     CMP WORD PTR [BP + 4], THEME3_Y
+        ;     JL NOTHING_LABEL
+
+        ;     MOV AX, THEME3_Y
+        ;     ADD AX, 34
+        ;     CMP [BP + 4], AX
+        ;     JG NOTHING_LABEL
+
+        ;     CMP WORD PTR [BP + 6], THEME3_X
+        ;     JL NOTHING_LABEL
+
+        ;     MOV AX, THEME3_X
+        ;     ADD AX, 34
+        ;     CMP [BP + 6], AX
+        ;     JG NOTHING_LABEL
+
+        ;     MOV AX, 0007h
+        ; JMP END_LABEL
+
+        ;! NOTHING_LABEL:
+        ;!     XOR AX, AX
+
+        END_LABEL:
+
+        MOV SP, BP
+        POP BP
+        RET 10
+    getMenuOptionClicked_omar ENDP
+;!click procs and macros:end
+
 ;?sound effect:start
 sound_effect PROC NEAR
     ; Set up the tone parameters
@@ -351,7 +715,6 @@ __drawBoard ENDP
         INT 10H
     ENDM
 
-
 ;!rahim function string:start
    __printGraphicalString PROC ; ref, color, initialX, initialY ; page implicitely set to 0
         PUSH BP
@@ -406,54 +769,64 @@ __drawBoard ENDP
 ;!rahim function string:end
 duringGameMenu PROC
     ;!score text:start 
-    drawBackGround 29,31,70,36,04h
-    drawBackGround 34,36,60,26,00h
-    printGraphicalString scoreWord,0FFh,5,3;!the color of the string will be :Black
+    drawBackGround 365,31,70,36,04h
+    drawBackGround 370,36,60,26,00h
+    printGraphicalString scoreWord,0FFh,47,3;!the color of the string will be :Black
     ;!score text:end
 
     ;!score first player:start
-    drawBackGround 181,31,40,36,04h
-    drawBackGround 186,36,30,26,00h
-    printGraphicalString whitePlayer_score,0FFh,24,3;!the color of the string will be :Black
+    drawBackGround 517,31,40,36,04h
+    drawBackGround 522,36,30,26,00h
+    printGraphicalString whitePlayer_score,0FFh,66,3;!the color of the string will be :Black
     ;!score first player:end
 
     ;!score second player:start
-    drawBackGround 231,31,40,36,04h
-    drawBackGround 236,36,30,26,00h
-    printGraphicalString blackPlayer_score,0FFh,30,3;!the color of the string will be :Black
+    drawBackGround 567,31,40,36,04h
+    drawBackGround 572,36,30,26,00h
+    printGraphicalString blackPlayer_score,0FFh,72,3;!the color of the string will be :Black
     ;!score second player:end
 
 
     ;!quit button:start
-    drawBackGround 29,283,70,36,04h
-    drawBackGround 34,288,60,26,00h
-    printGraphicalString quit,0FFh,6,21;
+    drawBackGround 365,283,70,36,04h
+    drawBackGround 370,288,60,26,00h
+    printGraphicalString quit,0FFh,48,21;
     ;!quit button:end
 
     ;!resign button:start
-    drawBackGround 189,283,84,36,04h
-    drawBackGround 194,288,74,26,00h
-    printGraphicalString resign,0FFh,26,21;
+    drawBackGround 525,283,84,36,04h
+    drawBackGround 530,288,74,26,00h
+    printGraphicalString resign,0FFh,68,21;
     ;!resign button:end
 
     ;!turn :start
-    drawBackGround 115,154,86,36,04h
+    drawBackGround 451,154,86,36,04h
 
     cmp isWhitePlayer,0
     je handleBlackTurn
     
-    drawBackGround 120,159,76,26,0Fh
-    printGraphicalString whitePlayer,0FFh,17,12;
+    drawBackGround 456,159,76,26,0Fh
+    printGraphicalString whitePlayer,0FFh,59,12;
     jmp everyThingIsHandeled
     handleBlackTurn:
     
-    drawBackGround 120,159,76,26,00h
-    printGraphicalString blackPlayer,0FFh,17,12;
+    drawBackGround 456,159,76,26,00h
+    printGraphicalString blackPlayer,0FFh,59,12;
     everyThingIsHandeled:
     ;!turn :end
 
     RET
 duringGameMenu ENDP
+MAIN PROC 
+    MOV AX, @DATA
+    MOV DS, AX
 
-CODE ENDS
-END
+    ;?board:start the hex of white color is:
+        setGraphics 10h;! set graphics mode 10h (640x350, 16 colors)
+        drawBoard 0Ah, 0Ah, 0Fh, 06h, 33;! draw the board with white and black cells and size 35 for each cell=>the width of the board is 35*10=350 and the height is 35*10=350
+    ;?board:start    
+        call duringGameMenu
+    call soundEffect;
+MAIN ENDP
+
+END main
