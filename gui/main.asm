@@ -185,7 +185,7 @@
                 JMP check
                 dame1:
                 
-                move_dame board,DL,CL,dameMoves,dameIndMoves,source_pawn,makla1,makla2, makla3, makla4,dest
+            move_dame board,DL,CL,dameMoves,dameIndMoves,source_pawn,makla1,madkla2, makla3, makla4,dest
                 
                 ; CMP maklaSif, 1
                 ; JE checkMove
@@ -227,6 +227,8 @@
 
             drawBorderCell source_pawn, 06h, 0, 0, 34 
             
+            CALL soundEffect
+
             Move_GUI source_pawn,dest,PColor ; isDirect <- board[x,y] if the move is valid
             ; CALL liveUsage
             ; XOR AX,AX
