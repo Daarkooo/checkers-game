@@ -1,4 +1,4 @@
-CaseColor MACRO row, column
+CaseColor MACRO row, column , Color
     LOCAL BlackCase, fin
 
         ; (row % 2 === column % 2)
@@ -14,15 +14,11 @@ CaseColor MACRO row, column
         jnz BlackCase  ; not a White Square
     
         ; White square
-        lea dx,White
-        mov ah,09
-        int 21h
+        MOV Color,'w'
         jmp fin
     
     BlackCase:
-        lea dx,Black
-        mov ah,09
-        int 21h
+        MOV Color,'b'
     
     fin: 
     ENDM
@@ -31,8 +27,7 @@ CaseColor MACRO row, column
 .data
     row db 3
     column db 2
-    Black db "A Black Square$"
-    White db "A White Square$"
+
 .code
 
     mov ax,@data
