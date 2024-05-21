@@ -28,9 +28,9 @@
     INCLUDE menu.inc
     INCLUDE print.inc
     INCLUDE logic.inc
+    INCLUDE sound.inc
 
 .CODE
-
     main PROC
         MOV AX, @DATA
         MOV DS, AX
@@ -57,6 +57,7 @@
 
         Board_init_GUI board, blackCell, whiteCell, blackPiece, whitePiece
         drawBorder 0008h, offsetX, offsetY, 340, 5
+        CALL duringGameMenu
         setupMouse 500, 270, 0, 0, 637, 347
 
         play:
@@ -64,8 +65,25 @@
             draw_borders IndMoves, directMoves, 0Ah
 
             reselect:
-                LEA AX, getCoordsFromMouseClick
+                LEA AX, getOptionClickedInGame
                 awaitMouseClick AX, offsetX, offsetY, cellSize
+
+                MAIN_NOTHING1:
+                    CMP AX, 0000h
+                    JNZ MAIN_RESIGN1
+                JMP reselect
+
+                MAIN_RESIGN1:
+                    CMP AX, 0002h
+                    JNZ MAIN_QUIT1
+                JMP main_endLabel
+
+                MAIN_QUIT1:
+                    CMP AX, 0003h
+                    JNZ MAIN_BOARD1
+                JMP main_endLabel
+
+                MAIN_BOARD1:
                 show_path board,DL,CL,turn,path1,path2,source_pawn,makla,makla2,isDirect,multiple_jumps
 
                 CMP path1,-1
@@ -100,8 +118,25 @@
             markCell 04h, offsetX, offsetY, cellSize, BX
 
             reselect2:
-                LEA AX,getCoordsFromMouseClick
+                LEA AX,getOptionClickedInGame
                 awaitMouseClick AX, offsetX, offsetY, cellSize ; CX <- x DX <- y
+
+                MAIN_NOTHING2:
+                    CMP AX, 0000h
+                    JNZ MAIN_RESIGN2
+                JMP reselect2
+
+                MAIN_RESIGN2:
+                    CMP AX, 0002h
+                    JNZ MAIN_QUIT2
+                JMP main_endLabel
+
+                MAIN_QUIT2:
+                    CMP AX, 0003h
+                    JNZ MAIN_BOARD2
+                JMP main_endLabel
+
+                MAIN_BOARD2:
 
                 move_pawn board, DL, CL, path1, path2, source_pawn, makla, makla2, isDirect
 
@@ -123,6 +158,7 @@
             drawBorderCell source_pawn, blackCell, offsetX, offsetY, cellSize
 
             Move_GUI source_pawn,isDirect,PColor ; isDirect <- board[x,y] if the move is valid
+            CALL soundEffect
         JMP play
 
         main_endLabel:

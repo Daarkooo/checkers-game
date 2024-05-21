@@ -7,6 +7,26 @@
     offsetX         EQU     295
     offsetY         EQU     5
 
+;! *********************************** OMAR'S WORK ***********************************
+    ;?menu vars:start
+        whitePlayer             db      'White$'
+        blackPlayer             db      'Black$'
+        isWhitePlayer           db      0
+        whitePlayer_score       db      '0','$'
+        blackPlayer_score       db      '0','$'
+        resign                  db      'Resign','$'
+        quit                    db      'Quit$'
+        restart                 db      'restart','$'
+        scoreWord               db      'Score:$'
+    ;todo text background vars :start
+        backGround_x            dw      0
+        backGround_y            dw      0
+        backGround_width        dw      10
+        backGround_height       dw      5
+        backGround_color        db      0Fh
+    ;todo text background vars :end
+;! ***********************************************************************************
+
 .CODE
     PushReg MACRO
         PUSH AX
@@ -1531,3 +1551,94 @@
 
                 popMousePosition
     ENDM
+
+;! *********************************** OMAR'S WORK ***********************************
+    ;todo draw text backGround :start
+    draw_backGround PROC NEAR
+    MOV cx,backGround_x;!position x column
+    MOV dx,backGround_y;!position y row
+        draw_backGround_horizontal:
+            MOV AH,0Ch;! set pixel
+            MOV AL,backGround_color;! color
+            MOV bh,0;! page 0
+            INT 10h;! call BIOS
+
+            inc cx;! move to the next column
+            mov ax,cx
+            sub ax,backGround_x
+            cmp ax,backGround_width
+            JNG draw_backGround_horizontal
+
+            mov cx,backGround_x;! reset the column position
+            inc dx;! move to the next row
+
+            mov ax,dx;
+            sub ax,backGround_y;
+            cmp ax,backGround_height;
+            JNG draw_backGround_horizontal;
+    RET
+    draw_backGround ENDP
+    drawBackGround MACRO backGround_column , backGround_row , width , height , color
+        mov ax,backGround_column
+        mov backGround_x,ax
+        mov ax,backGround_row
+        mov backGround_y,ax
+        mov ax,width
+        mov backGround_width,ax
+        mov ax,height
+        mov backGround_height,ax
+        mov AL,color
+        mov backGround_color,AL
+        call draw_backGround
+    ENDM
+    ;todo draw text backGround :end
+
+    duringGameMenu PROC
+        ;!score text:start 
+        drawBackGround 29,31,70,36,04h
+        drawBackGround 34,36,60,26,00h
+        printGraphicalString scoreWord,0FFh,5,3;!the color of the string will be :Black
+        ;!score text:end
+
+        ;!score first player:start
+        drawBackGround 181,31,40,36,04h
+        drawBackGround 186,36,30,26,00h
+        printGraphicalString whitePlayer_score,0FFh,24,3;!the color of the string will be :Black
+        ;!score first player:end
+
+        ;!score second player:start
+        drawBackGround 231,31,40,36,04h
+        drawBackGround 236,36,30,26,00h
+        printGraphicalString blackPlayer_score,0FFh,30,3;!the color of the string will be :Black
+        ;!score second player:end
+
+        ;!quit button:start
+        drawBackGround 29,283,70,36,04h
+        drawBackGround 34,288,60,26,00h
+        printGraphicalString quit,0FFh,6,21;
+        ;!quit button:end
+
+        ;!resign button:start
+        drawBackGround 189,283,84,36,04h
+        drawBackGround 194,288,74,26,00h
+        printGraphicalString resign,0FFh,26,21;
+        ;!resign button:end
+
+        ;!turn :start
+        drawBackGround 115,154,86,36,04h
+
+        cmp isWhitePlayer,0
+        je handleBlackTurn
+        
+        drawBackGround 120,159,76,26,0Fh
+        printGraphicalString whitePlayer,0FFh,17,12;
+        jmp everyThingIsHandeled
+        handleBlackTurn:
+        
+        drawBackGround 120,159,76,26,00h
+        printGraphicalString blackPlayer,0FFh,17,12;
+        everyThingIsHandeled:
+        ;!turn :end
+
+        RET
+    duringGameMenu ENDP
