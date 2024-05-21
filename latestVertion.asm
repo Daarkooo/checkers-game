@@ -3,6 +3,7 @@
 .STACK 100h
 
 .DATA
+    flag db 'b$';
     logoMessage db 'Click Space To Coninue','$';
     ;?infos about board:start
         ;! the board is a 10x10 board =>350x350 pixels
@@ -914,6 +915,19 @@ drawLogo PROC NEAR
 drawLogo ENDP
 ;!logo:end
 
+;!switch turn text:start
+switchTurnString MACRO flag
+    cmp flag, 'w'
+    je is_white_turn
+    printGraphicalString whitePlayer,0FFh,59,12
+    printGraphicalString blackPlayer,0FFh,59,12
+    jmp the_end
+    is_white_turn:
+    printGraphicalString blackPlayer,0FFh,59,12
+    printGraphicalString whitePlayer,0FFh,59,12
+    the_end:
+ENDM
+;!switch turn text:end
 
 MAIN PROC 
     MOV AX, @DATA
@@ -925,7 +939,8 @@ MAIN PROC
         drawBoard 0Ah, 0Ah, 0Fh, 06h, 33;! draw the board with white and black cells and size 35 for each cell=>the width of the board is 35*10=350 and the height is 35*10=350
     ;?board:start    
         call duringGameMenu
-        ;call soundEffect;
+        switchTurnString flag
+        ;call soundEffect; 
 MAIN ENDP
 
 END main

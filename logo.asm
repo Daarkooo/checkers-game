@@ -628,6 +628,9 @@ drawLogo PROC NEAR
     drawBackGround 580,120,20,20,0Fh
     drawBackGround 550,130,40,20,0Fh
     ;!the letter S:end
+    ;!show message:start
+    printGraphicalString logoMessage, 0FFh, 30,21
+    ;!show message:end
     ;!get out of logo:start
     mov ah,00h
     int 16h
@@ -637,7 +640,7 @@ drawLogo PROC NEAR
         je get_out
     jmp check_if_space_clicked
         get_out:
-        call clear_screen
+        drawBackGround 0,0,640,350,00h
     ;!get out of logo:end
     RET
 drawLogo ENDP
