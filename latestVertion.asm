@@ -116,7 +116,6 @@ drawBoard MACRO initialX, initialY, whiteColor, blackColor, size
 	CALL __drawBoard
 ENDM
 
-;!________________________________________________________________________________________________________________________
 
 ;!click procs and macros:start
     __sleep PROC; CX, DX
@@ -817,16 +816,113 @@ duringGameMenu PROC
 
     RET
 duringGameMenu ENDP
+
+;!logo:start
+drawLogo PROC NEAR
+    ;!the letter c:start
+    drawBackGround 50,30,40,20,0Fh
+    drawBackGround 40,50,20,20,0Fh
+    drawBackGround 30,70,20,20,0Fh
+    drawBackGround 30,90,20,20,0Fh
+    drawBackGround 40,110,20,20,0Fh
+    drawBackGround 50,130,40,20,0Fh
+    ;!the letter c:end
+    ;!the letter H:start
+    drawBackGround 100,30,20,120,0Fh
+    drawBackGround 100,80,60,20,0Fh
+    drawBackGround 160,30,20,120,0Fh
+    ;!the letter H:end
+
+    ;!the letter E:start
+    drawBackGround 210,30,40,20,0Fh
+    drawBackGround 200,50,20,20,0Fh
+    drawBackGround 190,70,20,20,0Fh
+    drawBackGround 190,80,60,20,0Fh
+    drawBackGround 190,90,20,20,0Fh
+    drawBackGround 200,110,20,20,0Fh
+    drawBackGround 210,130,40,20,0Fh
+    ;!the letter E:end
+
+    ;!the letter c:start
+    drawBackGround 280,30,40,20,0Fh
+    drawBackGround 270,50,20,20,0Fh
+    drawBackGround 260,70,20,20,0Fh
+    drawBackGround 260,90,20,20,0Fh
+    drawBackGround 270,110,20,20,0Fh
+    drawBackGround 280,130,40,20,0Fh
+    ;!the letter c:end
+
+    ;!the letter K:start
+    drawBackGround 330,30,20,120,0Fh
+    drawBackGround 380,30,20,20,0Fh
+    drawBackGround 370,50,20,20,0Fh
+    drawBackGround 360,70,20,20,0Fh
+    drawBackGround 350,90,20,20,0Fh
+    drawBackGround 350,90,20,20,0Fh
+    drawBackGround 360,110,20,20,0Fh
+    drawBackGround 370,130,20,20,0Fh
+    ;!the letter K:end
+
+    ;!the letter E:start
+    drawBackGround 420,30,40,20,0Fh
+    drawBackGround 410,50,20,20,0Fh
+    drawBackGround 400,70,20,20,0Fh
+    drawBackGround 400,80,60,20,0Fh
+    drawBackGround 400,90,20,20,0Fh
+    drawBackGround 410,110,20,20,0Fh
+    drawBackGround 420,130,40,20,0Fh
+    ;!the letter E:end
+
+    ;!the letter R:start
+    drawBackGround 470,30,20,120,0Fh
+    drawBackGround 490,30,20,20,0Fh
+    drawBackGround 500,40,20,20,0Fh
+    drawBackGround 510,50,20,20,0Fh
+    drawBackGround 520,60,20,20,0Fh
+    drawBackGround 510,70,20,20,0Fh
+    drawBackGround 500,80,20,20,0Fh
+    drawBackGround 490,90,20,20,0Fh
+    drawBackGround 490,90,20,20,0Fh
+    drawBackGround 500,110,20,20,0Fh
+    drawBackGround 510,130,20,20,0Fh
+    ;!the letter R:end
+
+    ;!the letter S:start
+    drawBackGround 570,30,40,20,0Fh
+    drawBackGround 560,50,20,20,0Fh
+    drawBackGround 550,70,20,20,0Fh
+    drawBackGround 560,90,50,20,0Fh
+    drawBackGround 590,100,20,20,0Fh
+    drawBackGround 580,120,20,20,0Fh
+    drawBackGround 550,130,40,20,0Fh
+    ;!the letter S:end
+    ;!get out of logo:start
+    mov ah,00h
+    int 16h
+
+    check_if_space_clicked:
+        cmp al,' '
+        je get_out
+    jmp check_if_space_clicked
+        get_out:
+        drawBackGround 0,0,640,350,00h
+    ;!get out of logo:end
+    RET
+drawLogo ENDP
+;!logo:end
+
+
 MAIN PROC 
     MOV AX, @DATA
     MOV DS, AX
 
     ;?board:start the hex of white color is:
         setGraphics 10h;! set graphics mode 10h (640x350, 16 colors)
+        call drawLogo
         drawBoard 0Ah, 0Ah, 0Fh, 06h, 33;! draw the board with white and black cells and size 35 for each cell=>the width of the board is 35*10=350 and the height is 35*10=350
     ;?board:start    
         call duringGameMenu
-    call soundEffect;
+    ;call soundEffect;
 MAIN ENDP
 
 END main
