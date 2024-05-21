@@ -917,6 +917,8 @@ drawLogo ENDP
 
 ;!switch turn text:start
 switchTurnString MACRO flag
+    LOCAL is_white_turn, the_end
+
     cmp flag, 'w'
     je is_white_turn
     printGraphicalString whitePlayer,0FFh,59,12
@@ -929,6 +931,7 @@ switchTurnString MACRO flag
 ENDM
 ;!switch turn text:end
 
+
 MAIN PROC 
     MOV AX, @DATA
     MOV DS, AX
@@ -939,6 +942,12 @@ MAIN PROC
         drawBoard 0Ah, 0Ah, 0Fh, 06h, 33;! draw the board with white and black cells and size 35 for each cell=>the width of the board is 35*10=350 and the height is 35*10=350
     ;?board:start    
         call duringGameMenu
+        switchTurnString flag
+        mov al,'b';
+        mov flag,al
+        switchTurnString flag
+        mov al,'w'
+        mov flag,al
         switchTurnString flag
         ;call soundEffect; 
 MAIN ENDP
