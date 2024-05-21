@@ -3,6 +3,7 @@
 .STACK 100h
 
 .DATA
+    logoMessage db 'Click Space To Coninue','$';
     ;?infos about board:start
         ;! the board is a 10x10 board =>350x350 pixels
     ;?infos about board:end
@@ -642,7 +643,6 @@ __drawCell PROC ; color, x, y, size  (last parameteres are top of stack)
 	POP BP
 	RET 8                   ; cleaning the stack
 __drawCell ENDP
-
 __drawBoard PROC ; initialX, initialY, whiteCell, blackCell, size (last parameteres are top of stack)
 	PUSH BP
 	MOV BP, SP
@@ -896,6 +896,9 @@ drawLogo PROC NEAR
     drawBackGround 580,120,20,20,0Fh
     drawBackGround 550,130,40,20,0Fh
     ;!the letter S:end
+    ;!show message:start
+    printGraphicalString logoMessage, 0FFh, 30,21
+    ;!show message:end
     ;!get out of logo:start
     mov ah,00h
     int 16h
@@ -922,7 +925,7 @@ MAIN PROC
         drawBoard 0Ah, 0Ah, 0Fh, 06h, 33;! draw the board with white and black cells and size 35 for each cell=>the width of the board is 35*10=350 and the height is 35*10=350
     ;?board:start    
         call duringGameMenu
-    ;call soundEffect;
+        ;call soundEffect;
 MAIN ENDP
 
 END main
