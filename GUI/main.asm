@@ -42,6 +42,12 @@
         MOV AX, 0010h   ; 640x350 16 colors
         INT 10h
 
+        CALL drawLogo
+
+        ; set up video mode
+        MOV AX, 0010h   ; 640x350 16 colors
+        INT 10h
+
         setupMouse 0, 0, 0, 0, 637, 347
 
         CALL graphicalMenu
