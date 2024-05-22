@@ -8,7 +8,10 @@
     CaseSize2   DB  17
     board       DB  10 DUP('w'), 20 DUP('0'), 20 DUP('b')
     blackColor  DW  06h
-    
+    innerColor DW 03H
+    whiteColor DW 10H
+    xOffset DW 0
+    yOffset DW 0
 
 .CODE
     PushReg MACRO 
@@ -288,13 +291,15 @@
         CALL __drawCircle
     ENDM
 
-    Board_init_GUI Macro Board,whiteColor,blackColor
+    Board_init_GUI Macro Board,whiteColor,blackColor,innerColor,xOffset,yOffset
         drawBoard 0, 0, 000Fh, 0006h, 34
         MOV CX,16
+        ADD CX,xOffset
         LEA SI,board
         Black:
         
             MOV DX,52
+            ADD DX,yOffset
             MOV BX,5
             Line0:
        
@@ -307,9 +312,21 @@
                     JMP finCircle0
                 white0:
                     CMP AL,'w'
+                    JNE blackqueen0
+                    drawCircle whiteColor,DX,CX 
+                    JMP finCircle0
+                blackqueen0:
+                    CMP AL,'B'
+                    JNE whitequeen0
+                    MOV AX,SI
+                    drawQueen AL, xOffset, yOffset, 34, blackColor, innerColor
+                    JMP finCircle0
+                whitequeen0:
+                    CMP AL,'W'
                     JNE finCircle0
-                    drawCircle whiteColor,DX,CX
-                    
+                    drawQueen AL, xOffset, yOffset, 34, blackColor, innerColor
+                    JMP finCircle0
+                        
                 finCircle0:
                 PopReg
                 
@@ -320,6 +337,7 @@
                 JNZ Line0
             ADD CX, 34
             MOV DX, 16
+            ADD DX,yOffset
             MOV BX, 5
             Line1:
                 PushReg
@@ -331,8 +349,19 @@
                     JMP finCircle1
                 white1:
                     CMP AL,'w'
+                    JNE blackqueen1
+                    drawCircle whiteColor,DX,CX 
+                    JMP finCircle1
+                blackqueen1:
+                    CMP AL,'B'
+                    JNE whitequeen1
+                    MOV AX,SI
+                    drawQueen AL, xOffset, yOffset, 34, blackColor, innerColor
+                    JMP finCircle1
+                whitequeen1:
+                    CMP AL,'W'
                     JNE finCircle1
-                    drawCircle whiteColor,DX,CX
+                    drawQueen AL, xOffset, yOffset, 34, blackColor, innerColor
                     
                 finCircle1:
                 PopReg
@@ -344,6 +373,7 @@
                 JNZ Line1
             ADD CX, 34
             MOV DX, 52
+            ADD DX,yOffset
             MOV BX, 5
             Line2:
                 PushReg
@@ -355,8 +385,19 @@
                     JMP finCircle2
                 white2:
                     CMP AL,'w'
-                    JNE finCircle2
+                    JNE blackqueen2
                     drawCircle whiteColor,DX,CX
+                    JMP finCircle2
+                blackqueen2:
+                    CMP AL,'B'
+                    JNE whitequeen2
+                    MOV AX,SI
+                    drawQueen AL, xOffset, yOffset, 34, blackColor, innerColor
+                    JMP finCircle2
+                whitequeen2:
+                    CMP AL,'W'
+                    JNE finCircle2
+                    drawQueen AL, xOffset, yOffset, 34, blackColor, innerColor
                     
                 finCircle2:
                 PopReg
@@ -367,6 +408,7 @@
                 JNZ Line2    
             ADD CX, 34
             MOV DX, 16
+            ADD DX,yOffset
             MOV BX, 5
             Line3:
                 PushReg
@@ -378,8 +420,19 @@
                     JMP finCircle3
                 white3:
                     CMP AL,'w'
+                    JNE blackqueen3
+                    drawCircle whiteColor,DX,CX 
+                    JMP finCircle3
+                blackqueen3:
+                    CMP AL,'B'
+                    JNE whitequeen3
+                    MOV AX,SI
+                    drawQueen AL, xOffset, yOffset, 34, blackColor, innerColor 
+                    JMP finCircle3
+                whitequeen3:
+                    CMP AL,'W'
                     JNE finCircle3
-                    drawCircle whiteColor,DX,CX
+                    drawQueen AL, xOffset, yOffset, 34, blackColor, innerColor
                     
                 finCircle3:
                 PopReg
@@ -390,6 +443,7 @@
                 JNZ Line3
             ADD CX, 34
             MOV DX,52
+            ADD DX,yOffset
             MOV BX,5
             Line4:
                 PushReg
@@ -401,8 +455,19 @@
                     JMP finCircle4
                 white4:
                     CMP AL,'w'
+                    JNE blackqueen4
+                    drawCircle whiteColor,DX,CX 
+                    JMP finCircle4
+                blackqueen4:
+                    CMP AL,'B'
+                    JNE whitequeen4
+                    MOV AX,SI
+                    drawQueen AL, xOffset, yOffset, 34, blackColor, innerColor 
+                    JMP finCircle4
+                whitequeen4:
+                    CMP AL,'W'
                     JNE finCircle4
-                    drawCircle whiteColor,DX,CX
+                    drawQueen AL, xOffset, yOffset, 34, blackColor, innerColor
                     
                 finCircle4:
                 PopReg
@@ -413,6 +478,7 @@
                 JNZ Line4 
             ADD CX, 34
             MOV DX, 16
+            ADD DX,yOffset
             MOV BX, 5           
             Line5:
                 PushReg
@@ -424,8 +490,19 @@
                     JMP finCircle5
                 white5:
                     CMP AL,'w'
+                    JNE blackqueen5
+                    drawCircle whiteColor,DX,CX 
+                    JMP finCircle5
+                blackqueen5:
+                    CMP AL,'B'
+                    JNE whitequeen5
+                    MOV AX,SI
+                    drawQueen AL, xOffset, yOffset, 34, blackColor, innerColor
+                    JMP finCircle5
+                whitequeen5:
+                    CMP AL,'W'
                     JNE finCircle5
-                    drawCircle whiteColor,DX,CX
+                    drawQueen AL, xOffset, yOffset, 34, blackColor, innerColor
                     
                 finCircle5:
                 PopReg
@@ -436,6 +513,7 @@
                 JNZ Line5
             ADD CX, 34
             MOV DX,52
+            ADD DX,yOffset
             MOV BX,5
             Line6:
                 PushReg
@@ -447,8 +525,19 @@
                     JMP finCircle6
                 white6:
                     CMP AL,'w'
-                    JNE finCircle6
+                    JNE blackqueen6
                     drawCircle whiteColor,DX,CX
+                    JMP finCircle6
+                blackqueen6:
+                    CMP AL,'B'
+                    JNE whitequeen6
+                    MOV AX,SI
+                    drawQueen AL, xOffset, yOffset, 34, blackColor, innerColor 
+                    JMP finCircle6
+                whitequeen6:
+                    CMP AL,'W'
+                    JNE finCircle6
+                    drawQueen AL, xOffset, yOffset, 34, blackColor, innerColor
                     
                 finCircle6:
                 PopReg
@@ -459,6 +548,7 @@
                 JNZ Line6
             ADD CX, 34
             MOV DX, 16
+            ADD DX,yOffset
             MOV BX, 5
             Line7:
                 PushReg
@@ -470,8 +560,19 @@
                     JMP finCircle7
                 white7:
                     CMP AL,'w'
+                    JNE blackqueen7
+                    drawCircle whiteColor,DX,CX  
+                    JMP finCircle7
+                blackqueen7:
+                    CMP AL,'B'
+                    JNE whitequeen7
+                    MOV AX,SI
+                    drawQueen AL, xOffset, yOffset, 34, blackColor, innerColor 
+                    JMP finCircle7
+                whitequeen7:
+                    CMP AL,'W'
                     JNE finCircle7
-                    drawCircle whiteColor,DX,CX
+                    drawQueen AL, xOffset, yOffset, 34, blackColor, innerColor
                     
                 finCircle7:
                 PopReg
@@ -482,6 +583,7 @@
                 JNZ Line7
             ADD CX, 34
             MOV DX, 52
+            ADD DX,yOffset
             MOV BX, 5
             Line8:
                 PushReg
@@ -493,8 +595,19 @@
                     JMP finCircle8
                 white8:
                     CMP AL,'w'
-                    JNE finCircle8
+                    JNE blackqueen8
                     drawCircle whiteColor,DX,CX
+                    JMP finCircle8
+                blackqueen8:
+                    CMP AL,'B'
+                    JNE whitequeen8
+                    MOV AX,SI
+                    drawQueen AL, xOffset, yOffset, 34, blackColor, innerColor
+                    JMP finCircle8
+                whitequeen8:
+                    CMP AL,'W'
+                    JNE finCircle8
+                    drawQueen AL, xOffset, yOffset, 34, blackColor, innerColor
                     
                 finCircle8:
                 PopReg
@@ -505,6 +618,7 @@
                 JNZ Line8    
             ADD CX, 34
             MOV DX, 16
+            ADD DX,yOffset
             MOV BX, 5
             Line9:
                 PushReg
@@ -516,8 +630,19 @@
                     JMP finCircle9
                 white9:
                     CMP AL,'w'
-                    JNE finCircle9
+                    JNE blackqueen9
                     drawCircle whiteColor,DX,CX
+                    JMP finCircle9
+                blackqueen9:
+                    CMP AL,'B'
+                    JNE whitequeen9
+                    MOV AX,SI
+                    drawQueen AL, xOffset, yOffset, 34, blackColor, innerColor
+                    JMP finCircle9
+                whitequeen9:
+                    CMP AL,'W'
+                    JNE finCircle9
+                    drawQueen AL, xOffset, yOffset, 34, blackColor, innerColor
                     
                 finCircle9:
                 PopReg
@@ -739,7 +864,7 @@
         MOV AX, 0012h
         INT 10h
         
-        Board_init_GUI board,04h,00h
+        Board_init_GUI Board,whiteColor,blackColor,innerColor,xOffset,yOffset
 
              
         MOV AX, 4C00h
