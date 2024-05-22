@@ -206,9 +206,9 @@
                 CMP AX, 0003h   ; exit
                 JZ main_endLabel
             JMP startClicked    ; If none of these cases, then it is restart
-        
+
         main_endLabel:
-        
+
         MOV AX, 0010h
         INT 10h
 
