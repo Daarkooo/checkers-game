@@ -784,4 +784,41 @@
             DEC CX
             JMP lab3
         endL:
+
+    ENDM
+
+    incScore MACRO turn
+        CMP turn, 'w'
+        JZ incScore_white
+        
+        incScore_black:
+        MOV AL, blackPlayer_score
+        INC AL
+        MOV blackPlayer_score, AL
+
+        JMP incScore_end
+
+        incScore_white:
+        MOV AL, whitePlayer_score
+        INC AL
+        MOV whitePlayer_score, AL
+        
+        incScore_end:
+    ENDM
+
+    check_state_game MACRO IndMoves, directMoves, winner ; if winner = 1 -> the opponent is the winner
+        LOCAL continue, end
+        
+        CMP IndMoves[0], 0
+        JNE continue
+            CMP directMoves[0], 0
+            JNE continue
+                MOV AL, 1
+                MOV winner, AL
+                JMP end
+        continue:
+            MOV AL, 0
+            MOV winner, AL    
+        end:
+
     ENDM
