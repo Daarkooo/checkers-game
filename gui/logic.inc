@@ -27,6 +27,7 @@
     msg_result DB "result: $"
     winner DB ?
     valid DB ?
+    boolProm DB ?
 
     ; isValid     DB      ?
     ; count       DB      0
@@ -727,7 +728,7 @@ show_path_dame MACRO board,i1,j1,turn1,dameMoves,dameIndMoves,pawn_position,makl
     MOV makla4,AL ; <- (-1)
 
     get_cell_state board, i, j, color, typePawn
-     MOV AL, typePawn
+    MOV AL, typePawn
     CMP AL, 1  ; to make the move -> 'w'='w' / 'b'='b' else impossible_move
     JE continue1
         JMP end
@@ -866,6 +867,8 @@ show_path_dame MACRO board,i1,j1,turn1,dameMoves,dameIndMoves,pawn_position,makl
         MOV AL, 'y'
         MOV isDirect, AL
     end1:
+    ; MOV AL,1
+    ; MOV typePawn,AL
 ENDM
 
 
@@ -964,6 +967,48 @@ save_dame_makla MACRO n
 
 ENDM    
 
+;-----promotion-----------
+promotion Macro dest,turn,boolProm
+    LOCAL blackSide,restB,whiteSide,endPionPromoted
+
+
+    XOR BX,BX
+    MOV BL,dest 
+    DEC BL
+    MOV DI,BX
+    MOV boolProm,0
+    blackSide:
+        CMP turn,'b'
+        JE restB
+        JMP whiteSide
+
+        restB:
+        get_row dest ,i
+        CMP i,9
+        JNE endPionPromoted
+        MOV board[DI],'B'
+        MOV boolProm,1
+
+        ; XOR AX,AX
+        ; MOV AL,dest
+        ; call liveUsage
+
+        JMP endPionPromoted
+    whiteSide:
+
+        get_row dest ,i
+        CMP i,0
+        JNE endPionPromoted
+        MOV board[DI],'W'
+        MOV boolProm,1
+
+        ; XOR AX,AX
+        ; MOV AL,dest
+        ; call liveUsage
+
+    endPionPromoted:
+
+ENDM
 
 ;-----switch_turn--------------------------------
 switch_turn MACRO turn

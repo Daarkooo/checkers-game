@@ -448,87 +448,7 @@
 	__drawCircle28 ENDP
 
 
-    ; ;! ALL PARAMETRES EXCEPT 'cellNumber' ARE 16-BITS
-    ; __drawQueen PROC ; cellNumber, xOffset, yOffset, cellSize, outerColor, innerColor
-    ;     PUSH BP
-    ;     MOV BP, SP
-    ;     SUB SP, 4
-
-    ;     ; * [BP +  4]: innerColor
-    ;     ; * [BP +  6]: outerColor
-    ;     ; * [BP +  8]: cellSize
-    ;     ; * [BP + 10]: yOffset
-    ;     ; * [BP + 12]: xOffset
-    ;     ; * [BP + 14]: cellNumber
-
-    ;     ; * [BP -  2]: real X (columns in px)
-    ;     ; * [BP -  4]: real Y (row in px)
-
-    ;     MOV AX, [BP + 14]
-    ;     get_column AL, AL       ; send N in AL and get the column in AL
-    ;     XOR AH, AH
-    ;     XOR DX, DX
-    ;     MOV BX, [BP + 8]
-    ;     MUL BX
-    ;     ADD AX, [BP + 12]
-    ;     MOV [BP - 2], AX
-
-    ;     MOV BX, [BP + 14]
-    ;     getRow BL, AL       ; send N in AL and get the column in AL
-    ;     XOR AH, AH
-    ;     XOR DX, DX
-    ;     MOV BX, [BP + 8]
-    ;     MUL BX
-    ;     ADD AX, [BP + 10]
-    ;     MOV [BP - 4], AX
-
-    ;     ; Get the center
-    ;     MOV CX, [BP + 8]
-    ;     SHR CX, 1
-    ;     ADD [BP - 4], CX
-    ;     ADD [BP - 2], CX
-
-    ;     MOV AX, [BP + 6]
-    ;     MOV CX, [BP - 2]
-    ;     MOV DX, [BP - 4]
-    ;     drawCircle AX, CX, DX
-
-    ;     MOV AX, [BP + 4]
-    ;     MOV CX, [BP - 2]
-    ;     MOV DX, [BP - 4]
-    ;     drawCircle14 AX, CX, DX
-
-    ;     MOV SP, BP
-    ;     POP BP
-    ;     RET 12
-    ; __drawQueen ENDP
-
-    ; drawQueen MACRO cellNumber, xOffset, yOffset, cellSize, outerColor, innerColor
-    ;     pushReg
-
-    ;     XOR AX, AX
-    ;     MOV AL, cellNumber
-    ;     PUSH AX
-
-    ;     MOV AX, xOffset
-    ;     PUSH AX
-
-    ;     MOV AX, yOffset
-    ;     PUSH AX
-
-    ;     MOV AX, cellSize
-    ;     PUSH AX
-
-    ;     MOV AX, outerColor
-    ;     PUSH AX
-
-    ;     MOV AX, innerColor
-    ;     PUSH AX
-
-    ;     CALL __drawQueen
-
-    ;     popReg
-    ; ENDM
+    ;! ALL PARAMETRES EXCEPT 'cellNumber' ARE 16-BITS
 
 
 	drawCircle MACRO color, initialX, initialY
@@ -1361,57 +1281,101 @@
             PUSH CX
             PUSH DX
 
-            ; cmp typePawn,1
-            ; JE dame
+            cmp typePawn,1
+            JE damee
                 drawCircle PColor, DX,CX
-            ; JMP next45
-            ; dame:
-            ;     drawQueen n2, offsetX,  offsetY, cel, DX, CX        cellNumber, xOffset, yOffset, cellSize, outerColor, innerColor
-            ; next45:
+            JMP next45
+            damee: 
+                drawQueen n2, 0,  0, 34, PColor, 000Eh       ;cellNumber, xOffset, yOffset, cellSize, outerColor, innerColor
+            next45: 
             POP DX
             POP CX
 
             setMousePosition DX, CX
     ENDM
 
+    __drawQueen PROC ; cellNumber, xOffset, yOffset, cellSize, outerColor, innerColor
+        PUSH BP
+        MOV BP, SP
+        SUB SP, 4
+
+        ; * [BP +  4]: innerColor
+        ; * [BP +  6]: outerColor
+        ; * [BP +  8]: cellSize
+        ; * [BP + 10]: yOffset
+        ; * [BP + 12]: xOffset
+        ; * [BP + 14]: cellNumber
+
+        ; * [BP -  2]: real X (columns in px)
+        ; * [BP -  4]: real Y (row in px)
+
+        MOV AX, [BP + 14]
+        get_column AL, AL       ; send N in AL and get the column in AL
+        XOR AH, AH
+        XOR DX, DX
+        MOV BX, [BP + 8]
+        MUL BX
+        ADD AX, [BP + 12]
+        MOV [BP - 2], AX
+
+        MOV BX, [BP + 14]
+        getRow BL, AL       ; send N in AL and get the column in AL
+        XOR AH, AH
+        XOR DX, DX
+        MOV BX, [BP + 8]
+        MUL BX
+        ADD AX, [BP + 10]
+        MOV [BP - 4], AX
+
+        ; Get the center
+        MOV CX, [BP + 8]
+        SHR CX, 1
+        ADD [BP - 4], CX
+        ADD [BP - 2], CX
+
+        MOV AX, [BP + 6]
+        MOV CX, [BP - 2]
+        MOV DX, [BP - 4]
+        drawCircle AX, CX, DX
+
+        MOV AX, [BP + 4]
+        MOV CX, [BP - 2]
+        MOV DX, [BP - 4]
+        drawCircle14 AX, CX, DX
+
+        MOV SP, BP
+        POP BP
+        RET 12
+    __drawQueen ENDP
+
+    drawQueen MACRO cellNumber, xOffset, yOffset, cellSize, outerColor, innerColor
+        pushReg
+
+        XOR AX, AX
+        MOV AL, cellNumber
+        PUSH AX
+
+        MOV AX, xOffset
+        PUSH AX
+
+        MOV AX, yOffset
+        PUSH AX
+
+        MOV AX, cellSize
+        PUSH AX
+
+        MOV AX, outerColor
+        PUSH AX
+
+        MOV AX, innerColor
+        PUSH AX
+
+        CALL __drawQueen
+
+        popReg
+    ENDM
+
     Time Macro
         mov ah, 00h
         int 16h
     ENDM
-
-
-    ;?sound effect:start
-    sound_effect PROC NEAR
-        ; Set up the tone parameters
-        mov al, 0B6h    ; Set timer 2 mode (square wave generator)
-        out 43h, al     ; Send mode command to timer 2
-        mov ax, 0E9C4h  ; Set the frequency (adjust this for different tones)
-        out 42h, al     ; Send low byte of frequency
-        mov al, ah
-        out 42h, al     ; Send high byte of frequency
-
-        ; Enable speaker output
-        in al, 61h      ; Read current value from port 61h
-        or al, 3        ; Set bits 0 and 1 to enable speaker (bits 0 and 1)
-        out 61h, al     ; Send the new value to port 61h
-
-        ; Wait a bit for the sound to play
-        mov cx, 0FFFFh   ; Adjust this delay for longer or shorter beeps
-        delay_loop:
-        loop delay_loop
-
-        ; Disable speaker output
-        in al, 61h      ; Read current value from port 61h
-        and al, 0FCh    ; Clear bits 0 and 1 to disable speaker (bits 0 and 1)
-        out 61h, al     ; Send the new value to port 61h
-
-        RET
-    sound_effect ENDP
-
-    soundEffect PROC NEAR
-        call sound_effect
-        call sound_effect
-        ; call sound_effect
-    RET
-    soundEffect ENDP
-    ;?sound effect:end

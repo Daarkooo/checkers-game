@@ -51,17 +51,17 @@
         MOV BP, SP
 
         ; set up video mode
-        MOV AX, 0010h   ; 640x350 16 colors
-        INT 10h
+        ; MOV AX, 0010h   ; 640x350 16 colors
+        ; INT 10h
 
-        setupMouse 0, 0, 0, 0, 637, 347
+        ; setupMouse 0, 0, 0, 0, 637, 347
 
-        CALL graphicalMenu
+        ; CALL graphicalMenu
 
-        CMP AX, 1
-        JZ startClicked
-            JMP main_endLabel
-        startClicked:
+        ; CMP AX, 1
+        ; JZ startClicked
+        ;     JMP main_endLabel
+        ; startClicked:
 
         ; Clear screen by re-setting video mode
         MOV AX, 0010h   ; 640x350 16 colors
@@ -94,15 +94,15 @@
                 ; JE continue
                 ;     JMP reselect
                 ; continue:
-                ; MOV x1,DL
-                ; MOV y1,CL
-                PUSH DX
-                PUSH CX
+                MOV x1,DL
+                MOV y1,CL
 
-                show_path board,DL,CL,turn,path1,path2,source_pawn,makla1,makla2
+                show_path board,x1,y1,turn,path1,path2,source_pawn,makla1,makla2
 
                 CMP typePawn,0
                 JE pawn
+                    ; PUSH DX
+                    ; PUSH CX
                     JMP dame
                 pawn:
                 ; XOR AX,AX
@@ -133,12 +133,19 @@
                 JMP reselect
 
                 dame:
-                POP CX
-                POP DX
-               show_path_dame board,DL,CL,turn,dameMoves,dameIndMoves,source_pawn,makla1,makla2,makla3,makla4 
+                ; POP CX
+                ; POP DX
+               show_path_dame board,x1,y1,turn,dameMoves,dameIndMoves,source_pawn,makla1,makla2,makla3,makla4 
                 
                 MOV AL, isDirect
                 MOV check_direct, AL
+
+                CMP typePawn,1
+                JE  continue1
+                    ; PUSH DX
+                    ; PUSH CX
+                    JMP pawn
+                continue1:
 
                 MOV AL,0
                 LEA BX, dameIndMoves
@@ -182,10 +189,23 @@
                 pawn1:
                 
                 move_pawn board,DL,CL,path1,path2,source_pawn,makla1,makla2,dest
-                JMP check
+
+                
+
+                promotion dest,turn,boolProm
+                CMP boolProm,1
+                JE next_promo
+                    JMP check
+                    next_promo:
+                    mark_cell_method 06h
+                        ; MOV AL,1
+                    MOV typePawn,1
+                    JMP promo
+
+                ; JMP check
                 dame1:
                 
-            move_dame board,DL,CL,dameMoves,dameIndMoves,source_pawn,makla1,madkla2, makla3, makla4,dest
+                move_dame board,DL,CL,dameMoves,dameIndMoves,source_pawn,makla1,makla2, makla3, makla4,dest
                 
                 ; CMP maklaSif, 1
                 ; JE checkMove
@@ -224,11 +244,10 @@
             mark_cell_method 06h
             
             ; call liveUsage
+            promo:
 
             drawBorderCell source_pawn, 06h, 0, 0, 34 
             
-            CALL soundEffect
-
             Move_GUI source_pawn,dest,PColor ; isDirect <- board[x,y] if the move is valid
             ; CALL liveUsage
             ; XOR AX,AX
