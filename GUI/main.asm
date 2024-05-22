@@ -10,8 +10,8 @@
 
     blackCell       DW      0006h ; brown
     whiteCell       DW      000Fh ; white
-    blackPiece      DW      0001h ; blue
-    whitePiece      DW      0000h ; black
+    blackPiece      DW      0000h ; blue
+    whitePiece      DW      000Fh ; black
 
     PColor          DW      ?
     source_pawn     DB      ?
@@ -42,6 +42,12 @@
         MOV AX, 0010h   ; 640x350 16 colors
         INT 10h
 
+        CALL drawLogo
+
+        ; set up video mode
+        MOV AX, 0010h   ; 640x350 16 colors
+        INT 10h
+
         setupMouse 0, 0, 0, 0, 637, 347
 
         CALL graphicalMenu
@@ -50,6 +56,7 @@
         JZ startClicked
         JMP main_endLabel
         startClicked:
+        board_init board
 
         ; Clear screen by re-setting video mode
         MOV AX, 0010h   ; 640x350 16 colors
@@ -62,6 +69,13 @@
 
         play:
             show_moves turn, board, IndMoves, directMoves
+
+            check_state_game IndMoves, directMoves, AL
+            CMP AL, 0
+            JNZ MAIN_continueGame
+            JMP MAIN_gameEnd
+            MAIN_continueGame:
+
             draw_borders IndMoves, directMoves, 0Ah
 
             reselect:
@@ -76,7 +90,7 @@
                 MAIN_RESIGN1:
                     CMP AX, 0002h
                     JNZ MAIN_QUIT1
-                JMP main_endLabel
+                JMP MAIN_gameEnd
 
                 MAIN_QUIT1:
                     CMP AX, 0003h
@@ -129,7 +143,7 @@
                 MAIN_RESIGN2:
                     CMP AX, 0002h
                     JNZ MAIN_QUIT2
-                JMP main_endLabel
+                JMP MAIN_gameEnd
 
                 MAIN_QUIT2:
                     CMP AX, 0003h
@@ -154,6 +168,7 @@
             markCell blackCell, offsetX, offsetY, cellSize, BX
 
             switch_turn turn ; make it here to change the color of the pawns (depends on player's turn)
+            switchTurnString turn
 
             drawBorderCell source_pawn, blackCell, offsetX, offsetY, cellSize
 
@@ -161,7 +176,41 @@
             CALL soundEffect
         JMP play
 
+        MAIN_gameEnd:
+            pushMousePosition
+            setMousePosition 0, 0
+
+            printGraphicalString resign, 0FFh, 26, 21
+            drawBackGround 189, 283, 84, 36, 02h
+            drawBackGround 194, 288, 74, 26, 00h
+            printGraphicalString restart, 0FFh, 25, 21
+
+            popMousePosition
+
+            printGraphicalString whitePlayer_score,0FFh,24,3
+            printGraphicalString blackPlayer_score,0FFh,30,3
+
+            incScore turn
+
+            printGraphicalString whitePlayer_score,0FFh,24,3
+            printGraphicalString blackPlayer_score,0FFh,30,3
+
+            LEA AX, getOptionClickedInGame
+            awaitMouseClick AX, offsetX, offsetY, cellSize
+
+            reselect3:
+                CMP AX, 0000h   ; nothing
+                JZ reselect3
+                CMP AX, 0001h   ; board (nothing in this case)
+                JZ reselect3
+                CMP AX, 0003h   ; exit
+                JZ main_endLabel
+            JMP startClicked    ; If none of these cases, then it is restart
+        
         main_endLabel:
+        
+        MOV AX, 0010h
+        INT 10h
 
         POP BP
         MOV AX, 4C00h
