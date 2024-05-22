@@ -784,6 +784,7 @@
             DEC CX
             JMP lab3
         endL:
+
     ENDM
 
     incScore MACRO turn
@@ -819,4 +820,5 @@
             MOV AL, 0
             MOV winner, AL    
         end:
+
     ENDM

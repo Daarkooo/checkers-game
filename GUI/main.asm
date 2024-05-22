@@ -10,8 +10,10 @@
 
     blackCell       DW      0006h ; brown
     whiteCell       DW      000Fh ; white
+
     blackPiece      DW      0000h ; blue
     whitePiece      DW      000Fh ; black
+
 
     PColor          DW      ?
     source_pawn     DB      ?
@@ -56,7 +58,9 @@
         JZ startClicked
         JMP main_endLabel
         startClicked:
+
         board_init board
+
 
         ; Clear screen by re-setting video mode
         MOV AX, 0010h   ; 640x350 16 colors
@@ -76,6 +80,7 @@
             JMP MAIN_gameEnd
             MAIN_continueGame:
 
+
             draw_borders IndMoves, directMoves, 0Ah
 
             reselect:
@@ -90,7 +95,9 @@
                 MAIN_RESIGN1:
                     CMP AX, 0002h
                     JNZ MAIN_QUIT1
+
                 JMP MAIN_gameEnd
+
 
                 MAIN_QUIT1:
                     CMP AX, 0003h
@@ -145,6 +152,7 @@
                     JNZ MAIN_QUIT2
                 JMP MAIN_gameEnd
 
+
                 MAIN_QUIT2:
                     CMP AX, 0003h
                     JNZ MAIN_BOARD2
@@ -168,13 +176,16 @@
             markCell blackCell, offsetX, offsetY, cellSize, BX
 
             switch_turn turn ; make it here to change the color of the pawns (depends on player's turn)
+
             switchTurnString turn
+
 
             drawBorderCell source_pawn, blackCell, offsetX, offsetY, cellSize
 
             Move_GUI source_pawn,isDirect,PColor ; isDirect <- board[x,y] if the move is valid
             CALL soundEffect
         JMP play
+
 
         MAIN_gameEnd:
             pushMousePosition
@@ -211,6 +222,7 @@
         
         MOV AX, 0010h
         INT 10h
+
 
         POP BP
         MOV AX, 4C00h

@@ -11,11 +11,13 @@
     ;?menu vars:start
         whitePlayer             db      'White$'
         blackPlayer             db      'Black$'
+
         whitePlayer_score       db      '0$'
         blackPlayer_score       db      '0$'
         resign                  db      'Resign$'
         quit                    db      'Quit$'
         restart                 db      'Restart$'
+
         scoreWord               db      'Score:$'
     ;todo text background vars :start
         backGround_x            dw      0
@@ -1240,6 +1242,7 @@
         ADD CX, 17
 
         Black:
+        
             MOV DX,51
             ADD DX,Offsetx
             MOV BX,5
@@ -1631,7 +1634,9 @@
         ;!turn :start
         drawBackGround 115,154,86,36,04h
 
+
         cmp turn, 'b'
+
         je handleBlackTurn
         
         drawBackGround 120,159,76,26,0Fh
@@ -1738,6 +1743,7 @@
         RET
     drawLogo ENDP
 
+
     ;!switch turn text:start
     switchTurnString MACRO flag
         LOCAL is_white_turn, the_end
@@ -1753,3 +1759,4 @@
         the_end:
     ENDM
     ;!switch turn text:end
+
