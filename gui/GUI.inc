@@ -994,34 +994,34 @@
                 DEC BX
                 CMP BX,0
                 JNZ Line0
-            ; ADD CX, 34
-            ; MOV DX, 17
-            ; ADD DX,Offsetx
-            ; MOV BX, 5
-            ; Line1:
-            ;     PushReg
-            ;     drawCircle blackPieceColor,DX,CX
-            ;     PopReg
-            ;     ADD DX,68 ; 2 CASES
-            ;     DEC BX
-            ;     CMP BX,0
-            ;     JNZ Line1
-            ; ADD CX, 34
-            ; MOV DX, 51
-            ; ADD DX,Offsetx
-            ; MOV BX, 5
-            ; Line2:
-            ;     PushReg
-            ;     drawCircle blackPieceColor,DX,CX
-            ;     PopReg
-            ;     ADD DX,68 ; 2 CASES
-            ;     DEC BX
-            ;     CMP BX,0
-            ;     JNZ Line2
-            ; ADD CX, 34
-            ; MOV DX, 16
-            ; ADD DX,Offsetx
-            ; MOV BX, 5
+            ADD CX, 34
+            MOV DX, 17
+            ADD DX,Offsetx
+            MOV BX, 5
+            Line1:
+                PushReg
+                drawCircle blackPieceColor,DX,CX
+                PopReg
+                ADD DX,68 ; 2 CASES
+                DEC BX
+                CMP BX,0
+                JNZ Line1
+            ADD CX, 34
+            MOV DX, 51
+            ADD DX,Offsetx
+            MOV BX, 5
+            Line2:
+                PushReg
+                drawCircle blackPieceColor,DX,CX
+                PopReg
+                ADD DX,68 ; 2 CASES
+                DEC BX
+                CMP BX,0
+                JNZ Line2
+            ADD CX, 34
+            MOV DX, 16
+            ADD DX,Offsetx
+            MOV BX, 5
             ; Line3:
             ;     PushReg
             ;     drawCircle blackPieceColor,DX,CX
@@ -1031,7 +1031,7 @@
             ;     CMP BX,0
             ;     JNZ Line3
 
-            ADD CX, 306 ; JUMP TO WHITE PART ;102
+            ADD CX, 238 ; JUMP TO WHITE PART ;102
          White:
 
             ; MOV DX,51
@@ -1045,7 +1045,7 @@
             ;     DEC BX
             ;     CMP BX,0
             ;     JNZ Line6
-            ; ADD CX, 34
+            ADD CX, 34
             MOV DX, 17
             ADD DX,Offsetx
             MOV BX, 5
@@ -1057,30 +1057,30 @@
                 DEC BX
                 CMP BX,0
                 JNZ Line7
-            ; ADD CX, 34
-            ; MOV DX, 51
-            ; ADD DX,Offsetx
-            ; MOV BX, 5
-            ; Line8:
-            ;     PushReg
-            ;     drawCircle whitePieceColor,DX,CX
-            ;     PopReg
-            ;     ADD DX,68 ; 2 CASES
-            ;     DEC BX
-            ;     CMP BX,0
-            ;     JNZ Line8
-            ; ADD CX, 34
-            ; MOV DX, 17
-            ; ADD DX,Offsetx
-            ; MOV BX, 5
-            ; Line9:
-            ;     PushReg
-            ;     drawCircle whitePieceColor,DX,CX
-            ;     PopReg
-            ;     ADD DX,68 ; 2 CASES
-            ;     DEC BX
-            ;     CMP BX,0
-            ;     JNZ Line9
+            ADD CX, 34
+            MOV DX, 51
+            ADD DX,Offsetx
+            MOV BX, 5
+            Line8:
+                PushReg
+                drawCircle whitePieceColor,DX,CX
+                PopReg
+                ADD DX,68 ; 2 CASES
+                DEC BX
+                CMP BX,0
+                JNZ Line8
+            ADD CX, 34
+            MOV DX, 17
+            ADD DX,Offsetx
+            MOV BX, 5
+            Line9:
+                PushReg
+                drawCircle whitePieceColor,DX,CX
+                PopReg
+                ADD DX,68 ; 2 CASES
+                DEC BX
+                CMP BX,0
+                JNZ Line9
     ENDM
 
     getRow MACRO Num, result

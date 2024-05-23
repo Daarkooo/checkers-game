@@ -604,7 +604,7 @@ ENDM
 
 ;------show_path----------
 show_path MACRO board,i1,j1,turn1,path1,path2,pawn_position,makla1,makla2
-    LOCAL end, next, next1, not_verified, not_verified1, not_verified2,  down, down1, label1, label2, label3, continue
+    LOCAL end, next, next1, not_verified, not_verified1, not_verified2,  down, down1, label1, label2, label3, continue, continue1
     
     set_show_values i1,j1,turn1
 
@@ -662,10 +662,19 @@ show_path MACRO board,i1,j1,turn1,path1,path2,pawn_position,makla1,makla2
     CMP bool,1
     JNE label1 ; if there's a move in indirect, isDirect'll return maklaNum -> isDirect != 'n'
         MOV bool,0
+        CMP maklaSif, 1
+        JE continue1
+            CMP makla1, -1
+            JE label1
+            CMP makla2, -1
+            JE label1
+        continue1:
         MOV AL,'n' ; not direct 
         MOV isDirect,AL
         JMP end
     label1:
+
+    
 
     ;---------DIRECT----------------
     MOV BH,i

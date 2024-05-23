@@ -4,10 +4,11 @@
 
 .DATA
     ; board           DB  20 DUP('b'), 10 DUP('0'), 20 DUP('w')
+    board           DB  15 DUP('b'), 20 DUP('0'), 15 DUP('w')
     ; board           DB  18 DUP('b'),'B','B', 10 DUP('0'), 18 DUP('w'),'W','W'
-    board           DB  3 DUP('B'),'b','b', 40 DUP('0'), 3 DUP('W') ,'w','w'
-    directMoves     DB  20 dup(?)
-    IndMoves        DB  20 dup(?)
+    ; board           DB  3 DUP('B'),'b','b', 40 DUP('0'), 2 DUP('W'), 'w','w','w'
+    directMoves     DB  290 dup(?)
+    IndMoves        DB  290 dup(?)
 
 
     blackCell       DW      0006h ; brown
@@ -266,6 +267,11 @@
             ; mov AL,check_direct
             ; call liveUsage 
 
+            CMP boolProm,1
+            JNE check_next
+                JMP next1
+            check_next:
+
             MOV AL,check_direct
             CMP AL, 'n'
             JE next_move
@@ -285,7 +291,7 @@
             ;     nextt1:
                 XOR AX,AX
                 mov al,isDirect
-                    CALL liveUsage
+                    ; CALL liveUsage
                 CMP isDirect, 'n'
                 JE nextt2
                     JMP next1
