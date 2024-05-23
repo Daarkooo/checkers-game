@@ -1489,6 +1489,7 @@ MakeMoveAI MACRO board,path
         MOV AL,board[BX]
         MOV PColor,AL
         MakeAMove board,n1,n2,PColor
+        Move_GUI n1,n2,PColor
         POP BX
         JMP boucle22                
     finMove:
