@@ -3,15 +3,15 @@
 .STACK 100h
 
 .DATA
-    board           DB  20 DUP('b'), 10 DUP('0'), 20 DUP('w')
-    directMoves     DB  20 dup(?)
-    IndMoves        DB  20 dup(?)
+    board           DB      20 DUP('b'), 10 DUP('0'), 20 DUP('w')
+    directMoves     DB      20 dup(?)
+    IndMoves        DB      20 dup(?)
 
 
     blackCell       DW      0006h ; brown
     whiteCell       DW      000Fh ; white
-    blackPiece      DW      0000h ; blue
-    whitePiece      DW      000Fh ; black
+    blackPiece      DW      0001h ; blue
+    whitePiece      DW      0000h ; black
 
     PColor          DW      ?
     source_pawn     DB      ?
@@ -56,6 +56,7 @@
         JZ startClicked
         JMP main_endLabel
         startClicked:
+        MOV turn, 'b'
         board_init board
 
         ; Clear screen by re-setting video mode
@@ -72,7 +73,7 @@
 
             check_state_game IndMoves, directMoves, AL
             CMP AL, 0
-            JNZ MAIN_continueGame
+            JZ MAIN_continueGame
             JMP MAIN_gameEnd
             MAIN_continueGame:
 
@@ -167,18 +168,29 @@
             MOV BL, path2
             markCell blackCell, offsetX, offsetY, cellSize, BX
 
-            switch_turn turn ; make it here to change the color of the pawns (depends on player's turn)
-            switchTurnString turn
-
             drawBorderCell source_pawn, blackCell, offsetX, offsetY, cellSize
 
-            Move_GUI source_pawn,isDirect,PColor ; isDirect <- board[x,y] if the move is valid
             CALL soundEffect
+            switch_turn turn ; make it here to change the color of the pawns (depends on player's turn)
+            Move_GUI source_pawn, isDirect, PColor ; isDirect <- board[x,y] if the move is valid
+            switchTurnString turn
         JMP play
 
         MAIN_gameEnd:
             pushMousePosition
             setMousePosition 0, 0
+
+            drawBackGround 80, 154, 156, 36, 0Eh
+            drawBackGround 85, 159, 146, 26, 00h
+            CMP turn, 'b'
+            JZ MAIN_whiteWin
+            printGraphicalString blackWinMsg, 0FFh, 12, 12
+            JMP MAIN_continueGame1
+
+            MAIN_whiteWin:
+            printGraphicalString whiteWinMsg, 0FFh, 12, 12
+
+            MAIN_continueGame1:
 
             printGraphicalString resign, 0FFh, 26, 21
             drawBackGround 189, 283, 84, 36, 02h

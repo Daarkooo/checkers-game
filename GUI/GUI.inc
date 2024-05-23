@@ -15,7 +15,7 @@
         blackPlayer_score       db      '0$'
         resign                  db      'Resign$'
         quit                    db      'Quit$'
-        restart                 db      'Restart$'
+        restart                 db      'Restart$$'
         scoreWord               db      'Score:$'
     ;todo text background vars :start
         backGround_x            dw      0
@@ -26,6 +26,8 @@
     ;todo text background vars :end
         logoMessage                 DB      "-- PRESS ANY KEY TO CONTINUE --$"
 ;! ***********************************************************************************
+    blackWinMsg                 DB      "BLACK PLAYER WON!$"
+    whiteWinMsg                 DB      "WHITE PLAYER WON!$"
 
 .CODE
     PushReg MACRO
@@ -1598,7 +1600,7 @@
     ;todo draw text backGround :end
 
     duringGameMenu PROC
-        ;!score text:start 
+        ;!score text:start
         drawBackGround 29,31,70,36,04h
         drawBackGround 34,36,60,26,00h
         printGraphicalString scoreWord,0FFh,5,3;!the color of the string will be :Black
@@ -1633,12 +1635,12 @@
 
         cmp turn, 'b'
         je handleBlackTurn
-        
+
         drawBackGround 120,159,76,26,0Fh
         printGraphicalString whitePlayer,0FFh,17,12;
         jmp everyThingIsHandeled
         handleBlackTurn:
-        
+
         drawBackGround 120,159,76,26,00h
         printGraphicalString blackPlayer,0FFh,17,12;
         everyThingIsHandeled:
@@ -1741,7 +1743,7 @@
     ;!switch turn text:start
     switchTurnString MACRO flag
         LOCAL is_white_turn, the_end
-    
+
         cmp flag, 'w'
         je is_white_turn
         printGraphicalString whitePlayer,0FFh,17,12

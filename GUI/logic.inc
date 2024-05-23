@@ -1,6 +1,8 @@
 .model small
 
 .data
+
+;! **********************************************************************
     n1 db ?
     n2 db ?
     i DB ?
@@ -23,6 +25,7 @@
     moves DB 50 dup(?)
     bool DB 0 ; need it in showpaths
     num1 DB ?
+;! **********************************************************************
     msg_result DB "result: $"
 
 .code
@@ -682,6 +685,24 @@
         MOV switcher,AL
     ENDM
 
+    ; switch_turn MACRO myTurn
+    ;     LOCAL switch_turn_blackTurn, switch_turn_end
+
+    ;     CMP myTurn, 'w'
+    ;     JZ switch_turn_blackTurn
+    ;     MOV myTurn, 'w'
+    ;     MOV AX, whitePiece
+    ;     MOV PColor, AX
+    ;     JMP switch_turn_end
+
+    ;     switch_turn_blackTurn:
+    ;     MOV myTurn, 'b'
+    ;     MOV AX, blackPiece
+    ;     MOV PColor, AX
+
+    ;     switch_turn_end:
+    ; ENDM
+
     ;--------draw_borders---------------------
     draw_borders MACRO IndMoves, directMove, color
         LOCAL direct, show_M, show_Mm, end_moves, end_moves, end_moves1
@@ -789,7 +810,7 @@
     incScore MACRO turn
         CMP turn, 'w'
         JZ incScore_white
-        
+
         incScore_black:
         MOV AL, blackPlayer_score
         INC AL
@@ -801,13 +822,13 @@
         MOV AL, whitePlayer_score
         INC AL
         MOV whitePlayer_score, AL
-        
+
         incScore_end:
     ENDM
 
     check_state_game MACRO IndMoves, directMoves, winner ; if winner = 1 -> the opponent is the winner
         LOCAL continue, end
-        
+
         CMP IndMoves[0], 0
         JNE continue
             CMP directMoves[0], 0
@@ -817,6 +838,6 @@
                 JMP end
         continue:
             MOV AL, 0
-            MOV winner, AL    
+            MOV winner, AL
         end:
     ENDM
