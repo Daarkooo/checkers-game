@@ -4,7 +4,7 @@
 
 .DATA
     ; board           DB  20 DUP('b'), 10 DUP('0'), 20 DUP('w')
-    ; board           DB  20 DUP('b'), 10 DUP('0'), 20 DUP('w')
+    ; board           DB  18 DUP('b'),'B','B', 10 DUP('0'), 18 DUP('w'),'W','W'
     board           DB  3 DUP('B'),'b','b', 40 DUP('0'), 3 DUP('W') ,'w','w'
     directMoves     DB  20 dup(?)
     IndMoves        DB  20 dup(?)
@@ -122,10 +122,6 @@
                 JE label2
                     MOV AL,1
                 label2:
-
-                ; CMP AL,1    
-                ; JE next
-                ;     JMP reselect
                 
                 CMP AL,1    
                 JNE labe1
@@ -178,9 +174,11 @@
             reselect2:
                 LEA AX,getCoordsFromMouseClick
                 awaitMouseClick AX,0,0,34 ; CX <- x DX <- y
-                
+
+
                 MOV x1, DL
                 MOV y1, CL
+                
 
                 CMP typePawn,0
                 JE pawn1
@@ -188,6 +186,22 @@
                 pawn1:
                 
                 move_pawn board,x1,y1,path1,path2,source_pawn,makla1,makla2,dest
+                
+                ; MOV AL,0
+                ; CMP path1,-1
+                ; JE labll1
+                ;     MOV AL,1
+                ; labll1:
+
+                ; CMP path2,-1
+                ; JE labll2
+                ;     MOV AL,1
+                ; labll2:
+                
+                ; CMP AL,1    
+                ; JNE dame1
+                ;     JMP next
+                ; labe1:
 
                 ; promotion dest,turn,boolProm
                 ; CMP boolProm,1
@@ -199,7 +213,7 @@
                 ;     MOV typePawn,1
                 ;     JMP promo
 
-                ; JMP check
+                JMP check
                 dame1:
                 
                 move_dame board,x1,y1,dameMoves,dameIndMoves,source_pawn,makla1,makla2, makla3, makla4,dest
@@ -264,12 +278,15 @@
 
             show_path board,x1,y1,turn,path1,path2,source_pawn,makla1,makla2
 
-            CMP check_direct, 'n'
-            JNE nextt1
-                JMP next1
-                nextt1:
+            ; CMP check_direct, 'n'
+            ; JNE nextt1
+            ;     JMP next1
+            ;     nextt1:
+                XOR AX,AX
+                mov al,isDirect
+                    CALL liveUsage
                 CMP isDirect, 'n'
-                JNE nextt2
+                JE nextt2
                     JMP next1
                 nextt2:
                     MOV AL,0
