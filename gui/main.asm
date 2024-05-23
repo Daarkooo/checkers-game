@@ -4,9 +4,9 @@
 
 .DATA
     ; board           DB  20 DUP('b'), 10 DUP('0'), 20 DUP('w')
-    board           DB  15 DUP('b'), 20 DUP('0'), 15 DUP('w')
+    ; board           DB  10 DUP('B'), 25 DUP('0'), 15 DUP('W')
     ; board           DB  18 DUP('b'),'B','B', 10 DUP('0'), 18 DUP('w'),'W','W'
-    ; board           DB  3 DUP('B'),'b','b', 40 DUP('0'), 2 DUP('W'), 'w','w','w'
+    board           DB  2 DUP('B'),'b','b','b', 40 DUP('0'), 2 DUP('W'), 'w','w','w'
     directMoves     DB  290 dup(?)
     IndMoves        DB  290 dup(?)
 
@@ -42,6 +42,7 @@
     INCLUDE print.inc
     INCLUDE logic.inc
     INCLUDE methods.inc
+    INCLUDE sound.inc
 
 .CODE
 
@@ -49,30 +50,40 @@
         MOV AX, @DATA
         MOV DS, AX
         
-        PUSH BP
+         PUSH BP
         MOV BP, SP
 
         ; set up video mode
-        ; MOV AX, 0010h   ; 640x350 16 colors
-        ; INT 10h
+        MOV AX, 0010h   ; 640x350 16 colors
+        INT 10h
 
-        ; setupMouse 0, 0, 0, 0, 637, 347
+        CALL drawLogo
 
-        ; CALL graphicalMenu
+        ; set up video mode
+        MOV AX, 0010h   ; 640x350 16 colors
+        INT 10h
 
-        ; CMP AX, 1
-        ; JZ startClicked
-        ;     JMP main_endLabel
-        ; startClicked:
+        setupMouse 0, 0, 0, 0, 637, 347
+
+        CALL graphicalMenu
+
+        CMP AX, 1
+        JZ startClicked
+        JMP main_endLabel
+        startClicked:
+        MOV turn, 'b'
+        board_init board
 
         ; Clear screen by re-setting video mode
         MOV AX, 0010h   ; 640x350 16 colors
         INT 10h
 
 
-        Board_init_GUI board, blackCell, whiteCell, blackPiece, whitePiece
-
+        Board_init_GUI board, blackCell, whiteCell, blackPiece, whitePiece 
+         CALL duringGameMenu
         setupMouse 500, 270, 0, 0, 637, 347
+        
+
 
         play:
 
@@ -82,20 +93,25 @@
             ; MOV countMoves, AL
             reselect:
                 
-                LEA AX, getCoordsFromMouseClick
-                awaitMouseClick AX,0,0,34 ; CX <- y DX <- x   
-                
-                ; CMP maklaSif, 1
-                ; JE maklaBlock
-                ;     JMP next
-                ; maklaBlock:
+                LEA AX, getOptionClickedInGame
+                awaitMouseClick AX, offsetX, offsetY, cellSize
 
-                ; makla_sif_check IndMoves, bool, isValid
-                
-                ; CMP isValid, 1
-                ; JE continue
-                ;     JMP reselect
-                ; continue:
+                MAIN_NOTHING1:
+                    CMP AX, 0000h
+                    JNZ MAIN_RESIGN1
+                JMP reselect
+
+                MAIN_RESIGN1:
+                    CMP AX, 0002h
+                    JNZ MAIN_QUIT1
+                JMP MAIN_gameEnd
+
+                MAIN_QUIT1:
+                    CMP AX, 0003h
+                    JNZ MAIN_BOARD1
+                JMP main_endLabel
+
+                MAIN_BOARD1:
 
                 MOV x1,DL
                 MOV y1,CL
@@ -164,7 +180,10 @@
             ;draw_borders IndMoves, directMoves, 06h
            
             multi_jumps_lab:
-            drawBorderCell source_pawn, 0Ah, 0, 0, 34 ; green 
+            pushMousePosition
+            setMousePosition 0, 0
+            drawBorderCell source_pawn, 0Ah, offsetX, offsetY, cellSize
+            popMousePosition
 
             
             ; CALL liveUsage
@@ -173,9 +192,25 @@
             
             ; CALL liveUsage
             reselect2:
-                LEA AX,getCoordsFromMouseClick
-                awaitMouseClick AX,0,0,34 ; CX <- x DX <- y
+                 LEA AX,getOptionClickedInGame
+                awaitMouseClick AX, offsetX, offsetY, cellSize ; CX <- xCX <- x DX <- y
 
+                MAIN_NOTHING2:
+                    CMP AX, 0000h
+                    JNZ MAIN_RESIGN2
+                JMP reselect2
+
+                MAIN_RESIGN2:
+                    CMP AX, 0002h
+                    JNZ MAIN_QUIT2
+                JMP MAIN_gameEnd
+
+                MAIN_QUIT2:
+                    CMP AX, 0003h
+                    JNZ MAIN_BOARD2
+                JMP main_endLabel
+
+                MAIN_BOARD2:
 
                 MOV x1, DL
                 MOV y1, CL
@@ -220,21 +255,21 @@
                 
                 move_dame board,x1,y1,dameMoves,dameIndMoves,source_pawn,makla1,makla2, makla3, makla4,dest
                 
-                ; CMP maklaSif, 1
-                ; JE checkMove
-                ;     JMP continue3
-                ; checkMove:    
-                ;     LEA SI, dameIndMoves
-                ;     CMP BYTE PTR [SI+3],0
-                ;     JNE next_move2
-                ;         JMP continue3
-                ;     next_move2:
+                CMP maklaSif, 1
+                JE checkMove
+                    JMP continue3
+                checkMove:    
+                    LEA SI, dameIndMoves
+                    CMP BYTE PTR [SI+3],0
+                    JNE next_move2
+                        JMP continue3
+                    next_move2:
 
-                ;     is_value_in_array x1, y1, dameIndMoves, bool
-                ;     CMP bool, 1
-                ;     JE label3
-                ;         JMP reselect2
-                ; continue3:
+                    is_value_in_array x1, y1, dameIndMoves, bool
+                    CMP bool, 1
+                    JE label3
+                        JMP reselect2
+                continue3:
                 
                 ; XOR AX,AX
                 ; XOR BX,BX
@@ -259,13 +294,16 @@
             ; call liveUsage
             promo:
 
-            drawBorderCell source_pawn, 06h, 0, 0, 34 
+             drawBorderCell source_pawn, blackCell, offsetX, offsetY, cellSize
             
+
             Move_GUI source_pawn,dest,PColor ; isDirect <- board[x,y] if the move is valid
             ; CALL liveUsage
             ; XOR AX,AX
             ; mov AL,check_direct
-            ; call liveUsage 
+            ; call liveUsage
+
+            CALL soundEffect
 
             CMP boolProm,1
             JNE check_next
@@ -278,10 +316,10 @@
                 JMP next1
             next_move:
 
-            CMP typePawn,0
-            JE pawn2
-                JMP dame2
-            pawn2:
+            ; CMP typePawn,0
+            ; JE pawn2
+            ;     JMP dame2
+            ; pawn2:
 
             show_path board,x1,y1,turn,path1,path2,source_pawn,makla1,makla2
 
@@ -313,27 +351,27 @@
                         next11:
                         JMP multi_jumps_lab
                     
-            dame2:
-            show_path_dame board,x1,y1,turn,dameMoves,dameIndMoves,source_pawn,makla1,makla2,makla3,makla4 
+            ; dame2:
+            ; show_path_dame board,x1,y1,turn,dameMoves,dameIndMoves,source_pawn,makla1,makla2,makla3,makla4 
 
-            LEA SI, dameIndMoves
-            CMP BYTE PTR [SI+3],0
-            JNE next_move1
-                JMP next1
-            next_move1:
+            ; LEA SI, dameIndMoves
+            ; CMP BYTE PTR [SI+3],0
+            ; JNE next_move1
+            ;     JMP next1
+            ; next_move1:
                
-                ; MOV AL,countMoves
-                ; CMP AL,0
-                ; JE nextMove
-                ;     is_value_in_array x1, y1, dameIndMoves, bool
-                ;     CMP bool, 1
-                ;     JE nextMove
-                ;         JMP next1
-                ; nextMove:
+            ;     ; MOV AL,countMoves
+            ;     ; CMP AL,0
+            ;     ; JE nextMove
+            ;     ;     is_value_in_array x1, y1, dameIndMoves, bool
+            ;     ;     CMP bool, 1
+            ;     ;     JE nextMove
+            ;     ;         JMP next1
+            ;     ; nextMove:
 
-                ; INC countMoves 
+            ;     ; INC countMoves 
                 
-                JMP multi_jumps_lab
+            ;     JMP multi_jumps_lab
             
             next1:
 
@@ -350,10 +388,53 @@
             
         JMP play
 
+         MAIN_gameEnd:
+            pushMousePosition
+            setMousePosition 0, 0
+
+            drawBackGround 80, 154, 156, 36, 0Eh
+            drawBackGround 85, 159, 146, 26, 00h
+            CMP turn, 'b'
+            JZ MAIN_whiteWin
+            printGraphicalString blackWinMsg, 0FFh, 12, 12
+            JMP MAIN_continueGame1
+
+            MAIN_whiteWin:
+            printGraphicalString whiteWinMsg, 0FFh, 12, 12
+
+            MAIN_continueGame1:
+
+            printGraphicalString resign, 0FFh, 26, 21
+            drawBackGround 189, 283, 84, 36, 02h
+            drawBackGround 194, 288, 74, 26, 00h
+            printGraphicalString restart, 0FFh, 25, 21
+
+            popMousePosition
+
+            printGraphicalString whitePlayer_score,0FFh,24,3
+            printGraphicalString blackPlayer_score,0FFh,30,3
+
+            incScore turn
+
+            printGraphicalString whitePlayer_score,0FFh,24,3
+            printGraphicalString blackPlayer_score,0FFh,30,3
+
+            LEA AX, getOptionClickedInGame
+            awaitMouseClick AX, offsetX, offsetY, cellSize
+
+            reselect3:
+                CMP AX, 0000h   ; nothing
+                JZ reselect3
+                CMP AX, 0001h   ; board (nothing in this case)
+                JZ reselect3
+                CMP AX, 0003h   ; exit
+                JZ main_endLabel
+            JMP startClicked    ; If none of these cases, then it is restart
+
         main_endLabel:
 
-        call liveUsage
-        ; we have a winner 
+        MOV AX, 0010h
+        INT 10h
 
         POP BP
         MOV AX, 4C00h

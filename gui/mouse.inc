@@ -128,8 +128,17 @@
             TEST BL, 1          ; Check if left button is pressed
         JZ __awaitMouseClick_mainLoop
 
-        sleep 0003h, 0D40h
+        __awaitMouseClick_buttonPressed:
+            MOV AX, 6h          ; Function 3: Get mouse position and button status
+            INT 33h             ; Call mouse interrupt
 
+            TEST BL, 1          ; Check if left button is pressed
+        JZ __awaitMouseClick_buttonPressed
+
+        ; sleep 0000h, 0C350h     ; 50000  MicroSecond
+        ; sleep 0001h, 5F90h      ; 90000  MicroSecond
+        ; sleep 0001h, 0ADB0h     ; 110000 MicroSecond
+        
         PUSH CX     ; column (x)
         PUSH DX     ; row (y)
 
@@ -159,7 +168,7 @@
 
     ; For now, this is the event handler to make moves in game
     ; returns x (column) and y (row) in CX and DX, respectively
-    getCoordsFromMouseClick PROC ; xOffset, yOffset, cellSize, xPosition, yPosition
+    __getCoordsFromMouseClick PROC ; xOffset, yOffset, cellSize, xPosition, yPosition
         PUSH BP
         MOV BP, SP
 
@@ -191,7 +200,26 @@
         MOV SP, BP
         POP BP
         RET 10
-    getCoordsFromMouseClick ENDP
+    __getCoordsFromMouseClick ENDP
+
+    getCoordsFromMouseClick MACRO xOffset, yOffset, cellSize, xPosition, yPosition
+        MOV AX, xOffset
+        PUSH AX
+
+        MOV AX, yOffset
+        PUSH AX
+
+        MOV AX, cellSize
+        PUSH AX
+
+        MOV AX, xPosition
+        PUSH AX
+
+        MOV AX, yPosition
+        PUSH AX
+
+        CALL __getCoordsFromMouseClick
+    ENDM
 
     ; For now, this is the event handler that returns which menu button was clicked, returns result in AX
     ; 0: nothing
@@ -379,3 +407,98 @@
         POP BP
         RET 10
     getMenuOptionClicked ENDP
+
+
+    ; For now, this is the event handler that returns what was clicked while inGame, if board was 
+    ; clicked, it returns row & column in DX & CX, respectively
+    ; Returns status code in AX following the following codification:
+    ; 0000h: Nothing
+    ; 0001h: Board (regular move)
+    ; 0002h: Resign
+    ; 0003h: Quit
+    getOptionClickedInGame PROC ; fakeArg1, fakeArg2, fakeArg3, xPosition, yPosition
+        PUSH BP
+        MOV BP, SP
+
+        ; [BP +  4]: yPosition
+        ; [BP +  6]: xPosition
+        ; [BP +  8]: cellSize
+        ; [BP + 10]: offsetY
+        ; [BP + 12]: offsetX
+
+        GOCIG_QUIT_LABEL:
+            CMP WORD PTR [BP + 6], 29
+            JL GOCIG_RESIGN_LABEL
+
+            CMP WORD PTR [BP + 6], 99
+            JG GOCIG_RESIGN_LABEL
+            
+            CMP WORD PTR [BP + 4], 283
+            JL GOCIG_RESIGN_LABEL
+
+            CMP WORD PTR [BP + 4], 319
+            JG GOCIG_RESIGN_LABEL
+
+            MOV AX, 0003h
+        JMP GOCIG_END_LABEL
+
+        GOCIG_RESIGN_LABEL:
+            CMP WORD PTR [BP + 6], 189
+            JL GOCIG_BOARD_LABEL
+
+            CMP WORD PTR [BP + 6], 273
+            JG GOCIG_BOARD_LABEL
+            
+            CMP WORD PTR [BP + 4], 283
+            JL GOCIG_BOARD_LABEL
+
+            CMP WORD PTR [BP + 4], 319
+            JG GOCIG_BOARD_LABEL
+
+            MOV AX, 0002h
+        JMP END_LABEL
+
+        GOCIG_BOARD_LABEL:
+            CMP WORD PTR [BP + 6], offsetX      ; minimum X
+            JL GOCIG_NOTHING_LABEL
+
+            MOV AX, offsetX
+            ADD AX, 340
+            CMP WORD PTR [BP + 6], AX           ; maximum X
+            JG GOCIG_NOTHING_LABEL
+
+            CMP WORD PTR [BP + 4], offsetY      ; minimum Y
+            JL GOCIG_NOTHING_LABEL
+
+            MOV AX, offsetY
+            ADD AX, 340
+            CMP WORD PTR [BP + 4], AX           ; maximum Y
+            JG GOCIG_NOTHING_LABEL
+
+            ; ! ****************************************************************
+            PUSH BX
+            PUSH DI
+
+            MOV AX, [BP + 12]               ; xOffset
+            MOV BX, [BP + 10]               ; yOffset
+            MOV CX, [BP + 8]                ; cellSize
+            MOV DX, [BP + 6]                ; xPosition
+            MOV DI, [BP + 4]                ; yPosition
+            getCoordsFromMouseClick AX, BX, CX, DX, DI
+
+            POP DI
+            POP BX
+            ; ! ****************************************************************
+
+            MOV AX, 0001h
+        JMP GOCIG_END_LABEL
+
+        GOCIG_NOTHING_LABEL:
+            MOV AX, 0000h
+
+        GOCIG_END_LABEL:
+
+        MOV SP, BP
+        POP BP
+        RET 10
+    getOptionClickedInGame ENDP

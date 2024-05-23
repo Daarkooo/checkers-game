@@ -4,15 +4,32 @@
     xArray11        DW      1, 2, 1, 0, 1
     cellSize        EQU     34
     cellSize2       EQU     17
-    offsetX         EQU     0
-    offsetY         EQU     0
+    offsetX         EQU     295
+    offsetY         EQU     5
+
+;! *********************************** OMAR'S WORK ***********************************
+    ;?menu vars:start
+        whitePlayer             db      'White$'
+        blackPlayer             db      'Black$'
+        whitePlayer_score       db      '0$'
+        blackPlayer_score       db      '0$'
+        resign                  db      'Resign$'
+        quit                    db      'Quit$'
+        restart                 db      'Restart$$'
+        scoreWord               db      'Score:$'
+    ;todo text background vars :start
+        backGround_x            dw      0
+        backGround_y            dw      0
+        backGround_width        dw      10
+        backGround_height       dw      5
+        backGround_color        db      0Fh
+    ;todo text background vars :end
+        logoMessage                 DB      "-- PRESS ANY KEY TO CONTINUE --$"
+;! ***********************************************************************************
+    blackWinMsg                 DB      "BLACK PLAYER WON!$"
+    whiteWinMsg                 DB      "WHITE PLAYER WON!$"
 
 .CODE
-
-    
-
-
-
     PushReg MACRO
         PUSH AX
         PUSH BX
@@ -31,7 +48,7 @@
         POP AX
     ENDM
 
-    ; *************************************************************************************************************
+    ;? *************************************************************************************************************
         get_column MACRO n,result
             LOCAL not_eqaul_zero, not_less_than_6, end
 
@@ -70,9 +87,9 @@
 
         getRow MACRO Num, result
             LOCAL errorLabel, endLabel
-            XOR AX, AX
-
             MOV AL, Num
+
+            XOR AH, AH
 
             TEST AL, AL
             JZ errorLabel
@@ -102,28 +119,284 @@
                 AND AH, 01h
                 CMP AL, AH
                 jnz calculate_number  ; not a White Square
-            
+
                 ; White square
                 mov Num, 0
                 jmp fin
-            
+
             calculate_number:
-            
+
                 ; Calculate the number
                 XOR AX, AX
                 mov al, row
                 mov bl, 5
                 mul bl  ; AL = row * 5
                 mov bl, column
-                shr bl, 1  ; Divide column by 2 
+                shr bl, 1  ; Divide column by 2
                 add al, bl  ; AL = AL + (column / 2)
                 inc al  ;the index starts from 0
-            
+
                 ; Store the number
                 mov Num, al
-            fin: 
+            fin:
         ENDM
-    ; *************************************************************************************************************
+    ;? *************************************************************************************************************
+
+    __setMousePosition PROC
+        PUSH BP
+        MOV BP, SP
+
+        ; [BP + 4]: y (row)
+        ; [BP + 6]: x (column)
+
+        MOV AX, 0004h
+        MOV CX, [BP + 6]
+        MOV DX, [BP + 4]
+        INT 33h
+
+        MOV SP, BP
+        POP BP
+        RET 4
+    __setMousePosition ENDP
+
+    setMousePosition MACRO x, y
+        pushReg
+        MOV AX, x
+        PUSH AX
+
+        MOV AX, y
+        PUSH AX
+
+        CALL __setMousePosition
+        PopReg
+    ENDM
+
+    pushMousePosition MACRO
+        PUSH AX
+        PUSH BX
+        MOV AX, 0003h
+        INT 33h
+        POP BX
+        POP AX
+        PUSH CX
+        PUSH DX
+    ENDM
+
+    popMousePosition MACRO
+        POP DX
+        POP CX
+
+        setMousePosition CX, DX
+    ENDM
+
+    setCursorPosition MACRO row, column, page
+        MOV AX, 0200h
+        MOV BH, page
+        MOV DL, column
+        MOV DH, row
+        INT 10H
+    ENDM
+
+    __printGraphicalCharacter PROC ; character, color
+        PUSH BP
+        MOV BP, SP
+
+        ; * [BP + 6]: character
+        ; * [BP + 4]: color
+
+        MOV AH, 0Ah
+        MOV AL, [BP + 6]
+        XOR BH, BH
+        MOV CX, 1
+
+        INT 10h
+
+        MOV SP, BP
+        POP BP
+        RET 4
+    __printGraphicalCharacter ENDP
+
+    printGraphicalCharacter MACRO character, color
+        MOV AL, character
+        PUSH AX
+
+        MOV AX, color
+        PUSH AX
+
+        CALL __printGraphicalCharacter
+    ENDM
+
+    __printGraphicalString PROC ; ref, color, initialX, initialY ; page implicitely set to 0
+        PUSH BP
+        MOV BP, SP
+
+        ; [BP + 10]: ref
+        ; [BP +  8]: color
+        ; [BP +  6]: initialX
+        ; [BP +  4]: initialY
+
+        MOV SI, [BP + 10]
+        MOV BX, [BP + 8]
+        MOV DL, BYTE PTR [BP + 6]
+        MOV DH, BYTE PTR [BP + 4]
+
+        __printGraphicalString_L1:
+            setCursorPosition DH, DL, 0
+
+            MOV AH, 0Ah
+            MOV AL, BYTE PTR [SI]
+            XOR BH, BH
+            MOV CX, 1
+
+            INT 10h
+            INC SI
+            INC DL
+
+            MOV AL, BYTE PTR [SI]
+            CMP AL, '$'
+        JNZ __printGraphicalString_L1
+
+        MOV SP, BP
+        POP BP
+        RET 8
+    __printGraphicalString ENDP
+
+    printGraphicalString MACRO ref, color, initialX, initialY ; page should be kept 0, for now at least
+        LEA AX, ref
+        PUSH AX
+
+        MOV AX, color
+        PUSH AX
+
+        MOV AX, initialX
+        PUSH AX
+
+        MOV AX, initialY
+        PUSH AX
+
+        CALL __printGraphicalString
+    ENDM
+
+    __printBoardWithOffset PROC ; board, color, xOffset, yOffset
+        PUSH BP
+        MOV BP, SP
+        SUB SP, 2
+
+        ; * [BP + 10]: board
+        ; * [BP +  8]: color
+        ; * [BP +  6]: xOffset
+        ; * [BP +  4]: yOffset
+
+        MOV WORD PTR [BP - 2], 0505h
+
+        MOV SI, [BP + 10]               ; board
+        MOV BX, [BP + 8]                ; color
+        MOV DL, BYTE PTR [BP + 6]       ; xOffset
+        MOV DH, BYTE PTR [BP + 4]       ; yOffset
+
+        __printBoardWithOffset_L1:
+
+            ; Draw cells in pairs
+            __printBoardWithOffset_L2:
+                ; First cell in pair
+                setCursorPosition DH, DL, 0
+                printGraphicalCharacter 2Eh, BX
+
+                INC DL
+
+                ; First space in pair
+                setCursorPosition DH, DL, 0
+                printGraphicalCharacter ' ', BX
+
+                INC DL
+
+                ; Second cell in pair
+                setCursorPosition DH, DL, 0
+
+                MOV AL, BYTE PTR [SI]
+                printGraphicalCharacter AL, BX
+
+                INC SI
+                INC DL
+
+                ; Second space in pair
+                setCursorPosition DH, DL, 0
+                printGraphicalCharacter ' ', BX
+
+                INC DL
+
+                DEC WORD PTR [BP - 2]
+                TEST WORD PTR [BP - 2], 00FFh
+            JNZ __printBoardWithOffset_L2
+
+            INC DH
+            MOV DL, BYTE PTR [BP + 6]
+            DEC BYTE PTR [BP - 3]
+            MOV BYTE PTR [BP - 2], 05h
+
+            __printBoardWithOffset_L3:
+                ; First cell in pair
+                setCursorPosition DH, DL, 0
+
+                MOV AL, BYTE PTR [SI]
+                printGraphicalCharacter AL, BX
+
+                INC SI
+                INC DL
+
+                ; First space in pair
+                setCursorPosition DH, DL, 0
+                printGraphicalCharacter ' ', BX
+
+                INC DL
+
+                ; Second cell in pair
+                setCursorPosition DH, DL, 0
+                printGraphicalCharacter 2Eh, BX
+
+                INC DL
+
+                ; Second space in pair
+                setCursorPosition DH, DL, 0
+                printGraphicalCharacter ' ', BX
+
+                INC DL
+
+                DEC WORD PTR [BP - 2]
+                TEST BYTE PTR [BP - 2], 00FFh
+            JNZ __printBoardWithOffset_L3
+
+            INC DH
+            MOV DL, BYTE PTR [BP + 6]
+            DEC BYTE PTR [BP - 1]
+            MOV BYTE PTR [BP - 2], 05h
+
+            TEST [BP - 2], 0FF00h
+            JZ __printBoardWithOffset_endLabel
+        JMP __printBoardWithOffset_L1
+
+        __printBoardWithOffset_endLabel:
+
+        MOV SP, BP
+        POP BP
+        RET 8
+    __printBoardWithOffset ENDP
+
+    printBoardWithOffset MACRO board, color, xOffset, yOffset
+        LEA AX, board
+        PUSH AX
+
+        MOV AX, color
+        PUSH AX
+
+        MOV AX, xOffset
+        PUSH AX
+
+        MOV AX, yOffset
+        PUSH AX
+
+        CALL __printBoardWithOffset
+    ENDM
 
     __drawHorizontalLine PROC ; color, startingX, Y, distance
 		PUSH BP
@@ -447,10 +720,6 @@
 		RET 6
 	__drawCircle28 ENDP
 
-
-    ;! ALL PARAMETRES EXCEPT 'cellNumber' ARE 16-BITS
-
-
 	drawCircle MACRO color, initialX, initialY
 		PushReg
 
@@ -483,7 +752,7 @@
 		XOR BX, BX
 		XOR SI, SI
 		__drawCircle14_L1:
-			MOV AX, [BP + 8]           ;
+			MOV AX, [BP + 8]
 			SUB CX, xArray14[SI]      ; new X
 
 			ADD BX, xArray14[SI]      ; distance is double
@@ -600,65 +869,6 @@
 		popReg
 	ENDM
 
-    setCursorPosition MACRO row, column, page
-        MOV AX, 0200h
-        MOV BH, page
-        MOV DL, column
-        MOV DH, row
-        INT 10H
-    ENDM
-
-    __printGraphicalString PROC ; ref, color, initialX, initialY ; page implicitely set to 0
-        PUSH BP
-        MOV BP, SP
-
-        ; [BP + 10]: ref
-        ; [BP +  8]: color
-        ; [BP +  6]: initialX
-        ; [BP +  4]: initialY
-
-        MOV SI, [BP + 10]
-        MOV BX, [BP + 8]
-        MOV DL, BYTE PTR [BP + 6]
-        MOV DH, BYTE PTR [BP + 4]
-
-        __printGraphicalString_L1:
-            setCursorPosition DH, DL, 0
-
-            MOV AH, 0Ah
-            MOV AL, BYTE PTR [SI]
-            XOR BH, BH
-            MOV CX, 1
-
-            INT 10h
-            INC SI
-            INC DL
-
-            MOV AL, BYTE PTR [SI]
-            CMP AL, '$'
-        JNZ __printGraphicalString_L1
-
-        MOV SP, BP
-        POP BP
-        RET 8
-    __printGraphicalString ENDP
-
-    printGraphicalString MACRO ref, color, initialX, initialY ; page should be kept 0, for now at least
-        LEA AX, ref
-        PUSH AX
-
-        MOV AX, color
-        PUSH AX
-
-        MOV AX, initialX
-        PUSH AX
-
-        MOV AX, initialY
-        PUSH AX
-
-        CALL __printGraphicalString
-    ENDM
-
     __drawBorder PROC ; color, startX, startY, distance, width
         PUSH BP
         MOV BP, SP
@@ -668,6 +878,9 @@
         ; [BP +  8]: startY
         ; [BP + 10]: startX
         ; [BP + 12]: color
+
+        pushMousePosition
+        setMousePosition 0, 0
 
         ; Upper and left border
         MOV CX, [BP +  4]       ; width (times to run the loop)
@@ -724,6 +937,8 @@
             DEC BX
         LOOP __drawBorder_lowerBorder
 
+        popMousePosition
+
         MOV SP, BP
         POP BP
         RET 10
@@ -750,139 +965,6 @@
         CALL __drawBorder
 
         popReg
-    ENDM
-
-    ; -----------------------------------------------
-    
-    __drawBorderCell PROC; N, color, xOffset, yOffset, cellSize
-        PUSH BP
-        MOV BP, SP
-        SUB SP, 4
-
-        ; [BP + 12] N
-        ; [BP + 10] color
-        ; [BP +  8] xOffset
-        ; [BP +  6] yOffset
-        ; [BP +  4] cellSize
-
-        ; [BP -  2] column (x)
-        ; [BP -  4] row (y)
-
-        ; got column (x)
-        MOV BL, BYTE PTR [BP + 12]
-        get_column BL, AL
-        XOR AH, AH
-        MOV [BP - 2], AX
-
-        ; got row (y)
-        MOV BL, BYTE PTR [BP + 12]
-        getRow BL, AL
-        XOR AH, AH
-        MOV [BP - 4], AX
-
-        ; initial column (px)
-        MOV AX, [BP - 2]
-        MOV BX, [BP + 4]
-        XOR DX, DX
-        MUL BX
-        ADD AX, [BP + 8]
-        MOV CX, AX
-
-        ; initial row (px)
-        MOV AX, [BP - 4]
-        MOV BX, [BP + 4]
-        XOR DX, DX
-        MUL BX
-        ADD AX, [BP + 6]
-        MOV DX, AX
-
-        ; Upper border
-        MOV AX, [BP + 10]
-        MOV BX, [BP + 4]
-        drawHorizontalLine AX, CX, DX, BX
-        INC DX
-        drawHorizontalLine AX, CX, DX, BX       ; 2 pixels
-        DEC DX
-
-        ; Left border
-        drawVerticalLine AX, CX, DX, BX
-        INC CX
-        drawVerticalLine AX, CX, DX, BX
-        DEC CX
-
-        ; Right border
-        ADD CX, [BP + 4]
-        drawVerticalLine AX, CX, DX, BX
-        DEC CX
-        drawVerticalLine AX, CX, DX, BX         ; 2 pixels
-        INC CX
-
-        ; Lower border
-        ADD DX, [BP + 4]
-        SUB CX, [BP + 4]
-        drawHorizontalLine AX, CX, DX, BX
-        DEC DX
-        drawHorizontalLine AX, CX, DX, BX
-        INC DX
-
-        MOV SP, BP
-        POP BP
-        RET 10
-    __drawBorderCell ENDP
-
-    drawBorderCell MACRO N, color, xOffset, yOffset, cellSize 
-        PushReg
-        
-        xor ah,ah
-        xor bh,bh
-
-        MOV AL, N
-        PUSH AX
-
-        MOV AL, color
-        PUSH AX
-
-        MOV AL, xOffset
-        PUSH AX
-
-        MOV AL, yOffset
-        PUSH AX
-
-        MOV AL, cellSize
-        PUSH AX
-
-        CALL __drawBorderCell
-
-        popReg
-    ENDM
-
-    __setMousePosition PROC
-        PUSH BP
-        MOV BP, SP
-
-        ; [BP + 4]: y (row)
-        ; [BP + 6]: x (column)
-
-        MOV AX, 0004h
-        MOV CX, [BP + 6]
-        MOV DX, [BP + 4]
-        INT 33h
-
-        MOV SP, BP
-        POP BP
-        RET 4
-    __setMousePosition ENDP
-
-    setMousePosition MACRO x, y
-        pushReg
-        MOV AX, x
-        PUSH AX
-
-        MOV AX, y
-        PUSH AX
-
-        CALL __setMousePosition
-        PopReg
     ENDM
 
     __markCell PROC ; color, xOffset, yOffset, cellSize, cellNumber
@@ -966,23 +1048,200 @@
         popReg
     ENDM
 
-    markCellsByArray MACRO array, color, 
+    ;! ALL PARAMETRES EXCEPT 'cellNumber' ARE 16-BITS
+    __drawQueen PROC ; cellNumber, xOffset, yOffset, cellSize, outerColor, innerColor
+        PUSH BP
+        MOV BP, SP
+        SUB SP, 4
+
+        ; * [BP +  4]: innerColor
+        ; * [BP +  6]: outerColor
+        ; * [BP +  8]: cellSize
+        ; * [BP + 10]: yOffset
+        ; * [BP + 12]: xOffset
+        ; * [BP + 14]: cellNumber
+
+        ; * [BP -  2]: real X (columns in px)
+        ; * [BP -  4]: real Y (row in px)
+
+        MOV AX, [BP + 14]
+        get_column AL, AL       ; send N in AL and get the column in AL
+        XOR AH, AH
+        XOR DX, DX
+        MOV BX, [BP + 8]
+        MUL BX
+        ADD AX, [BP + 12]
+        MOV [BP - 2], AX
+
+        MOV BX, [BP + 14]
+        getRow BL, AL       ; send N in AL and get the column in AL
+        XOR AH, AH
+        XOR DX, DX
+        MOV BX, [BP + 8]
+        MUL BX
+        ADD AX, [BP + 10]
+        MOV [BP - 4], AX
+
+        ; Get the center
+        MOV CX, [BP + 8]
+        SHR CX, 1
+        ADD [BP - 4], CX
+        ADD [BP - 2], CX
+
+        MOV AX, [BP + 6]
+        MOV CX, [BP - 2]
+        MOV DX, [BP - 4]
+        drawCircle AX, CX, DX
+
+        MOV AX, [BP + 4]
+        MOV CX, [BP - 2]
+        MOV DX, [BP - 4]
+        drawCircle14 AX, CX, DX
+
+        MOV SP, BP
+        POP BP
+        RET 12
+    __drawQueen ENDP
+
+    drawQueen MACRO cellNumber, xOffset, yOffset, cellSize, outerColor, innerColor
         pushReg
 
+        XOR AX, AX
+        MOV AL, cellNumber
+        PUSH AX
 
-        CALL __ markCellsByArray
+        MOV AX, xOffset
+        PUSH AX
 
-        popREg
+        MOV AX, yOffset
+        PUSH AX
+
+        MOV AX, cellSize
+        PUSH AX
+
+        MOV AX, outerColor
+        PUSH AX
+
+        MOV AX, innerColor
+        PUSH AX
+
+        CALL __drawQueen
+
+        popReg
     ENDM
+
+;? ****************************** HICHEM NEEDS THIS *******************************
+        __drawBorderCell PROC; N, color, xOffset, yOffset, cellSize
+        PUSH BP
+        MOV BP, SP
+        SUB SP, 4
+
+        ; [BP + 12] N
+        ; [BP + 10] color
+        ; [BP +  8] xOffset
+        ; [BP +  6] yOffset
+        ; [BP +  4] cellSize
+
+        ; [BP -  2] column (x)
+        ; [BP -  4] row (y)
+
+        ; got column (x)
+        MOV BL, BYTE PTR [BP + 12]
+        get_column BL, AL
+        XOR AH, AH
+        MOV [BP - 2], AX
+
+        ; got row (y)
+        MOV BL, BYTE PTR [BP + 12]
+        getRow BL, AL
+        XOR AH, AH
+        MOV [BP - 4], AX
+
+        ; initial column (px)
+        MOV AX, [BP - 2]
+        MOV BX, [BP + 4]
+        XOR DX, DX
+        MUL BX
+        ADD AX, [BP + 8]
+        MOV CX, AX
+
+        ; initial row (px)
+        MOV AX, [BP - 4]
+        MOV BX, [BP + 4]
+        XOR DX, DX
+        MUL BX
+        ADD AX, [BP + 6]
+        MOV DX, AX
+
+        ; Upper border
+        MOV AX, [BP + 10]
+        MOV BX, [BP + 4]
+        drawHorizontalLine AX, CX, DX, BX
+        INC DX
+        drawHorizontalLine AX, CX, DX, BX       ; 2 pixels
+        DEC DX
+
+        ; Left border
+        drawVerticalLine AX, CX, DX, BX
+        INC CX
+        drawVerticalLine AX, CX, DX, BX
+        DEC CX
+
+        ; Right border
+        ADD CX, [BP + 4]
+        drawVerticalLine AX, CX, DX, BX
+        DEC CX
+        drawVerticalLine AX, CX, DX, BX         ; 2 pixels
+        INC CX
+
+        ; Lower border
+        ADD DX, [BP + 4]
+        SUB CX, [BP + 4]
+        drawHorizontalLine AX, CX, DX, BX
+        DEC DX
+        drawHorizontalLine AX, CX, DX, BX
+        INC DX
+
+        MOV SP, BP
+        POP BP
+        RET 10
+    __drawBorderCell ENDP
+
+    drawBorderCell MACRO N, color, xOffset, yOffset, cellSize
+        PushReg
+
+        xor ah,ah
+        xor bh,bh
+
+        MOV AL, N
+        PUSH AX
+
+        MOV AX, color
+        PUSH AX
+
+        MOV AX, xOffset
+        PUSH AX
+
+        MOV AX, yOffset
+        PUSH AX
+
+        MOV AX, cellSize
+        PUSH AX
+
+        CALL __drawBorderCell
+
+        popReg
+    ENDM
+;? ********************************************************************************
 
 ;! ********************************* ABDOU'S WORK *********************************
     Board_init_GUI Macro Board, blackCellColor, whiteCellColor, blackPieceColor, whitePieceColor
-        drawBoard Offsetx, Offsety, whiteCellColor, blackCellColor, 34
+        LOCAL black, line0, line1, line2, line3, white, line6, line7, line8, line9
+        drawBoard Offsetx, Offsety, whiteCellColor, blackCellColor, cellSize
         MOV CX,offsety
         ADD CX, 17
 
         Black:
-
             MOV DX,51
             ADD DX,Offsetx
             MOV BX,5
@@ -1022,29 +1281,29 @@
             MOV DX, 16
             ADD DX,Offsetx
             MOV BX, 5
-            ; Line3:
-            ;     PushReg
-            ;     drawCircle blackPieceColor,DX,CX
-            ;     PopReg
-            ;     ADD DX,68 ; 2 CASES
-            ;     DEC BX
-            ;     CMP BX,0
-            ;     JNZ Line3
+            Line3:
+                PushReg
+                drawCircle blackPieceColor,DX,CX
+                PopReg
+                ADD DX,68 ; 2 CASES
+                DEC BX
+                CMP BX,0
+                JNZ Line3
 
-            ADD CX, 238 ; JUMP TO WHITE PART ;102
+            ADD CX, 102 ; JUMP TO WHITE PART
          White:
 
-            ; MOV DX,51
-            ; ADD DX,Offsetx
-            ; MOV BX,5
-            ; Line6:
-            ;     PushReg
-            ;     drawCircle whitePieceColor,DX,CX
-            ;     PopReg
-            ;     ADD DX,68 ; 2 CASES
-            ;     DEC BX
-            ;     CMP BX,0
-            ;     JNZ Line6
+            MOV DX,51
+            ADD DX,Offsetx
+            MOV BX,5
+            Line6:
+                PushReg
+                drawCircle whitePieceColor,DX,CX
+                PopReg
+                ADD DX,68 ; 2 CASES
+                DEC BX
+                CMP BX,0
+                JNZ Line6
             ADD CX, 34
             MOV DX, 17
             ADD DX,Offsetx
@@ -1176,206 +1435,333 @@
             MOV C, AX
     ENDM
 
-    Move_GUI Macro n1,n2,PColor
-        LOCAL MoveGui,MoveG,MoveD,MoveDownD,MoveTopD,MoveDownG,MoveTopG,FinMove,notMove1, notMove2, notMove3
-        MoveGui:
-            MOV AL,n1
-            CMP AL,n2
+    Move_GUI Macro n1, n2, PColor
+            LOCAL MoveGui,MoveG,MoveD,MoveDownD,MoveTopD,MoveDownG,MoveTopG,FinMove, notMove1, notMove2, notMove3, notMove4
+            MoveGui:
+                MOV AL,n1
+                CMP AL,n2
 
-            JNZ notMove1
-            JMP FinMove
-            notMove1:
+                JNZ notMove1
+                JMP FinMove
+                notMove1:
 
-            get_column n1,DL
-            get_column n2,DH
+                get_column n1,DL
+                get_column n2,DH
 
-            CMP DL,DH
+                CMP DL,DH
 
-            JL MoveD
-            JMP MoveG
+                JL MoveD
+                JMP MoveG
 
-            MoveD:
-                getRow n1,CL
-                getRow n2,CH
+                MoveD:
+                    getRow n1,CL
+                    getRow n2,CH
 
-                CMP CL,CH
-                JAE MoveTopD
+                    CMP CL,CH
+                    JAE MoveTopD
 
-                MoveDownD:
-                    CMP DL,DH
-                    JNZ notMove2
-                    JMP FinMove
-                    notMove2:
-                    PUSH DX
-                    PUSH CX
+                    MoveDownD:
+                        CMP DL,DH
+                        JNZ notMove2
+                        JMP FinMove
+                        notMove2:
+                        PUSH DX
+                        PUSH CX
 
-                    GetCase DL,CL,DX, CX
-                    drawCell 0006h, DX, CX, 34
+                        GetCase DL,CL,DX, CX
+                        ADD DX, offsetX
+                        ADD CX, offsetY
+                        drawCell blackCell, DX, CX, cellSize
 
-                    POP CX
-                    POP DX
-                    ADD DL,1
-                    ADD CL,1
-                    JMP MoveDownD
+                        POP CX
+                        POP DX
+                        ADD DL,1
+                        ADD CL,1
+                        JMP MoveDownD
 
+                    MoveTopD:
+                        CMP DL,DH
+                        JNZ notMove3
+                        JMP FinMove
+                        notMove3:
+                        PUSH DX
+                        PUSH CX
 
-                MoveTopD:
-                    CMP DL,DH
-                    JNZ notMove3
-                    JMP FinMove
-                    notMove3:
-                    PUSH DX
-                    PUSH CX
+                        GetCase DL,CL,DX, CX
+                        ADD DX, offsetX
+                        ADD CX, offsetY
+                        drawCell blackCell, DX, CX, cellSize
 
-                    GetCase DL,CL,DX, CX
-                    drawCell 0006h, DX, CX, 34
+                        POP CX
+                        POP DX
+                        ADD DL,1
+                        SUB CL,1
+                        JMP MoveTopD
 
-                    POP CX
-                    POP DX
-                    ADD DL,1
-                    SUB CL,1
-                    JMP MoveTopD
+                MoveG:
+                    getRow n1,CL
+                    getRow n2,CH
 
-            MoveG:
-                getRow n1,CL
-                getRow n2,CH
+                    CMP CL,CH
+                    JAE MoveTopG
 
-                CMP CL,CH
-                JAE MoveTopG
+                    MoveDownG:
+                        CMP DL,DH
+                        JNZ notMove4
+                        JMP FinMove
+                        notMove4:
+                        PUSH DX
+                        PUSH CX
 
-                MoveDownG:
-                    CMP DL,DH
-                    JE FinMove
-                    PUSH DX
-                    PUSH CX
+                        GetCase DL,CL,DX, CX
+                        ADD DX, offsetX
+                        ADD CX, offsetY
+                        drawCell blackCell, DX, CX, cellSize
 
-                    GetCase DL,CL,DX, CX
-                    drawCell 0006h, DX, CX, 34
+                        POP CX
+                        POP DX
+                        SUB DL,1
+                        ADD CL,1
+                        JMP MoveDownG
 
-                    POP CX
-                    POP DX
-                    SUB DL,1
-                    ADD CL,1
-                    JMP MoveDownG
+                    MoveTopG:
+                        CMP DL,DH
+                        JE FinMove
+                        PUSH DX
+                        PUSH CX
 
-                MoveTopG:
-                    CMP DL,DH
-                    JE FinMove
-                    PUSH DX
-                    PUSH CX
+                        GetCase DL,CL,DX, CX
+                        ADD DX, offsetX
+                        ADD CX, offsetY
+                        drawCell blackCell, DX, CX, cellSize
 
-                    GetCase DL,CL,DX, CX
-                    drawCell 0006h, DX, CX, 34
+                        POP CX
+                        POP DX
+                        SUB DL,1
+                        SUB CL,1
+                        JMP MoveTopG
+                JMP MoveGui
+            FinMove:
+                GetCenter Dh,Ch,DX,CX
 
-                    POP CX
-                    POP DX
-                    SUB DL,1
-                    SUB CL,1
-                    JMP MoveTopG
-            JMP MoveGui
-        FinMove:
-            GetCenter DL,CL,DX,CX
+                ADD CX, offsetY
+                ADD DX, offsetX
 
-            setMousePosition 0, 0
+                MOV SI, CX
+                MOV DI, DX
 
-            PUSH CX
-            PUSH DX
+                pushMousePosition`
+                setMousePosition 0, 0
 
-            cmp typePawn,1
-            JE damee
-                drawCircle PColor, DX,CX
-            JMP next45
-            damee: 
-                drawQueen n2, 0,  0, 34, PColor, 000Eh       ;cellNumber, xOffset, yOffset, cellSize, outerColor, innerColor
-            next45: 
-            POP DX
-            POP CX
+                ; drawCircle PColor, DI, SI
 
-            setMousePosition DX, CX
+                cmp typePawn,1
+                JE damee
+                    drawCircle PColor, DI,SI
+                JMP next45
+                damee: 
+                    drawQueen n2, offsetX,  offsetY, cellSize, PColor, 000Eh       ;cellNumber, xOffset, yOffset, cellSize, outerColor, innerColor
+                next45: 
+            ; POP DX
+            ; POP CX
+
+                popMousePosition
     ENDM
 
-    __drawQueen PROC ; cellNumber, xOffset, yOffset, cellSize, outerColor, innerColor
-        PUSH BP
-        MOV BP, SP
-        SUB SP, 4
+;! *********************************** OMAR'S WORK ***********************************
+    ;todo draw text backGround :start
+    draw_backGround PROC NEAR
+    MOV cx,backGround_x;!position x column
+    MOV dx,backGround_y;!position y row
+        draw_backGround_horizontal:
+            MOV AH,0Ch;! set pixel
+            MOV AL,backGround_color;! color
+            MOV bh,0;! page 0
+            INT 10h;! call BIOS
 
-        ; * [BP +  4]: innerColor
-        ; * [BP +  6]: outerColor
-        ; * [BP +  8]: cellSize
-        ; * [BP + 10]: yOffset
-        ; * [BP + 12]: xOffset
-        ; * [BP + 14]: cellNumber
+            inc cx;! move to the next column
+            mov ax,cx
+            sub ax,backGround_x
+            cmp ax,backGround_width
+            JNG draw_backGround_horizontal
 
-        ; * [BP -  2]: real X (columns in px)
-        ; * [BP -  4]: real Y (row in px)
+            mov cx,backGround_x;! reset the column position
+            inc dx;! move to the next row
 
-        MOV AX, [BP + 14]
-        get_column AL, AL       ; send N in AL and get the column in AL
-        XOR AH, AH
-        XOR DX, DX
-        MOV BX, [BP + 8]
-        MUL BX
-        ADD AX, [BP + 12]
-        MOV [BP - 2], AX
-
-        MOV BX, [BP + 14]
-        getRow BL, AL       ; send N in AL and get the column in AL
-        XOR AH, AH
-        XOR DX, DX
-        MOV BX, [BP + 8]
-        MUL BX
-        ADD AX, [BP + 10]
-        MOV [BP - 4], AX
-
-        ; Get the center
-        MOV CX, [BP + 8]
-        SHR CX, 1
-        ADD [BP - 4], CX
-        ADD [BP - 2], CX
-
-        MOV AX, [BP + 6]
-        MOV CX, [BP - 2]
-        MOV DX, [BP - 4]
-        drawCircle AX, CX, DX
-
-        MOV AX, [BP + 4]
-        MOV CX, [BP - 2]
-        MOV DX, [BP - 4]
-        drawCircle14 AX, CX, DX
-
-        MOV SP, BP
-        POP BP
-        RET 12
-    __drawQueen ENDP
-
-    drawQueen MACRO cellNumber, xOffset, yOffset, cellSize, outerColor, innerColor
-        pushReg
-
-        XOR AX, AX
-        MOV AL, cellNumber
-        PUSH AX
-
-        MOV AX, xOffset
-        PUSH AX
-
-        MOV AX, yOffset
-        PUSH AX
-
-        MOV AX, cellSize
-        PUSH AX
-
-        MOV AX, outerColor
-        PUSH AX
-
-        MOV AX, innerColor
-        PUSH AX
-
-        CALL __drawQueen
-
-        popReg
+            mov ax,dx;
+            sub ax,backGround_y;
+            cmp ax,backGround_height;
+            JNG draw_backGround_horizontal;
+    RET
+    draw_backGround ENDP
+    drawBackGround MACRO backGround_column , backGround_row , width , height , color
+        mov ax,backGround_column
+        mov backGround_x,ax
+        mov ax,backGround_row
+        mov backGround_y,ax
+        mov ax,width
+        mov backGround_width,ax
+        mov ax,height
+        mov backGround_height,ax
+        mov AL,color
+        mov backGround_color,AL
+        call draw_backGround
     ENDM
+    ;todo draw text backGround :end
 
-    Time Macro
-        mov ah, 00h
+    duringGameMenu PROC
+        ;!score text:start
+        drawBackGround 29,31,70,36,04h
+        drawBackGround 34,36,60,26,00h
+        printGraphicalString scoreWord,0FFh,5,3;!the color of the string will be :Black
+        ;!score text:end
+
+        ;!score first player:start
+        drawBackGround 181,31,40,36,04h
+        drawBackGround 186,36,30,26,00h
+        printGraphicalString whitePlayer_score,0FFh,24,3;!the color of the string will be :Black
+        ;!score first player:end
+
+        ;!score second player:start
+        drawBackGround 231,31,40,36,04h
+        drawBackGround 236,36,30,26,00h
+        printGraphicalString blackPlayer_score,0FFh,30,3;!the color of the string will be :Black
+        ;!score second player:end
+
+        ;!quit button:start
+        drawBackGround 29,283,70,36,04h
+        drawBackGround 34,288,60,26,00h
+        printGraphicalString quit,0FFh,6,21;
+        ;!quit button:end
+
+        ;!resign button:start
+        drawBackGround 189,283,84,36,04h
+        drawBackGround 194,288,74,26,00h
+        printGraphicalString resign,0FFh,26,21;
+        ;!resign button:end
+
+        ;!turn :start
+        drawBackGround 115,154,86,36,04h
+
+        cmp turn, 'b'
+        je handleBlackTurn
+
+        drawBackGround 120,159,76,26,0Fh
+        printGraphicalString whitePlayer,0FFh,17,12;
+        jmp everyThingIsHandeled
+        handleBlackTurn:
+
+        drawBackGround 120,159,76,26,00h
+        printGraphicalString blackPlayer,0FFh,17,12;
+        everyThingIsHandeled:
+        ;!turn :end
+
+        RET
+    duringGameMenu ENDP
+
+    drawLogo PROC NEAR
+        ;!the letter c:start
+        drawBackGround 50,30,40,20,0Fh
+        drawBackGround 40,50,20,20,0Fh
+        drawBackGround 30,70,20,20,0Fh
+        drawBackGround 30,90,20,20,0Fh
+        drawBackGround 40,110,20,20,0Fh
+        drawBackGround 50,130,40,20,0Fh
+        ;!the letter c:end
+        ;!the letter H:start
+        drawBackGround 100,30,20,120,0Fh
+        drawBackGround 100,80,60,20,0Fh
+        drawBackGround 160,30,20,120,0Fh
+        ;!the letter H:end
+
+        ;!the letter E:start
+        drawBackGround 210,30,40,20,0Fh
+        drawBackGround 200,50,20,20,0Fh
+        drawBackGround 190,70,20,20,0Fh
+        drawBackGround 190,80,60,20,0Fh
+        drawBackGround 190,90,20,20,0Fh
+        drawBackGround 200,110,20,20,0Fh
+        drawBackGround 210,130,40,20,0Fh
+        ;!the letter E:end
+
+        ;!the letter c:start
+        drawBackGround 280,30,40,20,0Fh
+        drawBackGround 270,50,20,20,0Fh
+        drawBackGround 260,70,20,20,0Fh
+        drawBackGround 260,90,20,20,0Fh
+        drawBackGround 270,110,20,20,0Fh
+        drawBackGround 280,130,40,20,0Fh
+        ;!the letter c:end
+
+        ;!the letter K:start
+        drawBackGround 330,30,20,120,0Fh
+        drawBackGround 380,30,20,20,0Fh
+        drawBackGround 370,50,20,20,0Fh
+        drawBackGround 360,70,20,20,0Fh
+        drawBackGround 350,90,20,20,0Fh
+        drawBackGround 350,90,20,20,0Fh
+        drawBackGround 360,110,20,20,0Fh
+        drawBackGround 370,130,20,20,0Fh
+        ;!the letter K:end
+
+        ;!the letter E:start
+        drawBackGround 420,30,40,20,0Fh
+        drawBackGround 410,50,20,20,0Fh
+        drawBackGround 400,70,20,20,0Fh
+        drawBackGround 400,80,60,20,0Fh
+        drawBackGround 400,90,20,20,0Fh
+        drawBackGround 410,110,20,20,0Fh
+        drawBackGround 420,130,40,20,0Fh
+        ;!the letter E:end
+
+        ;!the letter R:start
+        drawBackGround 470,30,20,120,0Fh
+        drawBackGround 490,30,20,20,0Fh
+        drawBackGround 500,40,20,20,0Fh
+        drawBackGround 510,50,20,20,0Fh
+        drawBackGround 520,60,20,20,0Fh
+        drawBackGround 510,70,20,20,0Fh
+        drawBackGround 500,80,20,20,0Fh
+        drawBackGround 490,90,20,20,0Fh
+        drawBackGround 490,90,20,20,0Fh
+        drawBackGround 500,110,20,20,0Fh
+        drawBackGround 510,130,20,20,0Fh
+        ;!the letter R:end
+
+        ;!the letter S:start
+        drawBackGround 570,30,40,20,0Fh
+        drawBackGround 560,50,20,20,0Fh
+        drawBackGround 550,70,20,20,0Fh
+        drawBackGround 560,90,50,20,0Fh
+        drawBackGround 590,100,20,20,0Fh
+        drawBackGround 580,120,20,20,0Fh
+        drawBackGround 550,130,40,20,0Fh
+        ;!the letter S:end
+        ;!show message:start
+        printGraphicalString logoMessage, 0FFh, 24, 18
+        ;!show message:end
+        ;!get out of logo:start
+
+        mov ah,00h
         int 16h
+
+        drawBackGround 0,0,640,350,00h
+        ;!get out of logo:end
+        RET
+    drawLogo ENDP
+
+    ;!switch turn text:start
+    switchTurnString MACRO flag
+        LOCAL is_white_turn, the_end
+
+        cmp flag, 'w'
+        je is_white_turn
+        printGraphicalString whitePlayer,0FFh,17,12
+        printGraphicalString blackPlayer,0FFh,17,12
+        jmp the_end
+        is_white_turn:
+        printGraphicalString blackPlayer,0FFh,17,12
+        printGraphicalString whitePlayer,0FFh,17,12
+        the_end:
     ENDM
+    ;!switch turn text:end

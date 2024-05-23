@@ -442,8 +442,12 @@ move_pawn MACRO board,x,y,path1,path2,pawn_position,makla1,makla2,dest
     MOV AL, BH ; BH <- board[x,y]
     DEC AL   
     MOV SI, AX     
-        
-    CMP isDirect,'y'
+
+    ; CMP isDirect,'y'
+    ; JNE indirect 
+    CMP makla1,-1
+    JNE indirect 
+    CMP makla2,-1
     JNE indirect 
         MOV AL,board[DI] ;---DIRECT MOVE---------
         MOV board[DI],'0'
@@ -604,7 +608,7 @@ ENDM
 
 ;------show_path----------
 show_path MACRO board,i1,j1,turn1,path1,path2,pawn_position,makla1,makla2
-    LOCAL end, next, next1, not_verified, not_verified1, not_verified2,  down, down1, label1, label2, label3, continue, continue1
+    LOCAL end, next, next1, not_verified, not_verified1, not_verified2,  down, down1, label1, label2, label3, indirect,continue, continue1
     
     set_show_values i1,j1,turn1
 
@@ -712,7 +716,17 @@ show_path MACRO board,i1,j1,turn1,path1,path2,pawn_position,makla1,makla2
         MOV AH,n2 
         MOV path2,AH
     label3:
-        MOV AL,'y' ; not direct 
+        ; CMP isDirect,'y'
+        ; JNE indirect 
+        CMP makla1,-1
+        JNE indirect
+        CMP makla2,-1
+        JNE indirect
+            MOV AL,'y' ; not direct 
+            MOV isDirect,AL
+            JMP end
+        indirect:  
+        MOV AL,'n' ; not direct 
         MOV isDirect,AL
     end:
     

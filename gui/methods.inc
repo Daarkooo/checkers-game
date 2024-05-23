@@ -69,105 +69,160 @@ draw_borders MACRO IndMoves, directMove, color
 
 ENDM 
 
-;---------show_moves------------- 
-show_moves MACRO board, IndMoves, directMoves
-    LOCAL lab1, lab2, lab3, lab4, lab5, directMove,continue, endL, dame, next
+; ;---------show_moves------------- 
+; show_moves MACRO board, IndMoves, directMoves
+;     LOCAL lab1, lab2, lab3, lab4, lab5, directMove,continue, endL, dame, next
     
-    set_array_null IndMoves
-    set_array_null directMoves
+;     set_array_null IndMoves
+;     set_array_null directMoves
 
-    LEA SI, board
-    LEA DI, IndMoves
-    LEA BX, directMoves  
+;     LEA SI, board
+;     LEA DI, IndMoves
+;     LEA BX, directMoves  
     
-    MOV CX, 50
-    lab3:     
+;     MOV CX, 50
+;     lab3:     
         
-        ;CMP BYTE PTR [SI], AL
-        ;JE continue
-       ;     JMP lab1  
-        ;continue:
+;         ;CMP BYTE PTR [SI], AL
+;         ;JE continue
+;        ;     JMP lab1  
+;         ;continue:
 
-            MOV DL,count
-            PUSH CX
-            PUSH BX
+;             MOV DL,count
+;             PUSH CX
+;             PUSH BX
             
-            get_row DL,i
-            get_column DL,j 
+;             get_row DL,i
+;             get_column DL,j 
 
-            ; POP BX
-            ; POP CX
+;             ; POP BX
+;             ; POP CX
 
-            PUSH SI
-            PUSH DI
-            show_path board,i,j,turn,path1,path2,source_pawn,makla1,makla2
-            POP DI
-            POP SI
-            POP BX
-            POP CX
+;             PUSH SI
+;             PUSH DI
+;             show_path board,i,j,turn,path1,path2,source_pawn,makla1,makla2
+;             POP DI
+;             POP SI
+;             POP BX
+;             POP CX
                                        
-            CMP path1, -1
-            JNE lab2
-                CMP path2, -1
-                JE dame 
-                    lab2:  
-                    MOV AL,source_pawn
-                    ; DEC AL
-                    CMP isDirect,'y'
-                    JE directMove
-                        MOV BYTE PTR [DI], AL
-                        INC DI
-                        JMP lab1
-                    directMove:
-                        MOV BYTE PTR [BX], AL
-                        INC BX
-                        JMP lab1
+;             CMP path1, -1
+;             JNE lab2
+;                 CMP path2, -1
+;                 JE dame 
+;                     lab2:  
+;                     MOV AL,source_pawn
+;                     ; DEC AL
+;                     CMP isDirect,'y'
+;                     JE directMove
+;                         MOV BYTE PTR [DI], AL
+;                         INC DI
+;                         JMP lab1
+;                     directMove:
+;                         MOV BYTE PTR [BX], AL
+;                         INC BX
+;                         JMP lab1
         
-            dame:
-            ;     PUSH CX
-            ;     PUSH SI
-            ;     PUSH DI
-            ;     ; PUSH BX
-            ;     MOV saveData, BX
-            ;    show_path_dame board,i,j,turn,dameMoves,dameIndMoves,pawn_position,makla1,makla2,makla3,makla4 
-            ;     ; MOV BX,saveData
-            ;     ; POP BX
+;             dame:
+;             ;     PUSH CX
+;             ;     PUSH SI
+;             ;     PUSH DI
+;             ;     ; PUSH BX
+;             ;     MOV saveData, BX
+;             ;    show_path_dame board,i,j,turn,dameMoves,dameIndMoves,pawn_position,makla1,makla2,makla3,makla4 
+;             ;     ; MOV BX,saveData
+;             ;     ; POP BX
                 
                 
-            ;     POP DI
-            ;     POP SI
-            ;     POP CX
+;             ;     POP DI
+;             ;     POP SI
+;             ;     POP CX
                 
-            ;     MOV AL,pawn_position
-            ;     ; LEA BX, dameIndMoves
-            ;     ; CMP BYTE PTR[BX],0  
-            ;     ; JNE lab5
-            ;     ;      JMP next
-            ;     ;  lab5:
-            ;              MOV BYTE PTR [DI], AL
-            ;              INC DI
-            ;     ;          JMP lab1
+;             ;     MOV AL,pawn_position
+;             ;     ; LEA BX, dameIndMoves
+;             ;     ; CMP BYTE PTR[BX],0  
+;             ;     ; JNE lab5
+;             ;     ;      JMP next
+;             ;     ;  lab5:
+;             ;              MOV BYTE PTR [DI], AL
+;             ;              INC DI
+;             ;     ;          JMP lab1
                 
-            ;     ;  next: 
-            ;     ;  LEA BX, dameMoves                      
-            ;     ; ;      CMP BYTE PTR[BX],0
-            ;     ; ;  JNE lab4
-            ;     ; ;      JMP lab1
-            ;     ; ;  lab4: 
-            ;     ;     MOV BX,saveData
-            ;     ;     MOV BYTE PTR [BX], AL
-            ;     ;     INC BX
+;             ;     ;  next: 
+;             ;     ;  LEA BX, dameMoves                      
+;             ;     ; ;      CMP BYTE PTR[BX],0
+;             ;     ; ;  JNE lab4
+;             ;     ; ;      JMP lab1
+;             ;     ; ;  lab4: 
+;             ;     ;     MOV BX,saveData
+;             ;     ;     MOV BYTE PTR [BX], AL
+;             ;     ;     INC BX
             
-        lab1:
-            INC SI  
-            INC count
-    CMP CX,0
-    JE endL
-        DEC CX
-        JMP lab3
-    endL:
+;         lab1:
+;             INC SI  
+;             INC count
+;     CMP CX,0
+;     JE endL
+;         DEC CX
+;         JMP lab3
+;     endL:
 
-ENDM
+; ENDM
+
+;---------show_moves-------------
+    show_moves MACRO turn, board, IndMoves, directMoves
+        LOCAL lab1, lab2, lab3, directMove,continue, endL
+
+        set_array_null IndMoves
+        set_array_null directMoves
+
+        LEA SI, board
+        LEA DI, IndMoves
+        LEA BX, directMoves
+
+        MOV CX, 50
+        lab3:
+            MOV AL,turn
+
+                MOV DL,count
+                PUSH CX
+                PUSH BX
+
+                get_row DL,i
+                get_column DL,j
+
+                PUSH SI
+                PUSH DI
+                show_path board,i,j,turn,path1,path2,source_pawn,makla,makla2,isDirect,multiple_jumps
+                POP DI
+                POP SI
+                POP BX
+                POP CX
+
+                CMP path1, -1
+                JNE lab2
+                    CMP path2, -1
+                    JE lab1
+                        lab2:
+                        MOV AL,source_pawn
+                        ; DEC AL
+                        CMP isDirect,'y'
+                        JE directMove
+                            MOV BYTE PTR [DI], AL
+                            INC DI
+                            JMP lab1
+                        directMove:
+                            MOV BYTE PTR [BX], AL
+                            INC BX
+            lab1:
+                INC SI
+                INC count
+        CMP CX,0
+        JE endL
+            DEC CX
+            JMP lab3
+        endL:
+    ENDM
 
 
 show_moves_dame MACRO board, IndMoves, directMoves
@@ -219,6 +274,26 @@ show_moves_dame MACRO board, IndMoves, directMoves
     endL:
 
 ENDM
+
+incScore MACRO turn
+        CMP turn, 'w'
+        JZ incScore_white
+
+        incScore_black:
+        MOV AL, blackPlayer_score
+        INC AL
+        MOV blackPlayer_score, AL
+
+        JMP incScore_end
+
+        incScore_white:
+        MOV AL, whitePlayer_score
+        INC AL
+        MOV whitePlayer_score, AL
+
+        incScore_end:
+    ENDM
+
 
 ;-------mark_cell_method------------
 mark_cell_method MACRO color
