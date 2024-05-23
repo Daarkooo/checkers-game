@@ -25,7 +25,6 @@
     bool DB 0 ; need it in showpaths 
     num1 DB ? 
     msg_result DB "result: $"
-    winner DB ?
     valid DB ?
     boolProm DB ?
 
@@ -348,13 +347,13 @@ verify_move MACRO board, i, j, x, y, turn, verified, isDirect, val1, val2
         continue:
     
     get_number x, y, menu, n2 ; menu <- null doesnt effect  
-        CMP n2,0
+        CMP n2,0 
         JNE impossible_move2 ; checking if it's a valid input
             JMP impossible_move
         impossible_move2:
     get_cell_state board, x, y, color, typePawn        
         CMP color, '0' ; to make the move -> board[x,y] needs to be empty '0'
-        JE continue1        
+        JE continue1                                                               
             JMP impossible_move
         continue1:
 
@@ -413,7 +412,6 @@ verify_move MACRO board, i, j, x, y, turn, verified, isDirect, val1, val2
         MOV verified,1   
     end:
 ENDM 
-
 
 
 ;------move_pawn---------- 
@@ -603,24 +601,25 @@ find_makla_dame MACRO num,maklaD
 
 ENDM
 
+
 ;------show_path----------
 show_path MACRO board,i1,j1,turn1,path1,path2,pawn_position,makla1,makla2
     LOCAL end, next, next1, not_verified, not_verified1, not_verified2,  down, down1, label1, label2, label3, continue
     
     set_show_values i1,j1,turn1
 
-    MOV BH,x
+    MOV BH,x 
     MOV CH,y                  
 
     get_cell_state board, i, j, color, typePawn
     MOV AL, typePawn
     CMP AL, 0 ; to make the move -> 'w'='w' / 'b'='b' else impossible_move
-    JE continue
+    JE continue  
         JMP end
     continue:
     
     ;---------INDIRECT---------------- we prioritize the indirect move  
-    CMP turn,'b'
+    CMP turn,'b'     
     JE down
         SUB BH,2  ;------WHITE's TURN------- x<-(i-2)
         JMP next
@@ -636,7 +635,7 @@ show_path MACRO board,i1,j1,turn1,path1,path2,pawn_position,makla1,makla2
     verify_move board,i,j,x,y,turn,verified,isDirect,pawn_position,n2 ; n1[i,j] n2[x,y]      
 
     CMP verified,0
-    JE not_verified 
+    JE not_verified       
         MOV bool,1
         MOV AH,n2
         MOV path1,AH
@@ -707,6 +706,7 @@ show_path MACRO board,i1,j1,turn1,path1,path2,pawn_position,makla1,makla2
         MOV AL,'y' ; not direct 
         MOV isDirect,AL
     end:
+    
 ENDM
 
 
@@ -727,7 +727,7 @@ show_path_dame MACRO board,i1,j1,turn1,dameMoves,dameIndMoves,pawn_position,makl
     MOV makla3,AL ; <- (-1)
     MOV makla4,AL ; <- (-1)
 
-    get_cell_state board, i, j, color, typePawn
+    get_cell_state board, i, j, color, typePawn 
     MOV AL, typePawn
     CMP AL, 1  ; to make the move -> 'w'='w' / 'b'='b' else impossible_move
     JE continue1
