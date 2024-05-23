@@ -23,69 +23,7 @@ find_ligne MACRO n, result
                
 ENDM 
 
- __printDecimal PROC
-        PUSH BP
-        MOV BP, SP
-
-        PUSH AX
-        PUSH BX
-        PUSH CX
-        PUSH DX
-
-        MOV AX, [BP + 4]
-        MOV CX, 10
-
-        MOV BX, 0FFFFh
-        PUSH BX
-
-        printDecimal_L1:
-            XOR DX, DX
-            DIV CX
-            PUSH DX
-            TEST AX, AX
-        JNZ printDecimal_L1
-
-        POP DX
-
-        printDecimal_L2:
-            CMP DX, 0FFFFh
-            JZ printDecimal_end
-
-            ADD DL, '0'
-            MOV AX, 0200h
-            INT 21h
-
-            POP DX
-        JMP printDecimal_L2
-
-        printDecimal_end:
-        POP DX
-        POP CX
-        POP BX
-        POP AX
-
-        MOV SP, BP
-        POP BP
-        RET 2
-    __printDecimal ENDP
  
-printDecimal MACRO num
-        
-        PUSH AX
-
-        MOV AX, num
-        PUSH AX
-
-        CALL __printDecimal
-        
-        POP AX
-        
-        
-ENDM
-
-
-
-
 
 find_column MACRO n,result
     
@@ -352,6 +290,8 @@ ENDM
      xor ah,ah
      mov si,ax     
      mov board[si-1],'D'
+     coolorie  x,y,07h,'D'
+     
      mov bool,1
           
     white:
@@ -363,6 +303,8 @@ ENDM
      xor ah,ah
      mov si,ax     
      mov board[si-1],'d'
+     coolorie  x,y,07h,'d'
+     
      mov bool,1     
     
     
@@ -408,6 +350,7 @@ effacer macro                   ;macro utiliser quant le tour est terminer pour 
 
 
 pre_deplacement macro i,j,x,y,dep_possible,turn,dame   ;j)macro qui verifie si le deplacement est possible de i,j a x,y    ;indice 0..9;possible 1 oui 0 non;
+   
     
     LOCAL pion_blanc,deplacement_impossible,deplacement_possible,fin,deplacement_indirect,cologne_gauche2,cologne_droite2,deplacement_direct,blancc,noiree,commun,possibilite_garder_n1,fin2,possible_white_dame_pion,           
     
@@ -531,8 +474,12 @@ deplacement_pion macro x,y,turn,tableau,board               ;k)macro qui effectu
     
   mov dep,0   ;pion toucher pion jouer (si il peut bouger alord il doit bouger)                  ;on suppose qu'on a toujour i,j avant de faire le deplacement don on rentre seulement le x,y
 
-  getNumber x,y,number1     ;on obtient le numero de case de la destiations
- 
+  getNumber x,y,number1     ;on obtient le numero de case de la destiations 
+  
+  cmp number1,0    ;white case
+  je impossible
+  
+  
     mov al,number1               ;les valeurs de deplacement etant deja stoker avant dans un vecteur il nous suffit de comparer avec les valeurs de ce vecteur
     
     cmp al,tableau[1]      ;la val d'indice 1 corespond a la cologne de droite
@@ -586,7 +533,7 @@ deplacement_pion macro x,y,turn,tableau,board               ;k)macro qui effectu
     je recolorie_de_1
     
      cmp tableau[3],0
-     je suite
+     je fin
      
      mov bl,tableau[3]
      mov n1,bl
@@ -705,13 +652,19 @@ show_path_pion macro i,j,tableau,turn
         sub bl,dh
     
     loop loopp
-
+  
+  cmp sif,1
+  je deplacement_impossible1
+  
+  
   cmp dl,0     ;on verifie si un depalcement indirect est possible si non on verifie le deplacement direct
-  je direct
+  je direct 
+  
+ 
   
   cmp dh,1
   je suuitee     ; la ligne nous permet de savoire si un deplacement indirect est possible pour faire une succession de deplacement
-     inc ligne
+  inc ligne
   suuitee:
      
 
@@ -725,12 +678,17 @@ endm
 
  
 show_path_dame macro i,j,tableau,turn 
+   
     
    pusha
   
    Local suitee,suite,arret_diagonal,arret_diagonal3,arret_diagonal2,deplacement_impossible1,direct,white,black,loopp,suite1,pion_juste,possible_white_dame_pawn,diagonal_svt,diagonal_gauche_bas,diagonal_droite_haut,diagonal_gauche_haut,fin3,obstacle_blanc_noir
- 
-  
+    
+   mov al,sif
+   mov sif2,al 
+   xor al,al
+   
+   
     mov si,1       ;indice du vecteur de sotckge des chemin de deplacement possible commence a 1 
     mov dh,1       ;designe la 1ere diagonal
     
@@ -786,6 +744,9 @@ show_path_dame macro i,j,tableau,turn
          cmp dep_possible,1
          jne obstacle_blanc_noir     ;si le deplacement n'est pas possible on doit verifier si on pet manger le pion\dame de la case destination
          
+         cmp sif,1
+         je suite
+         
          mov ch,number1          ; si le deplacement est possible on affectte le numero de la case dans le vecteur de sauvgarde de chemein de deplacement possible
          mov tableau[si],ch
          coolorie  tmp1,tmp2,valuee1,0   ;et on colorie la case en fonctions
@@ -802,8 +763,9 @@ show_path_dame macro i,j,tableau,turn
          jne arret_diagonal2
          
          inc dl               ;sinon on stocke a l'indice si la valeur 'o' 
-         mov tableau[si],'o'
-        
+         mov tableau[si],'o' 
+         
+         mov sif,0
          
          inc si
          mov ch,number1        ;et a l'indice si+1 le numero de case obstacle
@@ -834,7 +796,13 @@ show_path_dame macro i,j,tableau,turn
       
 
   arret_diagonal:
-    
+        push ax
+        xor al,al
+        
+        mov al,sif2
+        mov sif,al
+        pop ax
+        
         cmp dl,0
         jne suitee
         
@@ -855,9 +823,10 @@ endm
 
 
  
-deplacement_dame macro x,y,tableau
+deplacement_dame macro x,y,tableau 
+    
  
- Local cas_spe,suite1,loopp,suite,position_trouver,same_diagonal,deplacement_impossible,cotiinue 
+  Local cas_spe,suite1,loopp,suite,position_trouver,same_diagonal,deplacement_impossible,cotiinue 
   
   pusha
   
@@ -866,7 +835,8 @@ deplacement_dame macro x,y,tableau
   mov ligne,0
   
   getNumber x,y,number1 ;on recupere le numero de case destiantion
-                     
+  cmp number1,0
+  je deplacement_impossible                   
               ;initialisation des paarmetres
                      
   mov al,number1
@@ -1063,6 +1033,7 @@ endm
 coolorie macro vall1,vall2,coul,vall3       ;fonction qui colorie l'intersecetion d'une ligne cologne du terminal avec la val coul,val3 distingue si on reecris ou non le caractere
  
  pusha
+ 
  Local coloriee,loooppp,suuui,suuuui
  
     mov al,vall1
@@ -1352,6 +1323,8 @@ endm
  dep  db ?
  pos_dep db ?
  bool db ?
+ 
+ 
          
  touver_ligne db "  trouver la ligne $"
  trouver_cologne db "  trouver la cologne $" 
@@ -1372,6 +1345,11 @@ endm
  effac db "                                                                     $"
  turn_message db "turn : $"
  select_again db "  change parametres  $"
+ sif db 0
+ sif2 db ?
+ sif3 db ?
+ 
+ 
  
  
 .code
@@ -1387,7 +1365,16 @@ endm
   mov board[17],'D'
   mov board[21],'w'
   mov board[37],'0'
- 
+     
+     
+     
+     push ax
+     xor al,al
+     mov al,sif
+     mov sif3,al
+     pop ax
+              
+     
      mov turn,'b'
   
     deplacement_index 13,55    ;deplacer l'index sur le terminal a la ligne 9 cologne 55
@@ -1565,13 +1552,13 @@ endm
      cmp dh,4
      je couleur_case 
      
-     cmp dh,5              ;fonction a selectione si on a pris les coordone i,j
+     cmp dh,5               ;fonction a selectione si on a pris les coordone i,j
      je etatt_case
       
-     cmp dh,5
+     cmp dh,6
      je route_possible 
      
-     cmp dh,6 
+     cmp dh,7 
      je deplacem 
   
  trouv_ligne:                ;fonction de retouver la ligne
@@ -1617,7 +1604,8 @@ endm
    
     
  
- etatt_case:                 ;fonction de retouver l'etat  de la case selon i,j
+ etatt_case:
+                  ;fonction de retouver l'etat  de la case selon i,j
        cmp i,0
        jl reboucle
        
@@ -1644,26 +1632,43 @@ endm
       
         getNumber i,j,n       ;test
         
-        cmp number2,0
-        jne case_black  
+        cmp n,0
+        jne case_black 
+         
         deplacement_index dh,35
           
+         
          print_string white
+         
          jmp reboucle
          
          case_black:
         
-         deplacement_index dh,35 
+         deplacement_index dh,20 
          print_string numero_trouver
+         
+         push ax
+         xor ax,ax
+         mov al,n
          push bx
          xor bx,bx
-         mov bl,n
-         mov n2,bx
-         pop bx
-         
-         printDecimal n2  
+         mov bl,10
+         div bl
          
          
+         mov n1,al
+        
+         add n1,30h
+          
+         print_char n1
+  
+         mov n1,ah
+         add n1,30h
+          
+         print_char n1
+        
+          pop bx
+          pop ax  
          
   jmp reboucle    
     
@@ -1710,7 +1715,9 @@ endm
 
    
     mouvement:
-   
+        
+        
+        
            push cx
            
                show_path_global i,j,sauvegarde,turn      ;affceter tous les chemin possible a sauvegarde
@@ -1743,7 +1750,7 @@ endm
            
                switch_dame x,y,turn,bord
                cmp bool,1
-               je
+               je piion
             
            cmp ligne,1 ;on verifie si on a manger un pion
            jne finnn   
@@ -1759,6 +1766,7 @@ endm
             
             cmp ligne,1
             jne  finnn
+            
                 
            piion:  ;si on a manger avec le pion
            
@@ -1771,11 +1779,14 @@ endm
             mov valuee2,07h
             
               init_sauvegarde   ;on initialse le vecteur de sauvegrade
-            
-            
+              
+              
+              mov sif,1
+              
               show_path_global i,j,sauvegarde,turn  ;on verifie les chemins de la nouvelle positions
-            
-            cmp ligne,1       ;on verifie si on peut manger a partir de la nouvelle position
+              
+              
+            cmp pos_dep,1       ;on verifie si on peut manger a partir de la nouvelle position
             jne finnn  ;si non on quitte
             
             pop cx 
@@ -1788,9 +1799,14 @@ endm
     loop mouvement   ;et on refais la meme chose maximum 3 fois
     
    
-    
   finnn:
-   
+    
+              push ax
+              xor al,al
+              mov al,sif3
+              mov sif,al
+              pop ax
+    
     coolorie i,j,07h,0     ;recolorie le i,j
     mov valuee1,2ch
     mov valuee2,47h      ;reafecte les couleur de base
@@ -1818,7 +1834,8 @@ endm
     
     effacer
     
-   jmp main_loop
+   jmp main_loop  
    
-   
-   
+
+
+
