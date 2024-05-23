@@ -187,6 +187,16 @@
                 
                 move_pawn board,x1,y1,path1,path2,source_pawn,makla1,makla2,dest
                 
+                promotion dest,turn,boolProm
+                CMP boolProm,1
+                JE next_promo
+                    JMP check
+                    next_promo:
+                    mark_cell_method 06h
+                        ; MOV AL,1
+                    MOV typePawn,1
+                    JMP promo
+                    
                 ; MOV AL,0
                 ; CMP path1,-1
                 ; JE labll1
@@ -203,15 +213,6 @@
                 ;     JMP next
                 ; labe1:
 
-                ; promotion dest,turn,boolProm
-                ; CMP boolProm,1
-                ; JE next_promo
-                ;     JMP check
-                ;     next_promo:
-                ;     mark_cell_method 06h
-                ;         ; MOV AL,1
-                ;     MOV typePawn,1
-                ;     JMP promo
 
                 JMP check
                 dame1:
