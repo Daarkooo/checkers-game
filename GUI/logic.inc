@@ -26,7 +26,65 @@
     bool DB 0 ; need it in showpaths
     num1 DB ?
 ;! **********************************************************************
+
+;! **********************************************************************
+    n3 DB ? 
+    aiindMoves DB 20 dup(?) 
+    aidirectMoves DB 20 dup(?)
+    dameIndMoves DB 20 dup(?)
+    dameMoves DB 20 dup(?) ; makla i (i e (1->4))
     msg_result DB "result: $"
+    winner DB ?
+
+    ;Variable for AI Part
+    row DB ?
+    column DB ?
+    
+    pathSizeArrayIndex DB 0
+    pathSizeArray DB 10 dup(?)
+
+    Path DB 5 dup(?)  
+    maxPath DB 5 dup(?)
+    pathTaille DB 0
+    maxPathtaille DB 0
+    pileTaille DB 0
+    maxWeight DB 0
+    weightTmp DB 0
+    weight DB 0
+    
+    iAI DB ?
+    jAI DB ?
+    root DB 33
+    tmp DB ?
+    indice DB 0
+    
+    aipathSizeArrayIndex DB 0
+    aipathSizeArray DB 10 dup(?)
+
+    aiPath DB 5 dup(?)  
+    maxaiPath DB 5 dup(?)
+    aipathTaille DB 0
+    aipileTaille DB 0
+    maxaiWeight DB 0
+    aiweightaiTmp DB 0
+    aiweight DB 0
+    
+    iAI1 DB ?
+    jAI2 DB ?
+    airoot DB 33
+    aitmp DB ?
+    aiindice DB 0
+    ;---------------------------
+    PColor DB ?
+        
+    ; aiturn            DB      'w'
+    aipath1           DB      ?
+    aipath2           DB      ?
+    aimakla1          DB      ?
+    aimakla2          DB      ?
+    
+    ver  DB 0
+;! **********************************************************************
 
 .code
     ;------------get_clumn----------------
@@ -670,13 +728,17 @@
             mov AL,'b'
             mov turn,AL
             mov AX, whitePiece  ; the white side color
-            MOV PColor,AX
+            MOV turnColor,AX
+            MOV AX, blackPiece
+            MOV enemyTurnColor, AX
             JMP next_move
         switch:
             mov AL,'w'
             mov turn,AL
             mov AX, blackPiece ; the black side color
-            MOV PColor,AX
+            MOV turnColor,AX
+            MOV AX, whitePiece
+            MOV enemyTurnColor, AX
         next_move:
 
         MOV AL,switcher
@@ -684,24 +746,6 @@
         MUL BL
         MOV switcher,AL
     ENDM
-
-    ; switch_turn MACRO myTurn
-    ;     LOCAL switch_turn_blackTurn, switch_turn_end
-
-    ;     CMP myTurn, 'w'
-    ;     JZ switch_turn_blackTurn
-    ;     MOV myTurn, 'w'
-    ;     MOV AX, whitePiece
-    ;     MOV PColor, AX
-    ;     JMP switch_turn_end
-
-    ;     switch_turn_blackTurn:
-    ;     MOV myTurn, 'b'
-    ;     MOV AX, blackPiece
-    ;     MOV PColor, AX
-
-    ;     switch_turn_end:
-    ; ENDM
 
     ;--------draw_borders---------------------
     draw_borders MACRO IndMoves, directMove, color
@@ -752,8 +796,35 @@
 
     ENDM
 
-    ;---------show_moves-------------
-    show_moves MACRO turn, board, IndMoves, directMoves
+    makla_sif_check MACRO IndMoves, bool, isValid
+        LOCAL no_IndMove,next, end
+
+        CMP IndMoves[0], 0
+        JNE next
+            JMP no_IndMove
+        next:
+
+            PUSH CX
+            PUSH DX
+            is_value_in_array DL, CL, IndMoves, bool
+            POP DX
+            POP CX
+
+            CMP bool, 1
+            JE no_IndMove ; pawn picked 3ndou makla  
+                MOV AL,0
+                MOV isValid, AL
+                JMP end
+
+        no_IndMove:
+            MOV AL,1
+            MOV isValid, AL
+        end:
+
+    ENDM
+
+    ;---------show_moves------------- 
+      show_moves MACRO turn, board, IndMoves, directMoves
         LOCAL lab1, lab2, lab3, directMove,continue, endL
 
         set_array_null IndMoves
@@ -805,6 +876,51 @@
             DEC CX
             JMP lab3
         endL:
+
+    ENDM
+
+    ;-----is_value_in_array-----
+    is_value_in_array MACRO x, y, array, bool
+        LOCAL lab1, exist, not_exist, end
+
+        MOV DL, x
+        MOV DH, y
+        get_number DL, DH, menu, num
+        MOV AL, num
+
+        CMP AL, 0
+        JE not_exist
+
+        LEA SI, array
+        lab1:
+            CMP BYTE PTR [SI], 0
+            JE not_exist
+
+            CMP BYTE PTR [SI], AL
+            JE exist
+            INC SI
+            JMP lab1
+
+        exist:
+            MOV bool, 1
+            JMP end
+        not_exist:
+            MOV bool, 0
+        end:
+
+    ENDM
+
+    ;------set_array_null-----------
+    set_array_null MACRO array
+        LOCAL lab
+
+        LEA SI, array
+        lab:
+            MOV BYTE PTR [SI], 0
+            INC SI 
+            CMP BYTE PTR [SI], 0
+            JNE lab
+
     ENDM
 
     incScore MACRO turn
@@ -840,4 +956,1144 @@
             MOV AL, 0
             MOV winner, AL
         end:
+    ENDM
+
+;! ****************************** AI DEPENDENCIES *******************************
+    ;------get_number----------------  
+    get_Number2 MACRO column, row, Num
+        LOCAL calculate_number, fin
+
+            ; (row % 2 === column % 2)
+            mov al, column
+            xor ah, ah
+            mov cl, 2
+            div cl
+            mov bl, ah  ; Store (column % 2) in bl
+            mov al, row
+            xor ah, ah
+            div cl
+            cmp ah, bl  ; Compare (row % 2) with (column % 2)
+            jNE calculate_number  ; not a White Square
+        
+            ; White square
+            mov Num, 0
+            jmp fin
+        
+        calculate_number:
+        
+            ; Calculate the number
+            mov al, row
+            mov bl, 5
+            mul bl  ; AL = row * 5
+            mov bl, column
+            shr bl, 1  ; Divide column by 2 
+            add al, bl  ; AL = AL + (column / 2)
+            inc al  ;the index starts from 0
+        
+            ; Store the number
+            mov Num, al
+        
+        fin: 
+    ENDM    
+
+    ;------show_path_AI----------
+    show_path_AI MACRO board,i1,j1,turn1,path1,path2,pawn_position,makla,makla2
+        LOCAL end, next, next1, not_verified, not_verified1, not_verified2,  down, down1, label1, label2, label3
+            
+        MOV DL,i1
+        MOV DH,j1
+        mov i,DL  ;i<-dl
+        mov j,DH  ;j<-dh
+
+        MOV x,DL ; BH<-x
+        MOV y,DH ; CH<-y 
+        MOV BH,x
+        MOV CH,y                
+        MOV AH,turn1 
+        MOV turn,AH   
+        
+        MOV AL,-1 ;
+        MOV path1,AL
+        MOV path2,AL ; in case there's no move
+        MOV makla,AL
+        MOV makla2,AL
+        
+        ;---------INDIRECT---------------- we prioritize the indirect move  
+        CMP turn,'b'
+        JE down
+            SUB BH,2  ;------WHITE's TURN------- x<-(i-2)
+            JMP next
+        down: ;------BLACK's TURN-------
+            ADD BH,2 ; x<-(i+2)
+        next:
+        MOV x,BH
+        MOV AL,'n' ; not direct 
+        MOV isDirect,AL
+        
+        ADD CH,2 ; CH<-(y+2) 
+        MOV y,CH
+        verify_move board,i,j,x,y,turn,verified,isDirect,pawn_position,n2 ; n1[i,j] n2[x,y]      
+
+        CMP verified,0
+        JE not_verified 
+            MOV bool,1
+            MOV AH,n2
+            MOV path1,AH
+            MOV AH,isDirect
+            MOV makla,AH ; return maklaNum for path1
+        not_verified:
+        MOV AL,'n' ; not direct 
+        MOV isDirect,AL
+
+        MOV CH,j
+        SUB CH,2 ; CH<-(y-2) 
+        MOV y,CH
+        verify_move board,i,j,x,y,turn,verified,isDirect,pawn_position,n2 ; n1[i,j] n2[x,y] 
+        
+        CMP verified,0 
+        JE not_verified1 
+            MOV bool,1 ; isDirect'll return maklaNum for path2
+            MOV AH,n2
+            MOV path2,AH
+            MOV AH,isDirect
+            MOV makla2,AH
+        not_verified1:
+
+        CMP bool,1
+        JNE label1 ; if there's a move in indirect, isDirect'll return maklaNum -> isDirect != 'n'
+            MOV bool,0
+            MOV AL,'n' ; not direct 
+            MOV isDirect,AL
+            JMP end
+        label1:
+
+        ;---------DIRECT----------------
+        MOV BH,i
+        MOV CH,j
+
+        CMP turn,'b'
+        JE down1
+            DEC BH ;------WHITE's TURN------- x<-(i-1)
+            JMP next1
+        down1: ;------BLACK's TURN-------
+            INC BH ; x<-(i+1)
+        next1:
+        MOV x,BH
+
+        MOV AL,'y' ; direct direct
+        MOV isDirect,AL 
+        INC CH ; CH<-(j+1)  
+        MOV y,CH
+        verify_move board,i,j,x,y,turn,verified,isDirect,pawn_position,n2 ; n1[i,j] n2[x,y] 
+
+        CMP verified,0
+        JE not_verified2  
+            MOV AH,n2
+            MOV path1,AH
+        not_verified2:
+    
+        MOV CH,j
+        DEC CH ; CH<-(j-1) 
+        MOV y,CH 
+        
+        verify_move board,i,j,x,y,turn,verified,isDirect,pawn_position,n2 ; n1[i,j] n2[x,y] 
+
+        CMP verified,0
+        JE label3
+            MOV AH,n2 
+            MOV path2,AH
+        label3:
+            MOV AL,'y' ; not direct 
+            MOV isDirect,AL
+        end:
+    ENDM
+
+    show_path_dame MACRO board,i1,j1,turn1,path1,path2,pawn_position,makla
+        LOCAL next_direction, long_move, long_move1, next, continue, end
+    
+        set_array_null dameMoves
+        set_array_null dameIndMoves
+
+        set_show_values i1, j1, turn1
+
+        ;-------------DIRECT--------------------------
+        LEA DI,dameIndMoves
+        LEA SI,dameMoves
+
+        MOV CX,4
+        next_direction:
+            PUSH CX
+            PUSH DI
+
+            MOV AL,'y' ; direct direct
+            MOV isDirect,AL 
+
+            long_move:
+
+            dame_4_directions x,y
+                                
+                PUSH SI
+                verify_move board,i,j,x,y,turn,verified,isDirect,pawn_position,n2 ; n1[i,j] n2[x,y]
+                POP SI
+                
+                cmp verified,1
+                JNE next
+
+                MOV BYTE PTR [SI],n2 ; byte pointer
+                INC SI
+                
+                JMP long_move 
+
+            next:
+
+            dame_4_directions x,y
+            dame_4_directions x,y ; +2 (to check if there is an indirect move)
+
+            MOV AL,'n' ; direct direct
+            MOV isDirect,AL 
+            
+            verify_move board,i,j,x,y,turn,verified,isDirect,pawn_position,n2 ; n1[i,j] n2[x,y]
+
+            POP DI
+            CMP verified,1
+            JNE continue
+
+                save_dame_makla isDirect ; isDirect return the makla num (in verify_move)
+
+                ;----------------the long path where we can go after making makla-------------------
+                long_move1: ; save the data in direct & indirect move
+
+                    MOV BYTE PTR [SI],n2 ; direct move
+                    INC SI
+                    MOV BYTE PTR [DI],n2 ; indirect move
+                    INC DI
+
+                    dame_4_directions x,y 
+
+                    MOV AL,'y' ; direct 
+                    MOV isDirect,AL 
+
+                    PUSH DI
+                    PUSH SI
+                    verify_move board,i,j,x,y,turn,verified,isDirect,pawn_position,n2 ; n1[i,j] n2[x,y]
+                    POP SI
+                    POP DI
+
+                    cmp verified,1
+                    JNE continue
+                    
+                JMP long_move1 
+
+            continue:
+            
+            MOV BH,i
+            MOV CH,j
+
+            MOV x,BH
+            MOV y,CH
+            
+            POP CX
+        LOOP next_direction   
+
+        ; end:
+    ENDM
+
+    ;------set_show_values ------------------------
+    set_show_values MACRO i1,j1,turn1
+
+        MOV DL,i1
+        MOV DH,j1
+        mov i,DL  ;i<-dl
+        mov j,DH  ;j<-dh
+
+        MOV x,DL ; BH<-x
+        MOV y,DH ; CH<-y 
+                    
+        MOV AH,turn1 
+        MOV turn,AH   
+        
+        MOV AL,-1 ;
+        MOV path1,AL
+        MOV path2,AL ; in case there's no move
+
+    ENDM
+
+
+    ;-----dame_4_directions------------------------------
+    dame_4_directions MACRO x1,y1
+        LOCAL end, up_left, up_right, down_right
+        
+        MOV AL,x1
+        MOV BL,y1
+        MOV x,AL
+        MOV y,BL
+
+        CMP CX,4
+        JE up_right
+            CMP CX,3
+            JE up_left
+                CMP CX,2
+                JE down_right
+                    ;----down_left------
+                        DEC y ; y<-(j-1)  
+                        INC x ; x<-(i+1) 
+                        JMP end
+                down_right:
+                    INC y ; y<-(j+1)  
+                    INC x ; x<-(x+1) 
+                    JMP end
+            up_left:
+                DEC y ; y<-(j-1)  
+                DEC x ; x<-(i-1) 
+                JMP end
+        up_right:
+            DEC y ; y<-(j-1)  
+            INC x ; x<-(i+1) 
+
+        end:
+    ENDM
+
+    ;-------save_dama_makla
+    save_dame_makla MACRO n
+        LOCAL end, up_left, up_right, down_right
+        
+        MOV AL,n
+
+        CMP CX,4
+        JE up_right
+            CMP CX,3
+            JE up_left
+                CMP CX,2
+                JE down_right
+                    ;----down_left------
+                        MOV makla3, AL
+                        JMP end
+                down_right:
+                    MOV makla4, AL
+                    JMP end
+            up_left:
+                MOV makla, AL
+                JMP end
+        up_right:
+            MOV makla2, AL
+
+        end:
+
+    ENDM    
+
+    ;---------show_moves_ai------------- 
+show_moves_AI MACRO board, IndMoves, directMoves
+    LOCAL lab1, lab2, lab3, directMove,continue, endL
+    
+    set_array_null IndMoves
+    set_array_null directMoves
+
+    LEA SI, board
+    LEA DI, IndMoves
+    LEA BX, directMoves  
+    
+    MOV CX, 50
+    lab3:     
+        
+        ;CMP BYTE PTR [SI], AL
+        ;JE continue
+       ;     JMP lab1  
+        ;continue:
+
+            MOV DL,count
+            PUSH CX
+            PUSH BX
+            
+            get_row DL,i
+            get_column DL,j 
+            
+            PUSH SI
+            PUSH DI
+            show_path_AI board,i,j,turn,path1,path2,source_pawn,makla,makla2,isDirect
+            POP DI
+            POP SI
+            POP BX
+            POP CX
+                                       
+            CMP path1, -1
+            JNE lab2
+                CMP path2, -1
+                JE lab1 
+                    lab2:  
+                    MOV AL,source_pawn
+                    ; DEC AL
+                    CMP isDirect,'y'
+                    JE directMove
+                        MOV BYTE PTR [DI], AL
+                        INC DI
+                        JMP lab1
+                    directMove:
+                        MOV BYTE PTR [BX], AL
+                        INC BX
+        lab1:
+            INC SI  
+            INC count
+    CMP CX,0
+    JE endL
+        DEC CX
+        JMP lab3
+    endL:
+
+ENDM
+
+
+;! ******************************************************************************
+
+;! ************************************* AI *************************************
+    isPileEmpty MACRO pileTaille,result
+        LOCAL empty, notEmpty,endPileEmpty
+        CMP pileTaille, 0
+        JE empty
+            JMP notEmpty
+        empty:
+            MOV AL, 1
+            MOV result,AL
+            JMP endPileEmpty
+        notEmpty:
+            MOV AL, 0
+            MOV result,AL
+        endPileEmpty:
+    ENDM
+    ;--------------------------------------
+    ;--------------------------------------
+    pushPile MACRO pileTaille,node,weight
+        MOV AX,0
+        MOV AH,weight
+        MOV AL,node
+        PUSH AX
+        INC pileTaille
+    ENDM
+    ;--------------------------------------
+    popPile MACRO pileTaille,node,weight
+        MOV AX,0
+        POP AX
+        MOV node,AL
+        MOV weight,AH
+        DEC pileTaille
+    ENDM
+
+    ;--------------------------------------
+    getPawnQueen MACRO board,node,turn,weightTmp
+        LOCAL queen,pawn,next,next2,endGetPawn
+        MOV weightTmp,0
+        
+        MOV BX,0
+        MOV BL,node
+        DEC BL
+        queen:
+        MOV AL,Board[BX]
+        CMP AL,'B'
+        JNE next
+        MOV weightTmp,10
+        JMP endGetPawn
+        next:
+        MOV AL,Board[BX]
+        CMP AL,'W'
+        JNE pawn
+        MOV weightTmp,10
+        JMP endGetPawn
+
+        pawn:
+        MOV AL,Board[BX]
+        CMP AL,'b'
+        JNE next2
+        MOV weightTmp,1
+        JMP endGetPawn
+
+        next2:
+        CMP Board[BX],'w'
+        MOV weightTmp,1
+
+        endGetPawn:
+    ENDM
+    ;--------------------------------------
+    copyPath MACRO maxpath,path,pathTaille
+        LOCAL boucle
+        LEA SI,maxpath
+        LEA DI,path
+        XOR CX,CX
+        MOV CL,pathTaille
+
+        boucle:
+            MOV AL,[DI]
+            MOV [SI],AL
+            INC SI
+            INC DI
+
+            LOOP boucle
+    ENDM
+    ;--------------------------------------
+    preOrder MACRO board,pileTaille,root,weight,path
+        LOCAL bouclePreOrder,restofcode,rightPre,rest1,left,rest2,feuilles,estFeuilles,cond1,cond2,last,endPreOrder,change
+        MOV weight,0
+        pushPile pileTaille,root,weight
+        MOV pathSizeArrayIndex,1
+        MOV pathSizeArray[0],0
+        bouclePreOrder:
+                isPileEmpty pileTaille,AL
+                CMP AL,1
+                JNE restofcode
+                JMP endPreOrder
+            restofcode:
+                
+                popPile pileTaille,root,weight
+                
+                MOV BX,0
+                DEC pathSizeArrayIndex
+                MOV BL,pathSizeArrayIndex
+                MOV AL,pathSizeArray[BX]
+                MOV pathTaille,AL
+                MOV BL,pathTaille
+                MOV BH,0
+                MOV AL,root
+                MOV path[BX],AL
+                ADD pathTaille,1
+                get_column root , jAI
+                get_row root ,  iAI
+                ;printBoardWithOffset board, 000fh, 0, 0
+                XOR BX,BX
+                MOV BL,root
+                DEC BL
+                MOV AL,board[BX]
+                MOV tmp,AL
+                MOV AL,turn
+                MOV board[BX],AL
+                show_path_AI board,iAI,jAI,turn,path1,path2,pawn_position,makla,makla2
+                XOR BX,BX
+                MOV BL,root
+                DEC BL
+                MOV AL,tmp
+                MOV board[BX],AL
+            
+                rightPre:
+                    CMP makla2,-1
+                    JNE rest1
+                    JMP left
+                    rest1:
+                    
+                    getPawnQueen board,makla2,turn,weightTmp
+                    MOV AL,weight
+                    ADD weightTmp,AL
+                    pushPile pileTaille,path2,weightTmp
+                    MOV BX,0
+                    MOV BL,pathSizeArrayIndex
+                    MOV AL,pathTaille
+                    MOV pathSizeArray[BX],AL
+                    inc pathSizeArrayIndex
+        
+                left:
+                    CMP makla,-1
+                    JNE rest2
+                    JMP feuilles
+                    rest2:
+                    
+                    getPawnQueen board,makla,turn,weightTmp
+                    MOV AL,weight
+                    ADD weightTmp,AL
+                    pushPile pileTaille,path1,weightTmp
+                    MOV BX,0
+                    MOV BL,pathSizeArrayIndex
+                    MOV AL,pathTaille
+                    MOV pathSizeArray[BX],AL
+                    inc pathSizeArrayIndex
+                
+                estFeuilles:
+                    cond1:
+                        CMP makla2,-1
+                        JE cond2
+                        JMP bouclePreOrder
+                    cond2:
+                        CMP makla,-1
+                        JE feuilles
+                        JMP bouclePreOrder
+                    
+
+        
+                feuilles:
+                    get_row root ,iAI
+                    CMP iAI,0
+                    JNE bturn
+                    JMP isPromoted
+                    bturn:
+                    get_row root ,iAI
+                    CMP iAI,9
+                    JNE last
+                    
+                    isPromoted:
+                    ADD weight,9
+                    last:
+                    MOV AL, weight
+                    CMP AL, maxWeight
+                    JA change
+                    JMP bouclePreOrder
+                    change:
+                        MOV AL,weight
+                        MOV maxWeight,AL
+                        ;clrPath maxpath
+                        copyPath maxpath,path,pathTaille
+                        MOV BX,0
+                        MOV BL,pathtaille
+                        MOV [maxpath + BX],0
+                        MOV AL,pathtaille
+                        MOV maxpathtaille,AL
+                        
+                    JMP bouclePreOrder
+        endPreOrder:
+    ENDM
+    ;--------------------------------------
+    pionWeight MACRO root,weight
+        LOCAL path1Ver,path2Ver,path3Ver,changeP,endPionWeight,notpromo   
+        
+            get_column root , jAI
+            get_row root ,  iAI
+            MOV AL,root
+            mov path[0],AL
+            show_path_AI board,iAI,jAI,turn,path1,path2,pawn_position,makla,makla2
+            
+            path1Ver:
+                pionPromoted path1,iAI,ver
+                CMP ver,1
+                JNE path2Ver
+                MOV weight,9
+                MOV AL,path1
+                MOV path[1],AL
+                JMP path3Ver
+                
+                
+            path2Ver:
+                pionPromoted path2,iAI,ver
+                CMP ver,1
+                JNE notpromo
+                MOV weight,9
+                MOV AL,path2
+                MOV BX,0
+                MOV BL,1
+                MOV path[BX],AL
+                JMP path3Ver
+                notpromo:
+                CMP path2,-1
+                JE path1move
+                path2move:
+                MOV AL,path2
+                MOV BX,0
+                MOV BL,1
+                MOV path[BX],AL
+                MOV weight,1
+                JMP path3Ver
+                path1move:
+                MOV AL,path1
+                MOV BX,0
+                MOV BL,1
+                MOV path[BX],AL
+                MOV weight,1
+            path3Ver:  
+            MOV AL, weight
+            CMP AL, maxWeight
+            JA changeP
+            JMP endPionWeight
+                changeP:
+                    MOV AL,weight
+                    MOV maxWeight,AL
+                    MOV pathTaille,2
+                    ;clrPath maxpath
+                    copyPath maxpath,path,pathTaille
+                    MOV maxpathtaille,2 
+                    
+            endPionWeight:
+    ENDM   
+    ;--------------------------------------
+    pionPromoted Macro num,turn,result
+        LOCAL blackSide,restB,whiteSide,endPionPromoted
+        
+        Mov result,0
+        blackSide:
+            CMP turn,'b'
+            JE restB
+            JMP whiteSide
+            
+            restB:
+            get_row num ,i
+            CMP i,9
+            JNE endPionPromoted
+            MOV result,1
+            
+            
+            JMP endPionPromoted
+        whiteSide:
+            
+            get_row num ,i
+            CMP i,0
+            JNE endPionPromoted
+            MOV result,1
+            
+        endPionPromoted:
+        
+    ENDM
+    ;--------------------------------------
+    enemyMove MACRO board, turn, maklaSif , weight , maxWeight , path , bestPath 
+        LOCAL indirectEnemyMove,MaklaSifPart,enemyRest,directEnemyMove,Before,enemyRestP,finEnemyMove 
+        
+        MOV maxWeight,0
+        show_moves_AI  board, indMoves, directMoves
+        MOV indice,0
+        indirectEnemyMove:   
+            MOV BX,0
+            MOV BL,indice
+            MOV AL,indMoves[BX]
+            CMP AL,0
+            JNE enemyRest
+            JMP Before
+            enemyRest:
+            
+                MOV AL,indMoves[BX]
+                MOV root,AL
+                preOrder board,pileTaille,root,weight,path 
+            
+                INC indice
+            JMP indirectEnemyMove 
+
+            MaklaSifPart:
+            
+            CMP maklaSif,1
+            JNE Before
+            MOV al,pathTaille
+            CMP maxpathTaille,0
+            je Before
+            JMP finEnemyMove
+        
+        
+        Before:
+        
+        MOV indice,0
+        directEnemyMove:
+            
+                MOV BX,0
+                MOV BL,indice
+                MOV AL,directMoves[BX]
+                CMP AL,0
+                JNE enemyRestP
+                JMP finEnemyMove
+                enemyRestP:
+                
+                MOV weight,0
+                MOV BX,0
+                MOV BL,indice
+                MOV AL,directMoves[BX]
+                MOV root,AL
+                pionWeight root,weight
+                
+                
+                INC indice                                
+                JMP directEnemyMove
+
+        finEnemyMove:
+
+
+    ENDM
+
+    ;--------------------------------------
+    clrPath MACRO path 
+        LOCAL boucle
+        MOV CX,5
+        boucle:
+            MOV BX,CX 
+            MOV path[BX],0
+            LOOP boucle
+    ENDM
+    ;--------------------------------------
+    aipreOrder MACRO board
+        LOCAL boucleaiPreOrder,restofcode,rightPre,rest1,left,rest2,feuilles,estFeuilles,cond1,cond2,last,endaiPreOrder,change,isPromoted
+        MOV aiweight,0
+        pushPile aipileTaille,airoot,aiweight
+        MOV aipathSizeArrayIndex,1
+        MOV aipathSizeArray[0],0
+        boucleaiPreOrder:
+                isPileEmpty aipileTaille,AL
+                CMP AL,1
+                JNE restofcode
+                JMP endaiPreOrder
+            restofcode:
+                
+                popPile aipileTaille,airoot,aiweight
+                
+                MOV BX,0
+                DEC aipathSizeArrayIndex
+                MOV BL,aipathSizeArrayIndex
+                MOV AL,aipathSizeArray[BX]
+                MOV aipathTaille,AL
+                MOV BL,aipathTaille
+                MOV BH,0
+                MOV AL,airoot
+                MOV aipath[BX],AL
+                ADD aipathTaille,1
+                get_column airoot , jAI2
+                get_row airoot ,  iAI1
+                ;printBoardWithOffset board, 000fh, 0, 0
+                XOR BX,BX
+                MOV BL,airoot
+                DEC BL
+                MOV AL,board[BX]
+                MOV aitmp,AL
+                MOV AL,aiturn
+                MOV board[BX],AL
+                show_path_AI board,iAI1,jAI2,aiturn,aipath1,aipath2,pawn_position,aimakla1,aimakla2
+                XOR BX,BX
+                MOV BL,airoot
+                DEC BL
+                MOV AL,aitmp
+                MOV board[BX],AL
+            
+                rightPre:
+                    CMP aimakla2,-1
+                    JNE rest1
+                    JMP left
+                    rest1:
+                    
+                    getPawnQueen board,aimakla2,aiturn,aiweightaiTmp
+                    MOV AL,aiweight
+                    ADD aiweightaiTmp,AL
+                    pushPile aipileTaille,aipath2,aiweightaiTmp
+                    MOV BX,0
+                    MOV BL,aipathSizeArrayIndex
+                    MOV AL,aipathTaille
+                    MOV aipathSizeArray[BX],AL
+                    inc aipathSizeArrayIndex
+        
+                left:
+                    CMP aimakla1,-1
+                    JNE rest2
+                    JMP feuilles
+                    rest2:
+                    
+                    getPawnQueen board,aimakla1,aiturn,aiweightaiTmp
+                    MOV AL,aiweight
+                    ADD aiweightaiTmp,AL
+                    pushPile aipileTaille,aipath1,aiweightaiTmp
+                    MOV BX,0
+                    MOV BL,aipathSizeArrayIndex
+                    MOV AL,aipathTaille
+                    MOV aipathSizeArray[BX],AL
+                    inc aipathSizeArrayIndex
+                
+                estFeuilles:
+                    cond1:
+                        CMP aimakla2,-1
+                        JE cond2
+                        JMP boucleaiPreOrder
+                    cond2:
+                        CMP aimakla1,-1
+                        JE feuilles
+                        JMP boucleaiPreOrder
+                    
+
+        
+                feuilles:
+                    get_row airoot ,iAI1
+                    CMP iAI1,0
+                    JNE baiturn
+                    JMP isPromoted
+                    baiturn:
+                    get_row airoot ,iAI1
+                    CMP iAI1,9
+                    JNE last
+                    
+                    isPromoted:
+                    ADD aiweight,9
+                    last:
+                    copyBoard board,board2
+                    MakeMoveAI board2,path
+                    enemyMove board2,turn , maklaSif , weight , maxWeight , path , bestPath
+                    MOV AL, aiweight
+                    SUB AL, maxWeight
+                    
+                    MOV aiweight,AL
+                    CMP AL, maxaiWeight
+                    JA change
+                    JMP boucleaiPreOrder
+                    change:
+                        MOV AL,aiweight
+                        MOV maxaiWeight,AL
+                        copyPath maxaipath,aipath,aipathTaille
+                        
+                    JMP boucleaiPreOrder
+        endaiPreOrder:
+    ENDM
+    ;--------------------------------------
+    pionaiWeight MACRO airoot,aiweight
+        LOCAL aipath1Ver,aipath2Ver,aipath3Ver,changeP,endPionaiWeight   
+        
+            get_column airoot , jAI2
+            get_row airoot ,  iAI1
+            show_path_AI board,iAI1,jAI2,aiturn,aipath1,aipath2,pawn_position,aimakla1,aimakla2
+            
+            aipath1Ver:
+                pionPromoted aipath1,iAI1,al
+                CMP al,1
+                JNE aipath2Ver
+                MOV aiweight,9
+                JMP aipath3Ver
+                
+            aipath2Ver:
+                pionPromoted aipath2,iAI1,al
+                CMP al,1
+                JNE aipath3Ver
+                MOV aiweight,9
+                
+            aipath3Ver:  
+            MOV AL, aiweight
+            CMP AL, maxaiWeight
+            JA changeP
+            JMP endPionaiWeight
+                changeP:
+                    MOV AL,aiweight
+                    MOV maxaiWeight,AL
+                    
+            endPionaiWeight:
+    ENDM   
+
+    ;-------------------------------------- 
+    MakeMoveAI MACRO board,path,maxpathTaille
+    LOCAL boucle22,finMove,continue
+        MOV BX,0
+        boucle22:
+            MOV al,path[bx]
+            INC BX
+            MOV ah,path[bx]
+            CMP ah,0
+            jne continue
+            JMP finMove  
+            continue:
+            MOV n1,al
+            MOV n2,ah
+            PUSH BX
+            XOR BX,BX
+            MOV BL,n1
+            DEC BL
+            MOV AL,board[BX]
+            MOV PColor,AL
+            MakeAMove board,n1,n2,PColor
+            move_gui n1, n2, enemyTurnColor
+            POP BX
+            JMP boucle22                
+        finMove:
+    ENDM
+    ;--------------------------------------
+    aiMove MACRO board, aiturn, maklaSif , aiweight , maxaiWeight , aipath , bestaiPath 
+        LOCAL indirectEnemyMove,MaklaSifPart,enemyRest,directEnemyMove,Before,enemyRestP,finEnemyMove,changeP 
+        
+        MOV maxaiWeight,0
+        show_moves_ai  board, aiindMoves, aidirectMoves
+        MOV aiindice,0
+        indirectEnemyMove:   
+            MOV BX,0
+            MOV BL,aiindice
+            MOV AL,aiindMoves[BX]
+            CMP AL,0
+            JNE enemyRest
+            JMP Before
+            enemyRest:
+            
+                MOV AL,aiindMoves[BX]
+                MOV airoot,AL
+                aipreOrder 
+            
+                INC aiindice
+            JMP indirectEnemyMove 
+
+            MaklaSifPart:
+            CMP maklaSif,1
+            JNE Before
+            JMP finEnemyMove
+        
+        
+        Before:
+        
+        MOV aiindice,0
+        directEnemyMove:
+            
+                MOV BX,0
+                MOV BL,aiindice
+                MOV AL,aidirectMoves[BX]
+                CMP AL,0
+                JNE enemyRestP
+                JMP finEnemyMove
+                enemyRestP:
+                
+                MOV aiweight,0
+                MOV BX,0
+                MOV BL,aiindice
+                MOV AL,aidirectMoves[BX]
+                MOV airoot,AL
+                pionaiWeight airoot,aiweight
+                MOV AL, weight
+                    CMP AL, maxWeight
+                    JA changeP
+                    JMP nextP
+                    changeP:
+                        MOV AL,weight
+                        MOV maxWeight,AL
+                        
+                nextP:        
+                INC aiindice                                
+                JMP directEnemyMove
+
+        finEnemyMove:
+
+
+    ENDM 
+        
+    MakeAMove Macro board,n1,n2,PColor
+            LOCAL MoveApply,MoveG,MoveD,MoveDownD,MoveTopD,MoveDownG,MoveTopG,FinMove,rest23,notMove1, notMove2, notMove3, notMove4
+            MoveApply:
+                MOV AL,n1
+                CMP AL,n2
+
+                JNZ notMove1
+                JMP FinMove
+                notMove1:
+
+                get_column n1,DL
+                get_column n2,DH
+
+                CMP DL,DH
+
+                JB MoveD
+                JMP MoveG
+
+                MoveD:
+                get_Row n1,CL
+                get_Row n2,CH
+
+                CMP CL,CH
+                JAE MoveTopD
+
+                MoveDownD:
+                    CMP DL,DH
+                    JNZ notMove2
+                    JMP FinMove
+                    notMove2:
+                    PUSH DX
+                    PUSH CX
+
+                    MOV x,DL
+                    MOV y,CL
+                    get_number2 x, y, n3
+                    MOV BX,0
+                    MOV BL,n3
+                    DEC BL
+                    MOV board[BX],'0'
+
+                    POP CX
+                    POP DX
+                    ADD DL,1
+                    ADD CL,1
+                    JMP MoveDownD
+
+
+                MoveTopD:
+                    CMP DL,DH
+                    JNZ notMove3
+                    JMP FinMove
+                    notMove3:
+                    PUSH DX
+                    PUSH CX
+
+                    MOV x,DL
+                    MOV y,CL
+                    get_number2 x, y, n3
+                    MOV BX,0
+                    MOV BL,n3
+                    DEC BL
+                    MOV board[BX],'0'   
+
+                    POP CX
+                    POP DX
+                    ADD DL,1
+                    SUB CL,1
+                    JMP MoveTopD
+
+                MoveG:
+                get_Row n1,CL
+                get_Row n2,CH
+
+                CMP CL,CH
+                JAE MoveTopG
+
+                MoveDownG:
+                    CMP DL,DH
+                    JNZ notMove4
+                    JMP FinMove
+                    notMove4:
+                    PUSH DX
+                    PUSH CX
+                    
+                    MOV x,DL
+                    MOV y,CL
+                    get_number2 x, y, n3
+                    MOV BX,0
+                    MOV BL,n3
+                    DEC BL
+                    MOV board[BX],'0'   
+
+                    POP CX
+                    POP DX
+                    SUB DL,1
+                    ADD CL,1
+                    JMP MoveDownG
+
+                MoveTopG:
+                    CMP DL,DH
+                    JNE rest23
+                    JMP FinMove
+                    rest23:
+                    PUSH DX
+                    PUSH CX
+
+                    MOV x,DL
+                    MOV y,CL
+                    get_number2 x, y, n3
+                    MOV BX,0
+                    MOV BL,n3 
+                    DEC BL
+                    MOV board[BX],'0'  
+
+                    POP CX
+                    POP DX
+                    SUB DL,1
+                    SUB CL,1
+                    JMP MoveTopG
+                JMP MoveApply
+            FinMove:
+                MOV x,DL
+                MOV y,CL
+                get_number2 x, y, n3
+                MOV BX,0
+                MOV BL,n3
+                DEC BL
+                MOV AL,PColor
+                MOV board[BX],AL
+    ENDM
+
+    copyBoard MACRO board,board2
+        LOCAL boucle,finCopy
+        MOV BX,49
+        boucle:
+            CMP BX,-1
+            JNE rest
+            JMP finCopy
+            rest:
+            
+            MOV al,board[BX]
+            MOV board2,al
+            
+            DEC BX
+            JMP boucle
+        finCopy:
+        
+            
     ENDM

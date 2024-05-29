@@ -204,9 +204,9 @@
             JMP menu_endLabel
 
             SPMP_clicked:
-                CMP isSinglePlayer, 1
                 pushMousePosition
                 setMousePosition 0, 0
+                CMP isSinglePlayer, 1
                 JZ SP_TOGGLE
                     printGraphicalString MP_MSG, 0F1h, 25, 6
                     printGraphicalString SP_MSG, 0F1h, 24, 6
@@ -223,9 +223,9 @@
                 JMP MAIN_L1
 
             MAKLA_clicked:
-                CMP maklaSif, 1
                 pushMousePosition
                 setMousePosition 0, 0
+                CMP maklaSif, 1
                 JZ MAKLA_TOGGLE
                     printGraphicalString MKLASIF_MSG , 0F2h, 23, 11
                     printGraphicalString MKLANSIF_MSG, 0F2h, 23, 11

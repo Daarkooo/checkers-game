@@ -13,7 +13,8 @@
     blackPiece      DW      0001h ; blue
     whitePiece      DW      0000h ; black
 
-    PColor          DW      ?
+    turnColor       DW      ?
+    enemyTurnColor  DW      ?
     source_pawn     DB      ?
     turn            DB      'b'
     path1           DB      ?
@@ -24,6 +25,7 @@
     isDirect        DB      ?
     multiple_jumps  DB      ?
     maklaSif        DB      1
+    aiturn          DB      'w'
 
     INCLUDE menu.inc
     INCLUDE print.inc
@@ -67,16 +69,41 @@
         drawBorder 0008h, offsetX, offsetY, 340, 5
         CALL duringGameMenu
         setupMouse 500, 270, 0, 0, 637, 347
+        printBoardWithOffset board, 000Eh, 0, 5
 
         play:
+
+            ;! ******************************** NOT WORKING ********************************
+                ; check_state_game IndMoves, directMoves, AL
+                ; CMP AL, 0
+                ; JZ MAIN_continueGame
+                ; JMP MAIN_gameEnd
+                ; MAIN_continueGame:
+            ;! *****************************************************************************
+
+            CMP isSinglePlayer, 1
+            JZ MAIN_isSinglePlayer
+            JMP MAIN_notBotTurn
+
+            MAIN_isSinglePlayer:
+
+            MOV AL, turn
+            CMP AL, aiturn
+            JZ MAIN_isBotTurn
+            JMP MAIN_notBotTurn
+
+            MAIN_isBotTurn:
+            ; printBoardWithOffset board, 000Eh, 00, 6
+            enemyMove               board, aiturn , maklaSif , weight , maxWeight , path , bestPath
+            MakeMoveAI              board, maxpath,maxpathTaille      
+            ; printBoardWithOffset board, 000Eh, 30, 6
+
+            switch_turn turn
+            JMP MAIN_BotTurnEnd
+
+            MAIN_notBotTurn:
+
             show_moves turn, board, IndMoves, directMoves
-
-            check_state_game IndMoves, directMoves, AL
-            CMP AL, 0
-            JZ MAIN_continueGame
-            JMP MAIN_gameEnd
-            MAIN_continueGame:
-
             draw_borders IndMoves, directMoves, 0Ah
 
             reselect:
@@ -172,8 +199,13 @@
 
             CALL soundEffect
             switch_turn turn ; make it here to change the color of the pawns (depends on player's turn)
-            Move_GUI source_pawn, isDirect, PColor ; isDirect <- board[x,y] if the move is valid
+            Move_GUI source_pawn, isDirect, turnColor        ; isDirect <- board[x,y] if the move is valid
+
+            MAIN_BotTurnEnd:
             switchTurnString turn
+
+            printBoardWithOffset board, 000Eh, 0, 5
+            printBoardWithOffset board, 000Eh, 0, 5
         JMP play
 
         MAIN_gameEnd:

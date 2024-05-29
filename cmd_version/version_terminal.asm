@@ -1455,11 +1455,3 @@ endm
     effacer
     
    jmp main_loop
-    
-    
-    
-    
-    
-    
-    
-    
