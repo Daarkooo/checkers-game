@@ -9,12 +9,12 @@
     IndMoves        DB      20 dup(?)
 
 
-    blackCell       DW      0006h ; brown
-    whiteCell       DW      000Fh ; white
-    blackPiece      DW      0001h ; blue
-    whitePiece      DW      0000h ; black
+    blackCell       DW      0006h   ; brown
+    whiteCell       DW      000Fh   ; white
+    blackPiece      DW      0001h   ; blue
+    whitePiece      DW      0000h   ; black
 
-    PColor          DW      0001H ; initial it with black Piece Color
+    PColor          DW      ?       ; initial it with black Piece Color
     source_pawn     DB      ?
     turn            DB      'b'
     path1           DB      ?
@@ -79,6 +79,8 @@
         drawBorder 0008h, 295, 5, 340, 5
         CALL duringGameMenu
         setupMouse 500, 270, 0, 0, 637, 347
+        MOV AX, blackPiece
+        MOV PColor, AX
 
         play:
             ; show_moves board, IndMoves, directMoves
@@ -180,7 +182,7 @@
             popMousePosition
 
             ; Use BX to pass 8 bit paraemtre, because AX will be cleared inside MACRO call
-            mark_cell_method 04h
+            mark_cell_method 0004h
 
             reselect2:
                 LEA AX,getOptionClickedInGame
@@ -218,7 +220,7 @@
                 JE next_promo
                     JMP check
                     next_promo:
-                    mark_cell_method 06h
+                    mark_cell_method blackCell
                         ; MOV AL,1
                     MOV typePawn,1
                     JMP promo
@@ -277,7 +279,7 @@
                     JMP reselect2
             label3:
 
-            mark_cell_method 06h
+            mark_cell_method blackCell
 
             promo:
             drawBorderCell source_pawn, blackCell, offsetX, offsetY, cellSize
