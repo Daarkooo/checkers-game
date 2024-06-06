@@ -135,10 +135,6 @@
             TEST BL, 1          ; Check if left button is pressed
         JZ __awaitMouseClick_buttonPressed
 
-        ; sleep 0000h, 0C350h     ; 50000  MicroSecond
-        ; sleep 0001h, 5F90h      ; 90000  MicroSecond
-        ; sleep 0001h, 0ADB0h     ; 110000 MicroSecond
-        
         PUSH CX     ; column (x)
         PUSH DX     ; row (y)
 

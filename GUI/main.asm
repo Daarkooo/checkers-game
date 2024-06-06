@@ -4,9 +4,9 @@
 
 .DATA
 
-    board           DB  50 DUP('?')
-    directMoves     DB  20 dup(?)
-    IndMoves        DB  20 dup(?)
+    board           DB      50 DUP('?')
+    directMoves     DB      20 dup(?)
+    IndMoves        DB      20 dup(?)
 
 
     blackCell       DW      0006h ; brown
@@ -46,8 +46,8 @@
     main PROC
         MOV AX, @DATA
         MOV DS, AX
-        
-         PUSH BP
+
+        PUSH BP
         MOV BP, SP
 
         ; set up video mode
@@ -75,21 +75,19 @@
         MOV AX, 0010h   ; 640x350 16 colors
         INT 10h
 
-
-        Board_init_GUI board, blackCell, whiteCell, blackPiece, whitePiece 
-         CALL duringGameMenu
+        Board_init_GUI board, blackCell, whiteCell, blackPiece, whitePiece
+        drawBorder 0008h, 295, 5, 340, 5
+        CALL duringGameMenu
         setupMouse 500, 270, 0, 0, 637, 347
-        
-
 
         play:
-
-            ;show_moves board, IndMoves, directMoves
-            ; draw_borders IndMoves, directMoves, 0Ah 
+            ; show_moves board, IndMoves, directMoves
+            ; draw_borders IndMoves, directMoves, 0Ah
             ; MOV AL, 0
             ; MOV countMoves, AL
+
             reselect:
-                
+
                 LEA AX, getOptionClickedInGame
                 awaitMouseClick AX, offsetX, offsetY, cellSize
 
@@ -121,11 +119,10 @@
                 pawn:
                 XOR AX,AX
                 MOV AL, typePawn
-                ; call liveUsage
 
                 MOV AL, isDirect
-                MOV check_direct , AL ; need it in multiple_jumps to check if the previous move was a direct/indirect move 
-                
+                MOV check_direct , AL ; need it in multiple_jumps to check if the previous move was a direct/indirect move
+
                 MOV AL,0
                 CMP path1,-1
                 JE label1
@@ -136,16 +133,16 @@
                 JE label2
                     MOV AL,1
                 label2:
-                
-                CMP AL,1    
+
+                CMP AL,1
                 JNE labe1
                     JMP next
                 labe1:
                 JMP reselect
 
                 dame:
-               show_path_dame board,x1,y1,turn,dameMoves,dameIndMoves,source_pawn,makla1,makla2,makla3,makla4 
-                
+                show_path_dame board,x1,y1,turn,dameMoves,dameIndMoves,source_pawn,makla1,makla2,makla3,makla4
+
                 MOV AL, isDirect
                 MOV check_direct, AL
 
@@ -158,38 +155,35 @@
 
                 MOV AL,0
                 LEA BX, dameIndMoves
-                CMP BYTE PTR[BX+3],0  
+                CMP BYTE PTR[BX+3],0
                 JE lab5
                     MOV AL,1
                 lab5:
 
-                LEA BX, dameMoves                      
+                LEA BX, dameMoves
                 CMP BYTE PTR[BX+3],0
                 JE lab4
                     MOV AL,1
-                lab4: 
-                    
+                lab4:
+
                 CMP AL,1
                 JE next
                     JMP reselect
 
             next:
-            ;draw_borders IndMoves, directMoves, 06h
-           
+            ; draw_borders IndMoves, directMoves, 06h
+
             multi_jumps_lab:
             pushMousePosition
             setMousePosition 0, 0
             drawBorderCell source_pawn, 0Ah, offsetX, offsetY, cellSize
             popMousePosition
 
-            
-            ; CALL liveUsage
             ; Use BX to pass 8 bit paraemtre, because AX will be cleared inside MACRO call
             mark_cell_method 04h
-            
-            ; CALL liveUsage
+
             reselect2:
-                 LEA AX,getOptionClickedInGame
+                LEA AX,getOptionClickedInGame
                 awaitMouseClick AX, offsetX, offsetY, cellSize ; CX <- xCX <- x DX <- y
 
                 MAIN_NOTHING2:
@@ -211,15 +205,14 @@
 
                 MOV x1, DL
                 MOV y1, CL
-                
 
                 CMP typePawn,0
                 JE pawn1
                     JMP dame1
                 pawn1:
-                
+
                 move_pawn board,x1,y1,path1,path2,source_pawn,makla1,makla2,dest
-                
+
                 promotion dest,turn,boolProm
                 CMP boolProm,1
                 JE next_promo
@@ -229,7 +222,7 @@
                         ; MOV AL,1
                     MOV typePawn,1
                     JMP promo
-                    
+
                 ; MOV AL,0
                 ; CMP path1,-1
                 ; JE labll1
@@ -240,8 +233,8 @@
                 ; JE labll2
                 ;     MOV AL,1
                 ; labll2:
-                
-                ; CMP AL,1    
+
+                ; CMP AL,1
                 ; JNE dame1
                 ;     JMP next
                 ; labe1:
@@ -249,13 +242,13 @@
 
                 JMP check
                 dame1:
-                
+
                 move_dame board,x1,y1,dameMoves,dameIndMoves,source_pawn,makla1,makla2, makla3, makla4,dest
-                
+
                 CMP maklaSif, 1
                 JE checkMove
                     JMP continue3
-                checkMove:    
+                checkMove:
                     LEA SI, dameIndMoves
                     CMP BYTE PTR [SI+3],0
                     JNE next_move2
@@ -267,7 +260,7 @@
                     JE label3
                         JMP reselect2
                 continue3:
-                
+
                 ; XOR AX,AX
                 ; XOR BX,BX
                 ; XOR CX,CX
@@ -283,22 +276,13 @@
                 JNE label3
                     JMP reselect2
             label3:
-      
-
 
             mark_cell_method 06h
-            
-            ; call liveUsage
-            promo:
 
-             drawBorderCell source_pawn, blackCell, offsetX, offsetY, cellSize
-            
+            promo:
+            drawBorderCell source_pawn, blackCell, offsetX, offsetY, cellSize
 
             Move_GUI source_pawn,dest,PColor ; isDirect <- board[x,y] if the move is valid
-            ; CALL liveUsage
-            ; XOR AX,AX
-            ; mov AL,check_direct
-            ; call liveUsage
 
             CALL soundEffect
 
@@ -342,21 +326,21 @@
                         MOV AL,1
                     lab2:
 
-                    CMP AL,1    
+                    CMP AL,1
                     JE next11
                         JMP next1
                         next11:
                         JMP multi_jumps_lab
-                    
+
             ; dame2:
-            ; show_path_dame board,x1,y1,turn,dameMoves,dameIndMoves,source_pawn,makla1,makla2,makla3,makla4 
+            ; show_path_dame board,x1,y1,turn,dameMoves,dameIndMoves,source_pawn,makla1,makla2,makla3,makla4
 
             ; LEA SI, dameIndMoves
             ; CMP BYTE PTR [SI+3],0
             ; JNE next_move1
             ;     JMP next1
             ; next_move1:
-               
+
             ;     ; MOV AL,countMoves
             ;     ; CMP AL,0
             ;     ; JE nextMove
@@ -366,13 +350,13 @@
             ;     ;         JMP next1
             ;     ; nextMove:
 
-            ;     ; INC countMoves 
-                
+            ;     ; INC countMoves
+
             ;     JMP multi_jumps_lab
-            
+
             next1:
 
-            switch_turn turn 
+            switch_turn turn
 
             ; check_state_game IndMoves, directMoves, winner
             ; CMP winner, 1
@@ -382,7 +366,7 @@
             ;     JMP main_endLabel
             ; continue2:
             ; MOV winner, 0
-            
+
 
             drawBackGround 115,159,86,26,00h
 
@@ -395,22 +379,22 @@
 
             printGraphicalString blackPlayer,0FFh,16,12;
             everyThingIsHandeled:
-            
+
         JMP play
 
-         MAIN_gameEnd:
+        MAIN_gameEnd:
             pushMousePosition
             setMousePosition 0, 0
 
-            drawBackGround 80, 154, 156, 36, 0Eh
-            drawBackGround 85, 159, 146, 26, 00h
+            drawBackGround 110, 154, 122, 36, 0Eh
+            drawBackGround 115, 159, 112, 26, 00h
             CMP turn, 'b'
             JZ MAIN_whiteWin
-            printGraphicalString blackWinMsg, 0FFh, 12, 12
+            printGraphicalString blackWinMsg, 0FFh, 15, 12
             JMP MAIN_continueGame1
 
             MAIN_whiteWin:
-            printGraphicalString whiteWinMsg, 0FFh, 12, 12
+            printGraphicalString whiteWinMsg, 0FFh, 15, 12
 
             MAIN_continueGame1:
 

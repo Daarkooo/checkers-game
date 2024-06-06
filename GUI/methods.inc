@@ -20,7 +20,7 @@ makla_sif_check MACRO IndMoves, bool, isValid
         POP CX
 
         CMP bool, 1
-        JE no_IndMove ; pawn picked 3ndou makla  
+        JE no_IndMove ; pawn picked 3ndou makla1  
             MOV AL,0
             MOV isValid, AL
             JMP end
@@ -193,7 +193,7 @@ ENDM
 
                 PUSH SI
                 PUSH DI
-                show_path board,i,j,turn,path1,path2,source_pawn,makla,makla2,isDirect,multiple_jumps
+                show_path board,i,j,turn,path1,path2,source_pawn,makla1,makla2,isDirect,multiple_jumps
                 POP DI
                 POP SI
                 POP BX
@@ -245,7 +245,7 @@ show_moves_dame MACRO board, IndMoves, directMoves
             
             ;show_path_dame board,i1,j1,turn1,path1,path2,pawn_position,makla1
             CMP maklaSIf,1 ; ---- DAME CASE----------
-            JE makla
+            JE makla1
                 POP BX
                 CMP dameMoves[0],0
                 JNE lab4
@@ -254,7 +254,7 @@ show_moves_dame MACRO board, IndMoves, directMoves
                     MOV BYTE PTR [BX], AL
                     INC BX
                     JMP lab1
-            makla:
+            makla1:
                 CMP dameIndMoves[0],0
                 JNE lab5
                     JMP lab1
@@ -393,7 +393,7 @@ ENDM
 ;                 JMP next1
 ;             next_move:
 
-;             show_path board,x1,y1,turn,path1,path2,source_pawn,makla,makla2,isDirect
+;             show_path board,x1,y1,turn,path1,path2,source_pawn,makla1,makla2,isDirect
 
 ;             CMP isDirect, 'n'
 ;             JNE next1

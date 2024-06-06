@@ -1,9 +1,9 @@
 .DATA
     SPMP_X          EQU     164
     SPMP_Y          EQU     66
-    MP_MSG          DB      "1 vs COM$"
-    SP_MSG          DB      "1 vs 1$"
-    isSinglePlayer  DB      1
+    MP_MSG          DB      "1 vs 1$"
+    SP_MSG          DB      "1 vs COM$"
+    isSinglePlayer  DB      0
 
     MAKLA_X         EQU     164
     MAKLA_Y         EQU     136
@@ -128,7 +128,7 @@
 
         ; SP/MP TOGGLE
         drawRectangle SPMP_X, SPMP_Y, 120, 50, 0006h
-        printGraphicalString SP_MSG, 0F1h, 24, 6
+        printGraphicalString MP_MSG, 0F1h, 25, 6
 
         ; MAKLA TOGGLE
         drawRectangle MAKLA_X, MAKLA_Y, 120, 50, 0002h

@@ -9,8 +9,8 @@
 
 ;! *********************************** OMAR'S WORK ***********************************
     ;?menu vars:start
-        whitePlayer             db      'Player 2$'
         blackPlayer             db      'Player 1$'
+        whitePlayer             db      'Player 2$'
         whitePlayer_score       db      '0$'
         blackPlayer_score       db      '0$'
         resign                  db      'Resign$'
@@ -26,8 +26,8 @@
     ;todo text background vars :end
         logoMessage                 DB      "-- PRESS ANY KEY TO CONTINUE --$"
 ;! ***********************************************************************************
-    blackWinMsg                 DB      "BLACK PLAYER WON!$"
-    whiteWinMsg                 DB      "WHITE PLAYER WON!$"
+    blackWinMsg                 DB      "PLAYER 1 WON!$"
+    whiteWinMsg                 DB      "PLAYER 2 WON!$"
 
 .CODE
     PushReg MACRO
@@ -1553,8 +1553,6 @@
                 pushMousePosition`
                 setMousePosition 0, 0
 
-                ; drawCircle PColor, DI, SI
-
                 cmp typePawn,1
                 JE damee
                     drawCircle PColor, DI,SI
@@ -1562,8 +1560,6 @@
                 damee: 
                     drawQueen n2, offsetX,  offsetY, cellSize, PColor, 000Eh       ;cellNumber, xOffset, yOffset, cellSize, outerColor, innerColor
                 next45: 
-            ; POP DX
-            ; POP CX
 
                 popMousePosition
     ENDM
@@ -1641,7 +1637,7 @@
         ;!resign button:end
 
         ;!turn :start
-        drawBackGround 110,154,96,36,04h backGround_column , backGround_row , width , height , color
+        drawBackGround 110,154,96,36,04h
 
         ; cmp turn, 'b'
         ; je handleBlackTurn
