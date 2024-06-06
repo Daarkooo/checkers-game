@@ -9,15 +9,13 @@
 
 ;! *********************************** OMAR'S WORK ***********************************
     ;?menu vars:start
-        whitePlayer             db      'White$'
-        blackPlayer             db      'Black$'
-
+        whitePlayer             db      'Player 2$'
+        blackPlayer             db      'Player 1$'
         whitePlayer_score       db      '0$'
         blackPlayer_score       db      '0$'
         resign                  db      'Resign$'
         quit                    db      'Quit$'
-        restart                 db      'Restart$'
-
+        restart                 db      'Restart$$'
         scoreWord               db      'Score:$'
     ;todo text background vars :start
         backGround_x            dw      0
@@ -28,6 +26,8 @@
     ;todo text background vars :end
         logoMessage                 DB      "-- PRESS ANY KEY TO CONTINUE --$"
 ;! ***********************************************************************************
+    blackWinMsg                 DB      "BLACK PLAYER WON!$"
+    whiteWinMsg                 DB      "WHITE PLAYER WON!$"
 
 .CODE
     PushReg MACRO
@@ -1242,7 +1242,6 @@
         ADD CX, 17
 
         Black:
-        
             MOV DX,51
             ADD DX,Offsetx
             MOV BX,5
@@ -1551,10 +1550,20 @@
                 MOV SI, CX
                 MOV DI, DX
 
-                pushMousePosition
+                pushMousePosition`
                 setMousePosition 0, 0
 
-                drawCircle PColor, DI, SI
+                ; drawCircle PColor, DI, SI
+
+                cmp typePawn,1
+                JE damee
+                    drawCircle PColor, DI,SI
+                JMP next45
+                damee: 
+                    drawQueen n2, offsetX,  offsetY, cellSize, PColor, 000Eh       ;cellNumber, xOffset, yOffset, cellSize, outerColor, innerColor
+                next45: 
+            ; POP DX
+            ; POP CX
 
                 popMousePosition
     ENDM
@@ -1601,7 +1610,7 @@
     ;todo draw text backGround :end
 
     duringGameMenu PROC
-        ;!score text:start 
+        ;!score text:start
         drawBackGround 29,31,70,36,04h
         drawBackGround 34,36,60,26,00h
         printGraphicalString scoreWord,0FFh,5,3;!the color of the string will be :Black
@@ -1632,21 +1641,19 @@
         ;!resign button:end
 
         ;!turn :start
-        drawBackGround 115,154,86,36,04h
+        drawBackGround 110,154,96,36,04h backGround_column , backGround_row , width , height , color
 
+        ; cmp turn, 'b'
+        ; je handleBlackTurn
 
-        cmp turn, 'b'
+        ; drawBackGround 120,159,76,26,0Fh
+        ; printGraphicalString whitePlayer,0FFh,17,12;
+        ; jmp everyThingIsHandeled
+        ; handleBlackTurn:
 
-        je handleBlackTurn
-        
-        drawBackGround 120,159,76,26,0Fh
-        printGraphicalString whitePlayer,0FFh,17,12;
-        jmp everyThingIsHandeled
-        handleBlackTurn:
-        
-        drawBackGround 120,159,76,26,00h
-        printGraphicalString blackPlayer,0FFh,17,12;
-        everyThingIsHandeled:
+        drawBackGround 115,159,86,26,00h
+        printGraphicalString blackPlayer,0FFh,16,12;
+        ; everyThingIsHandeled:
         ;!turn :end
 
         RET
@@ -1743,11 +1750,10 @@
         RET
     drawLogo ENDP
 
-
     ;!switch turn text:start
     switchTurnString MACRO flag
         LOCAL is_white_turn, the_end
-    
+
         cmp flag, 'w'
         je is_white_turn
         printGraphicalString whitePlayer,0FFh,17,12
@@ -1759,4 +1765,3 @@
         the_end:
     ENDM
     ;!switch turn text:end
-

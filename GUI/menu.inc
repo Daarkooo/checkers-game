@@ -1,15 +1,14 @@
 .DATA
     SPMP_X          EQU     164
     SPMP_Y          EQU     66
-    MP_MSG          DB      "1 vs 1$"
-    SP_MSG          DB      "1 vs COM$"
-    isSP            DB      1
+    MP_MSG          DB      "1 vs COM$"
+    SP_MSG          DB      "1 vs 1$"
+    isSinglePlayer  DB      1
 
     MAKLA_X         EQU     164
     MAKLA_Y         EQU     136
     MKLASIF_MSG     DB      "makla sif$"
     MKLANSIF_MSG    DB      "machi sif$"
-    isMaklaSif      DB      1
 
     START_X         EQU     265
     START_Y         EQU     234
@@ -147,7 +146,7 @@
         printGraphicalString THEMES_TITLE, 0FFh, THEMES_TITLE_X, THEMES_TITLE_Y
 
         ; THEMES LIST
-        drawThemeTemplate THEME0_X, THEME0_Y, 0006h, 000Fh, 0000h, 000Fh, 17 ; THEME 1
+        drawThemeTemplate THEME0_X, THEME0_Y, 0006h, 000Fh, 0001h, 0000h, 17 ; THEME 1
         drawBorder 0002h, THEME0_X, THEME0_Y, 34, 3
 
         drawThemeTemplate THEME1_X, THEME1_Y, 0000h, 0007h, 0004h, 000Fh, 17 ; THEME 2
@@ -205,38 +204,38 @@
             JMP menu_endLabel
 
             SPMP_clicked:
-                CMP isSP, 1
+                CMP isSinglePlayer, 1
                 pushMousePosition
                 setMousePosition 0, 0
                 JZ SP_TOGGLE
                     printGraphicalString MP_MSG, 0F1h, 25, 6
                     printGraphicalString SP_MSG, 0F1h, 24, 6
-                    MOV isSP, 1
+                    MOV isSinglePlayer, 1
                     JMP SPMP_end
 
                 SP_TOGGLE:
                     printGraphicalString SP_MSG, 0F1h, 24, 6
                     printGraphicalString MP_MSG, 0F1h, 25, 6
-                    MOV isSP, 0
+                    MOV isSinglePlayer, 0
 
                 SPMP_end:
                 popMousePosition
                 JMP MAIN_L1
 
             MAKLA_clicked:
-                CMP isMaklaSif, 1
+                CMP maklaSif, 1
                 pushMousePosition
                 setMousePosition 0, 0
                 JZ MAKLA_TOGGLE
                     printGraphicalString MKLASIF_MSG , 0F2h, 23, 11
                     printGraphicalString MKLANSIF_MSG, 0F2h, 23, 11
-                    MOV isMaklaSif, 1
+                    MOV maklaSif, 1
                     JMP MAKLA_end
 
                 MAKLA_TOGGLE:
                     printGraphicalString MKLANSIF_MSG, 0F2h, 23, 11
                     printGraphicalString MKLASIF_MSG , 0F2h, 23, 11
-                    MOV isMaklaSif, 0
+                    MOV maklaSif, 0
 
                 MAKLA_end:
                 popMousePosition
@@ -245,8 +244,8 @@
             THEME0_clicked:
                 MOV blackCell , 0006h
                 MOV whiteCell , 000Fh
-                MOV blackPiece, 0000h
-                MOV whitePiece, 000Fh
+                MOV blackPiece, 0001h
+                MOV whitePiece, 0000h
 
                 pushMousePosition
                 setMousePosition 0, 0
