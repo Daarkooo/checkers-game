@@ -1639,17 +1639,8 @@
         ;!turn :start
         drawBackGround 110,154,96,36,04h
 
-        ; cmp turn, 'b'
-        ; je handleBlackTurn
-
-        ; drawBackGround 120,159,76,26,0Fh
-        ; printGraphicalString whitePlayer,0FFh,17,12;
-        ; jmp everyThingIsHandeled
-        ; handleBlackTurn:
-
         drawBackGround 115,159,86,26,00h
         printGraphicalString blackPlayer,0FFh,16,12;
-        ; everyThingIsHandeled:
         ;!turn :end
 
         RET

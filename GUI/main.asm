@@ -19,7 +19,6 @@
     turn            DB      'b'
     path1           DB      ?
     path2           DB      ?
-    tmp             DB      ?
     num             DB      ?
     maklaD          DB      ?
     makla1          DB      ?
@@ -83,8 +82,6 @@
         play:
             ; show_moves board, IndMoves, directMoves
             ; draw_borders IndMoves, directMoves, 0Ah
-            ; MOV AL, 0
-            ; MOV countMoves, AL
 
             reselect:
 
@@ -146,13 +143,6 @@
                 MOV AL, isDirect
                 MOV check_direct, AL
 
-                ; CMP typePawn,1
-                ; JE continue1
-                ;     ; PUSH DX
-                ;     ; PUSH CX
-                ;     JMP pawn
-                ; continue1:
-
                 MOV AL,0
                 LEA BX, dameIndMoves
                 CMP BYTE PTR[BX+3],0
@@ -171,9 +161,9 @@
                     JMP reselect
 
             next:
-            ; draw_borders IndMoves, directMoves, 06h
 
             multi_jumps_lab:
+
             pushMousePosition
             setMousePosition 0, 0
             drawBorderCell source_pawn, 0Ah, offsetX, offsetY, cellSize
@@ -214,6 +204,7 @@
                 move_pawn board,x1,y1,path1,path2,source_pawn,makla1,makla2,dest
 
                 promotion dest,turn,boolProm
+
                 CMP boolProm,1
                 JE next_promo
                     JMP check
@@ -222,23 +213,6 @@
                         ; MOV AL,1
                     MOV typePawn,1
                     JMP promo
-
-                ; MOV AL,0
-                ; CMP path1,-1
-                ; JE labll1
-                ;     MOV AL,1
-                ; labll1:
-
-                ; CMP path2,-1
-                ; JE labll2
-                ;     MOV AL,1
-                ; labll2:
-
-                ; CMP AL,1
-                ; JNE dame1
-                ;     JMP next
-                ; labe1:
-
 
                 JMP check
                 dame1:
@@ -260,17 +234,7 @@
                     JE label3
                         JMP reselect2
                 continue3:
-
-                ; XOR AX,AX
-                ; XOR BX,BX
-                ; XOR CX,CX
-                ; XOR DX,DX
-                ; MOV AL,dameMoves[2]
-                ; MOV BL,dameIndMoves[0]
-                ; MOV CL,dameMoves[3]
-                ; MOV DL,isDirect
-
-                ; CALL liveUsage
+                
                 check:
                 CMP dest,-1
                 JNE label3
@@ -297,10 +261,10 @@
                 JMP next1
             next_move:
 
-            ; CMP typePawn,0
-            ; JE pawn2
-            ;     JMP dame2
-            ; pawn2:
+            CMP typePawn,0
+            JE pawn2
+                JMP dame2
+            pawn2:
 
             show_path board,x1,y1,turn,path1,path2,source_pawn,makla1,makla2
 
@@ -332,27 +296,27 @@
                         next11:
                         JMP multi_jumps_lab
 
-            ; dame2:
-            ; show_path_dame board,x1,y1,turn,dameMoves,dameIndMoves,source_pawn,makla1,makla2,makla3,makla4
+            dame2:
+            show_path_dame board,x1,y1,turn,dameMoves,dameIndMoves,source_pawn,makla1,makla2,makla3,makla4
 
-            ; LEA SI, dameIndMoves
-            ; CMP BYTE PTR [SI+3],0
-            ; JNE next_move1
-            ;     JMP next1
-            ; next_move1:
+            LEA SI, dameIndMoves
+            CMP BYTE PTR [SI+3],0
+            JNE next_move1
+                JMP next1
+            next_move1:
 
-            ;     ; MOV AL,countMoves
-            ;     ; CMP AL,0
-            ;     ; JE nextMove
-            ;     ;     is_value_in_array x1, y1, dameIndMoves, bool
-            ;     ;     CMP bool, 1
-            ;     ;     JE nextMove
-            ;     ;         JMP next1
-            ;     ; nextMove:
+                ; MOV AL,countMoves
+                ; CMP AL,0
+                ; JE nextMove
+                ;     is_value_in_array x1, y1, dameIndMoves, bool
+                ;     CMP bool, 1
+                ;     JE nextMove
+                ;         JMP next1
+                ; nextMove:
 
-            ;     ; INC countMoves
+                ; INC countMoves
 
-            ;     JMP multi_jumps_lab
+                JMP multi_jumps_lab
 
             next1:
 

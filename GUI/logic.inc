@@ -1,31 +1,31 @@
 .DATA
-    n1 db ?
-    n2 db ?
-    i DB ?
-    j DB ?
-    i1 DB ?
-    j1 DB ?
-    x DB ?
-    y DB ?
+    n1  DB ?
+    n2  DB ?
+    i   DB ?
+    j   DB ?
+    i1  DB ?
+    j1  DB ?
+    x   DB ?
+    y   DB ?
     xDame DB ?  ; need to save makla
     yDame DB ?
-    countDame DB ?
+    countDame     DB ?
     pawn_position DB ?
-    state DB ?
+    state    DB ?
     switcher DB 1
-    checked DB ?
-    dest DB ?
-    val1 DB ?
-    val2 DB ?
-    menu DB ?
+    checked  DB ?
+    dest     DB ?
+    val1     DB ?
+    val2     DB ?
+    menu     DB ?
     verified DB ?
-    dameIndMoves DB 20 dup(?)
-    dameMoves DB 20 dup(?) ; makla i (i e (1->4))
-    bool DB 0 ; need it in showpaths
-    num1 DB ?
-    msg_result DB "result: $"
+    dameIndMoves  DB 20 dup(?)
+    dameMoves     DB 20 dup(?) ; makla i (i e (1->4))
+    bool  DB 0 ; need it in showpaths
+    num1  DB ?
     valid DB ?
-    boolProm DB ?
+    msg_result DB "result: $"
+    boolProm   DB ?
 
 .CODE
 
@@ -764,69 +764,69 @@
                 JMP long_move
 
             next:
-            ; MOV AL,x
-            ; MOV xDame,AL
-            ; MOV AL,y
-            ; MOV yDame,AL
+            MOV AL,x
+            MOV xDame,AL
+            MOV AL,y
+            MOV yDame,AL
 
-            ; ;dame_4_directions x,y
-            ; dame_4_directions x,y, valid
-            ; CMP n1,1
-            ; JNE lab2  ; checking
-            ;     JMP continue
-            ; lab2:
+            ;dame_4_directions x,y
+            dame_4_directions x,y, valid
+            CMP n1,1
+            JNE lab2  ; checking
+                JMP continue
+            lab2:
 
-            ; MOV AL,'n' ; direct direct
-            ; MOV isDirect,AL
+            MOV AL,'n' ; direct direct
+            MOV isDirect,AL
 
-            ; PUSH SI
-            ; ; PUSH CX
-            ; verify_move board,i,j,x,y,turn,verified,isDirect,pawn_position,n2     ; n1[i,j] n2[x,y]
-            ; ; POP CX
-            ; POP SI
+            PUSH SI
+            ; PUSH CX
+            verify_move board,i,j,x,y,turn,verified,isDirect,pawn_position,n2     ; n1[i,j] n2[x,y]
+            ; POP CX
+            POP SI
 
-            ; POP DI
-            ; CMP verified,1
-            ; JE next1
-            ;     JMP continue
-            ; next1:
-            ;    ; get_number xDame,yDame,menu,isDirect
+            POP DI
+            CMP verified,1
+            JE next1
+                JMP continue
+            next1:
+               ; get_number xDame,yDame,menu,isDirect
 
-            ;     save_dame_makla isDirect ; isDirect return the makla num (in verify_move)
+                save_dame_makla isDirect ; isDirect return the makla num (in verify_move)
 
-            ;     ;----------------the long path where we can go after making makla-------------------
-            ;     long_move1: ; save the data in direct & indirect move
+                ;----------------the long path where we can go after making makla-------------------
+                long_move1: ; save the data in direct & indirect move
 
-            ;         MOV AL,n2
-            ;         MOV BYTE PTR [SI],AL ; direct move
-            ;         INC SI
-            ;         MOV BYTE PTR [DI],AL ; indirect move
-            ;         INC DI
+                    MOV AL,n2
+                    MOV BYTE PTR [SI],AL ; direct move
+                    INC SI
+                    MOV BYTE PTR [DI],AL ; indirect move
+                    INC DI
 
-            ;         dame_4_directions x,y, valid
-            ;         CMP n1,1
-            ;         JNE lab3  ; checking
-            ;             JMP continue
-            ;         lab3:
+                    dame_4_directions x,y, valid
+                    CMP n1,1
+                    JNE lab3  ; checking
+                        JMP continue
+                    lab3:
 
-            ;         MOV AL,'y' ; direct
-            ;         MOV isDirect,AL
+                    MOV AL,'y' ; direct
+                    MOV isDirect,AL
 
-            ;         PUSH DI
-            ;         PUSH SI
-            ;         ; PUSH CX
-            ;         verify_move board,i,j,x,y,turn,verified,isDirect,pawn_position,n2 ; n1[i,j] n2[x,y]
-            ;         ; POP CX
-            ;         POP SI
-            ;         POP DI
+                    PUSH DI
+                    PUSH SI
+                    ; PUSH CX
+                    verify_move board,i,j,x,y,turn,verified,isDirect,pawn_position,n2 ; n1[i,j] n2[x,y]
+                    ; POP CX
+                    POP SI
+                    POP DI
 
-            ;         MOV AL,'n' ; direct direct
-            ;         MOV isDirect,AL
+                    MOV AL,'n' ; direct direct
+                    MOV isDirect,AL
 
-            ;         cmp verified,1
-            ;         JNE continue
+                    cmp verified,1
+                    JNE continue
 
-            ;     JMP long_move1
+                JMP long_move1
 
             continue:
 

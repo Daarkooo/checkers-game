@@ -275,25 +275,6 @@ show_moves_dame MACRO board, IndMoves, directMoves
 
 ENDM
 
-incScore MACRO turn
-        CMP turn, 'w'
-        JZ incScore_white
-
-        incScore_black:
-        MOV AL, blackPlayer_score
-        INC AL
-        MOV blackPlayer_score, AL
-
-        JMP incScore_end
-
-        incScore_white:
-        MOV AL, whitePlayer_score
-        INC AL
-        MOV whitePlayer_score, AL
-
-        incScore_end:
-    ENDM
-
 
 ;-------mark_cell_method------------
 mark_cell_method MACRO color
@@ -379,40 +360,3 @@ set_array_null MACRO array
 
 ENDM
 
-
-
-
-
-
-; multiple_jumps MACRO check_direct, x1, x2, turn
-;     LOCAL 
-
-;     MOV AL,check_direct
-;             CMP AL, 'n'
-;             JE next_move
-;                 JMP next1
-;             next_move:
-
-;             show_path board,x1,y1,turn,path1,path2,source_pawn,makla1,makla2,isDirect
-
-;             CMP isDirect, 'n'
-;             JNE next1
-            
-;                 CMP path1,-1
-;                 JE lab1
-;                     MOV AL,1
-;                 lab1:
-
-;                 CMP path2,-1
-;                 JE lab2
-;                     MOV AL,1
-;                 lab2:
-
-;                 CMP AL,1    
-;                 JNE next1
-;                     JMP multi_jumps_lab
-;             next1:
-
-
-
-; ENDM
