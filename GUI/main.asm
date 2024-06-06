@@ -388,15 +388,15 @@
             pushMousePosition
             setMousePosition 0, 0
 
-            drawBackGround 110, 154, 122, 36, 0Eh
-            drawBackGround 115, 159, 112, 26, 00h
+            drawBackGround 90, 154, 125, 36, 0Eh
+            drawBackGround 95, 159, 115, 26, 00h
             CMP turn, 'b'
             JZ MAIN_whiteWin
-            printGraphicalString blackWinMsg, 0FFh, 15, 12
+            printGraphicalString blackWinMsg, 0FFh, 13, 12
             JMP MAIN_continueGame1
 
             MAIN_whiteWin:
-            printGraphicalString whiteWinMsg, 0FFh, 15, 12
+            printGraphicalString whiteWinMsg, 0FFh, 13, 12
 
             MAIN_continueGame1:
 
