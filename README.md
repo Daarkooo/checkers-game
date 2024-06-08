@@ -15,6 +15,27 @@ Welcome to our classic Checkers game, brought to life in 16-bit MASM Assembly! *
 - **Simple and Classic:** Experience the traditional charm of a text-based interface.
 - **Keyboard Control:** Navigate the game using familiar keyboard inputs.
 - **Compatibility:** Runs primarily on Emu8086 emulator.
+## Screenshots
+- Graphical Version:
+<p align="center">
+    <img src="Screenshots/gui1.png" alt="Image 4" width="400" />
+    <img src="Screenshots/gui2.png" alt="Image 4" width="400" />
+</p>
+
+<p align="center">
+    <img src="Screenshots/gui3.png" alt="Image 4" width="400" />
+    <img src="Screenshots/gui4.png" alt="Image 4" width="400" />
+</p>
+
+
+- Command Line Version:
+
+<p align="center">
+    <img src="Screenshots/cmd1.png" alt="Image 1" width="266" />
+    <img src="Screenshots/cmd2.png" alt="Image 2" width="266" />
+    <img src="Screenshots/cmd3.png" alt="Image 3" width="266" />
+</p>
+
 
 ## Getting Started
 
