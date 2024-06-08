@@ -19,12 +19,12 @@ Welcome to our classic Checkers game, brought to life in 16-bit MASM Assembly! *
 - Graphical Version:
 <p align="center">
     <img src="Screenshots/gui1.png" alt="Image 4" width="400" />
-    <img src="Screenshots/gui2.png" alt="Image 4" width="400" />
+    <img src="Screenshots/gui2.png" alt="Image 5" width="400" />
 </p>
 
 <p align="center">
-    <img src="Screenshots/gui3.png" alt="Image 4" width="400" />
-    <img src="Screenshots/gui4.png" alt="Image 4" width="400" />
+    <img src="Screenshots/gui3.png" alt="Image 6" width="400" />
+    <img src="Screenshots/gui4.png" alt="Image 7" width="400" />
 </p>
 
 
@@ -86,7 +86,7 @@ This project was made possible by the hard work and dedication of the following 
 - **Contributor 3:** [Rayan Chabati](https://github.com/Rayanch0)
 - **Contributor 4:** [Abderaouf Benamirouche](https://github.com/Abdou-bnm)
 - **Contributor 5:** [Omar Heriche](https://github.com/OmarHeriche)
-- **Contributor 6:** [Ramy Imansoura ](https://github.com/Ramy-Dev)
+- **Contributor 6:** [Ramy Imansoura](https://github.com/Ramy-Dev)
 
 ## Contributing to the Project
 
