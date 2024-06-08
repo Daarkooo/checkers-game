@@ -99,6 +99,11 @@ We'd love your contributions to enhance this checkers game! Here's how you can p
 5. Push your changes to your forked branch.
 6. Submit a Pull Request to the main repository.
 
+## License and Acknowledgements
+This project is open-source and licensed under the [MIT License](license)
+
+A big thank you to everyone who has contributed to this project, especially the MASM community for their valuable support and resources.
+
 ---
 
 #### Now, let's dive in and enjoy the game!
